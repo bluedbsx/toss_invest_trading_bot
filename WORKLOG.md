@@ -117,3 +117,8 @@
 
 ### F. 핸드오프 주의
 - 병합은 원본(`toss_invest`)에 적용됨. 현재 **클론 봇이 실행 중**일 수 있으므로(같은 토스 계좌 공유), 원본을 실행하기 전 **클론 봇을 반드시 종료**할 것. 동시에 두 인스턴스를 돌리지 말 것.
+
+### G. GitHub 연동 (2026-06-26) — Claude (Opus 4.8)
+- 초기 커밋(`89c5d84`)을 private 레포 `https://github.com/Joyanggi/toss_invest_trading_bot.git`(`origin/main`)에 푸시. 원격에 있던 GitHub 자동 생성 stub 커밋은 `--force-with-lease`로 대체.
+- 푸시 전 확인: `.env`, `data/`(state.json·decision-samples.json·backups·forensics)는 `.gitignore`로 제외됨 → 원격에 크레덴셜/운영데이터 없음(추적 파일 30개, 전부 소스/문서/템플릿).
+- 규칙 추가([`AGENTS.md`](AGENTS.md) §0): **기능 단위 작업 완료 시 Codex·Claude 모두 작성자 명시하여 `origin/main`에 커밋·푸시.** 사용자가 매번 지시하지 않아도 됨.

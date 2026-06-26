@@ -3,6 +3,17 @@
 이 저장소는 사용자(Joyanggi)와 여러 AI 에이전트(**Codex**, **Claude**)가 함께 개발합니다.
 서로의 작업을 교차 검증(cross-check)할 수 있도록 아래 규칙을 지킵니다.
 
+- **원격 저장소(private):** https://github.com/Joyanggi/toss_invest_trading_bot.git (`origin`, 기본 브랜치 `main`)
+
+## 0. 기능 단위 작업이 끝나면 커밋·푸시한다 (Codex·Claude 공통)
+- **기능 추가, 버그 수정, 리팩터 등 "한 단위"의 작업이 완료되면, 그때마다 알아서 `origin/main`에 커밋·푸시한다.** 사용자가 매번 지시하지 않아도 된다.
+- 커밋 메시지에 **작성 주체를 명시**한다.
+  - Claude: 메시지 끝에 `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>` 트레일러.
+  - Codex: 메시지에 `Co-Authored-By: Codex <codex@openai.com>`(또는 본인 식별자) 트레일러를 남겨 누가 했는지 드러낸다.
+- 같은 커밋(또는 직후)에 [`WORKLOG.md`](WORKLOG.md) 항목을 추가한다(아래 규칙 1).
+- **절대 커밋하면 안 되는 것:** `.env`(실 크레덴셜), `data/` 내 운영 데이터(`state.json`, `decision-samples.json`, `backups/`, `forensics/`). 모두 `.gitignore`로 제외돼 있으니 `git add -f`로 강제 추가하지 말 것. 푸시 전 `git status`로 민감 파일이 안 들어갔는지 확인한다.
+- 미완성/실험 중인 변경은 푸시하지 않는다(논리적 완료 시점에만).
+
 ## 1. 모든 기능 변경은 WORKLOG.md에 남긴다
 - 위치: [`WORKLOG.md`](WORKLOG.md)
 - 작업을 시작하기 전에 **반드시 WORKLOG.md를 먼저 읽는다.** 직전 작업자가 무엇을, 왜, 어떻게 바꿨는지 파악하고 이어서 작업한다.
