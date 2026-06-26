@@ -635,7 +635,7 @@ function extractClientOrderId(order) {
   );
 }
 
-function rebuildLiveBotPortfolio(state) {
+export function rebuildLiveBotPortfolio(state) {
   const liveTrades = state.tradeHistory
     .filter((trade) => !trade.dryRun && trade.execution && Number(trade.execution.filledQuantity ?? 0) > 0)
     .slice()
@@ -674,17 +674,33 @@ function rebuildLiveBotPortfolio(state) {
     }
 
     if (trade.side === "SELL") {
-      const proceeds = Math.max(0, amount - commission - tax);
-      const closeRatio = current.quantity > 0 ? Math.min(1, quantity / current.quantity) : 1;
+      // 봇 장부에 실제로 있는 수량까지만 매도로 인정한다. 보유한 적 없는 수량(봇 보유 0일 때 들어온
+      // 매뉴얼 매도, 매수보다 먼저 기록된 매도 등)은 원가 0으로 잡혀 대금 전액이 유령 이익이 되므로
+      // (예: MUU 매뉴얼 매도 +$24가 원가 0으로 실현이익에 잡혀 봇 자산을 부풀린 사례) 봇 장부에서 제외한다.
+      const heldQuantity = Number(current.quantity ?? 0);
+      const effectiveQuantity = Math.min(quantity, heldQuantity);
+      if (effectiveQuantity <= POSITION_DUST_EPSILON) {
+        // 봇이 보유한 적 없는 수량의 매도 — 현금/실현/포지션 어디에도 반영하지 않는다.
+        trade.realizedPnlUsd = 0;
+        trade.unmatchedSellQuantity = round(quantity, 6);
+        continue;
+      }
+      // 봇 보유분을 넘는 부분(유령)은 대금에서 비례 제외한다.
+      const fillRatio = quantity > 0 ? effectiveQuantity / quantity : 1;
+      const proceeds = Math.max(0, amount - commission - tax) * fillRatio;
+      const closeRatio = heldQuantity > 0 ? Math.min(1, effectiveQuantity / heldQuantity) : 1;
       const costBasis = current.investedAmountUsd * closeRatio;
       const realizedPnlUsd = proceeds - costBasis;
-      const rawRemainingQuantity = Math.max(0, current.quantity - quantity);
+      const rawRemainingQuantity = Math.max(0, heldQuantity - effectiveQuantity);
       const fullyClosed = rawRemainingQuantity <= POSITION_DUST_EPSILON;
       const remainingQuantity = fullyClosed ? 0 : rawRemainingQuantity;
       const remainingCost = fullyClosed ? 0 : Math.max(0, current.investedAmountUsd - costBasis);
       performance.totalSellAmountUsd += proceeds;
       performance.realizedPnlUsd += realizedPnlUsd;
       trade.realizedPnlUsd = round(realizedPnlUsd, 2);
+      if (effectiveQuantity < quantity - POSITION_DUST_EPSILON) {
+        trade.unmatchedSellQuantity = round(quantity - effectiveQuantity, 6);
+      }
       positions[symbol] = {
         quantity: remainingQuantity,
         investedAmountUsd: remainingCost,
