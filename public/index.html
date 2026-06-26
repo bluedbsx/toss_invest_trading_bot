@@ -133,14 +133,14 @@
             <small>2배/3배 효과를 감안한 전체 위험 한도입니다.</small>
           </label>
           <label>
-            <span>일봉 급락 매수대기</span>
+            <span>당일 급락 매수대기</span>
             <input id="intradayDropBlockPct" type="number" min="1" max="30" step="0.5" />
-            <small>일봉 기준 이 이상 하락한 종목은 새 매수를 기다립니다.</small>
+            <small>당일 시가 대비 이 이상 하락하면서 단기 추세선까지 이탈했을 때만 새 매수를 기다립니다. 추세가 살아 있는 눌림목은 그대로 매수합니다.</small>
           </label>
           <label>
-            <span>일봉 급락 매도경고</span>
+            <span>당일 급락 방어매도</span>
             <input id="intradayPanicExitPct" type="number" min="2" max="50" step="0.5" />
-            <small>보유 중 일봉 기준 이 이상 하락하면 방어 매도 후보가 됩니다.</small>
+            <small>보유 중 당일 시가 대비 이 이상 하락하면 방어 매도 후보가 됩니다.</small>
           </label>
           <label>
             <span>추가매수 간격</span>

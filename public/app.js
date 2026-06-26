@@ -129,7 +129,7 @@ async function runAutomationNow() {
     state = preserveRuntimeState(result.state ?? state);
     renderAutomation();
     await refresh();
-    showProgress("봇 자가판단 완료", (result.actions ?? []).map((item) => item.message).join(" ") || "자동화할 항목이 없었습니다.", "success");
+    showProgress("봇 자가판단 완료", (result.actions ?? []).map((item) => item.message).join(" · ") || "자동화할 항목이 없었습니다.", "success");
   } catch (error) {
     showProgress("봇 자가판단 실패", humanError(error.message), "danger");
   } finally {
@@ -455,7 +455,9 @@ function renderAutomation() {
   $("#automationSummary").className = activeCount ? "badge buy" : "badge neutral";
   const lastActions = automation.lastActions ?? [];
   $("#automationNote").innerHTML = lastActions.length
-    ? `<strong>최근 자가판단</strong> ${escapeHtml(formatTime(automation.lastRunAt))}<br>${escapeHtml(lastActions.map((item) => item.message).join(" "))}`
+    ? `<strong>최근 자가판단</strong> ${escapeHtml(formatTime(automation.lastRunAt))}<br>${lastActions
+        .map((item) => `· ${escapeHtml(item.message)}`)
+        .join("<br>")}`
     : "아직 자동 자가판단 기록이 없습니다.";
 }
 
