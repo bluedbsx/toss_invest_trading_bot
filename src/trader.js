@@ -2,6 +2,7 @@ import { backtestTarget, buildOrderPlan, evaluateTarget, parseLeverage } from ".
 import { normalizeCandles } from "./indicators.js";
 import { getEventRisk, getNewsRisk, listEventCalendar } from "./eventRisk.js";
 import { attachTradeLearningContext, recordDecisionSample } from "./learning.js";
+import { recordEquitySnapshot } from "./validation.js";
 
 // 부동소수점 매매로 남는 미세한 수량 찌꺼기(예: 3e-18주)를 보유로 오인하지 않기 위한 기준값.
 // 소수점 수량은 6자리까지만 추적하므로 1e-6주 미만은 사실상 0(전량 매도)으로 본다.
@@ -87,6 +88,8 @@ export class Trader {
     const exposure = summarizeExposure(state, managedTargets, prices);
     const botBudget = summarizeBotBudget(state, exposure);
     state.botBudget = botBudget;
+    // 검증용 일별 자산 스냅샷(하루 1개, 외부 호출 없이 이미 계산된 equity만 사용 → 틱 비용 불변).
+    recordEquitySnapshot(state);
     const riskGuard = calculateDailyRiskGuard(state, managedTargets, prices);
     state.riskGuard = riskGuard;
 

@@ -94,6 +94,7 @@ async function refresh() {
   renderSettings();
   renderTargets();
   renderAccount();
+  renderValidation();
   renderSignals();
   renderTrades();
   renderNews();
@@ -762,6 +763,64 @@ function renderAccount() {
         )
         .join("")
     : row("봇 보유 종목 없음", "-", "기존 토스 계좌 보유 종목은 제외하고, 이 봇이 매매한 종목만 보여줍니다.");
+}
+
+function renderValidation() {
+  const host = $("#validationSummary");
+  const gateBadge = $("#validationGate");
+  const detail = $("#validationGateDetail");
+  if (!host || !gateBadge || !detail) return;
+  const v = state.validation;
+  if (!v) {
+    host.innerHTML = "";
+    detail.innerHTML = `<p class="recommendation-note">검증 데이터를 계산하는 중입니다.</p>`;
+    gateBadge.textContent = "대기";
+    gateBadge.className = "badge neutral";
+    return;
+  }
+  const b = v.benchmark ?? {};
+  const m = v.metrics ?? {};
+  const g = v.gate ?? {};
+  const excess =
+    g.excessReturnPct !== null && g.excessReturnPct !== undefined
+      ? `${g.excessReturnPct >= 0 ? "+" : ""}${g.excessReturnPct}%p`
+      : "-";
+  const cards = [
+    ["봇 수익률", v.botReturnPct != null ? pct(v.botReturnPct) : "-", `자산 ${money(v.equityUsd)} · 시드 ${money(v.seedUsd)}`],
+    [
+      "벤치마크 (SOXL 보유)",
+      b.available ? pct(b.returnPct) : "대기",
+      b.available ? `같은 현금흐름 보유 시 ${money(b.valueUsd)}` : "가격 데이터 없음"
+    ],
+    [
+      "초과수익",
+      excess,
+      g.beatsBenchmark === null ? "비교 대기" : g.beatsBenchmark ? "단순보유 초과" : "단순보유 미달"
+    ],
+    [
+      "승률 · 손익비",
+      `${m.winRatePct != null ? pct(m.winRatePct) : "-"} · ${m.profitFactor != null ? m.profitFactor : "표본부족"}`,
+      `왕복 ${m.cycleCount ?? 0} · 체결 ${m.finalTradeCount ?? 0}`
+    ],
+    ["최대낙폭 (MDD)", v.maxDrawdownPct != null ? pct(v.maxDrawdownPct) : "-", `일별 자산 ${v.equityCurvePoints ?? 0}일 적립`]
+  ];
+  host.innerHTML = cards
+    .map(
+      ([label, val, note]) =>
+        `<div class="learning-card"><span>${escapeHtml(label)}</span><strong>${escapeHtml(String(val))}</strong><small>${escapeHtml(note)}</small></div>`
+    )
+    .join("");
+  gateBadge.textContent = g.ready ? "증액 가능" : "증액 보류";
+  gateBadge.className = `badge ${g.ready ? "buy" : "sell"}`;
+  const checks = (g.checks ?? [])
+    .map((check) => `<span class="diff-chip ${check.pass ? "" : "changed"}">${check.pass ? "✓" : "✗"} ${escapeHtml(check.label)}</span>`)
+    .join(" ");
+  detail.innerHTML = `
+    <p class="recommendation-note">
+      <strong>${g.ready ? "✅ 증액 게이트 통과" : "⏸ 증액 보류"}</strong> ${escapeHtml(g.verdict ?? "")}
+      <br>${checks}
+      <br><small>${escapeHtml(g.note ?? "")}</small>
+    </p>`;
 }
 
 function renderSignals() {

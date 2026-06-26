@@ -206,3 +206,18 @@
   - **라이브 반영은 재시작 필요** — 실행 중 봇은 다음 `syncExecutedBotOrders`(재시작/체결동기화) 때 포지션·성과를 새 로직으로 재계산해 equity가 ~$90로 self-heal됨. equity는 `capitalBaseUsd`(매수 사이징 기준)라 봇 주문 규모가 그만큼 보수화됨(올바름).
   - **사용자 토스 확인 권장**: 06-24 MUU 매뉴얼 매도가 실제 무엇이었는지(봇이 산 적 없는 별도 보유분인지, 타임스탬프 역전인지) 토스 거래내역으로 최종 확인 필요. 어느 경우든 +$24 유령 이익은 부정확하므로 제외가 안전.
   - closedCycles는 이미 이 건을 제외하고 있어 별도 변경 없음.
+
+### S. 검증 시스템 — 벤치마크 + 지표 + 증액 게이트 (`src/validation.js`, `server.js`, `src/trader.js`, `public/*`)
+- 문제/목적: 사용자가 "실제로 돈을 불리며 시드를 계속 추가" 하길 원함. 그러려면 "봇이 단순 보유를 이기는가 / 시드를 더 넣어도 되는가"를 데이터로 판단할 잣대가 필요한데 없었음(승률만 표시).
+- 구현(매매 로직 불변, 측정·표시 전용):
+  1) **벤치마크** — 시드 투입(초기 + 일회성 추가)을 현금흐름으로 보고, "같은 돈을 그 시점에 SOXL 매수·보유했다면"의 현재 가치 vs 봇 자산. `buildCapitalFlows`가 `botStartedAt` 초기 시드 + `budget-add` 추천이벤트로 흐름 복원.
+  2) **지표** — 승률·손익비(profit factor)·MDD·벤치 대비 초과수익. 손익비/승률은 `closedCycles`(FIFO 매칭) 우선 사용(유령 매도 제외돼 정확).
+  3) **증액 게이트** — 왕복 사이클 ≥5 + 체결 ≥20 + 벤치 초과를 투명한 체크리스트로 판정(자동 변경 없음, 사용자 판단 보조). 기준은 `buildNextActions`(learning.js)와 일치시켜 교차검증.
+  - 일별 자산 스냅샷(`recordEquitySnapshot`)을 트레이더 틱에서 `state.equityCurve`(최상위)에 하루 1개 적립(외부 호출 없음). MDD 계산용. `state.performance`는 rebuild/paper가 통째 교체하므로 최상위에 둠.
+  - `/api/state`가 `computeValidation`(SOXL 캔들 30분 캐시 + 30초 결과 캐시)로 validation 블록 첨부. UI에 "검증 · 시드 증액 판단" 패널 추가.
+- 건드린 파일/함수: 신규 `src/validation.js`; `server.js`(import, `computeValidation`, /api/state 첨부); `src/trader.js`(`recordEquitySnapshot` 호출); `public/index.html`(패널), `public/app.js`(`renderValidation`).
+- 검증 방법과 결과: 검증모듈 단위테스트(자산곡선/MDD/지속성 4건 PASS) + 격리 mock 인스턴스(포트 3999, 크레덴셜 없음, 임시 DATA_DIR — 실계좌·실봇 무관) 종단 스모크: /api/state에 validation 첨부, 패널 렌더 확인. **§R 수정 적용(재시작) 후 실측: 봇 −9.9%($90.13) vs SOXL 보유 −11.2% → 초과 +1.35%p, 승률 40%·손익비 0.05, 게이트 = 보류(체결 11/20).**
+- 가정/주의(교차검증 요청):
+  - 벤치마크는 사용자가 지정한 **SOXL 단순보유** 1종(대표 3x). 비중가중 바스켓은 추후 옵션(`BENCHMARK_SYMBOL`).
+  - **현 데이터 기준 결론: 시드 증액 보류.** 봇은 −10%로 단순보유를 겨우 이긴 수준이고 손익비 0.05(질 때 크게, 이길 때 조금)라 아직 알파 미증명. 표본(체결 20·사이클 5)과 벤치 초과가 쌓일 때 트랜치 증액 권장.
+  - 게이트는 자동으로 아무것도 바꾸지 않음. equityCurve는 지금부터 적립 시작이라 MDD는 시간이 지나야 의미 생김.

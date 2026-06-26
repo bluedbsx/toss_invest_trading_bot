@@ -18,6 +18,7 @@ import { actionCostsForTargets } from "./src/rateLimiter.js";
 import { TossClient } from "./src/tossClient.js";
 import { Trader } from "./src/trader.js";
 import { buildLearningReport, recordRecommendationEvent } from "./src/learning.js";
+import { buildValidation, BENCHMARK_SYMBOL } from "./src/validation.js";
 import { enforceDashboardAuth } from "./src/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -214,6 +215,7 @@ async function handleApi(request, response, url) {
     const state = await loadState();
     const enabledTargetCount = state.targets.filter((target) => target.enabled !== false).length;
     const publicIp = await getPublicIp();
+    const validation = await computeValidation(state);
     sendJson(response, 200, {
       ...state,
       // 무거운 결정 샘플 배열은 폴링 응답에서 빼고 개수만 보낸다(브라우저는 길이만 사용).
@@ -222,6 +224,7 @@ async function handleApi(request, response, url) {
         decisionSamples: undefined,
         decisionSampleCount: state.learning?.decisionSamples?.length ?? 0
       },
+      validation,
       strategy: strategySummary,
       runtime: {
         liveTradingEnv: process.env.LIVE_TRADING === "true",
@@ -656,6 +659,28 @@ function scoreLocalIp(ip, name) {
   if (/^en|^wl|wi-fi|wifi|ap/i.test(name)) score += 2;
   if (/bridge|docker|utun|awdl|llw/i.test(name)) score -= 4;
   return score;
+}
+
+// 검증(벤치마크·지표·증액게이트) 블록을 만든다. 벤치마크 캔들은 외부 데이터라 짧게 캐시해
+// /api/state 폴링(20초)마다 야후를 때리지 않게 한다(getExternalDailyCandles 자체도 30분 캐시).
+let validationCache = null;
+const VALIDATION_CACHE_MS = 30_000;
+async function computeValidation(state) {
+  const now = Date.now();
+  if (validationCache && now - validationCache.createdAt < VALIDATION_CACHE_MS) {
+    return buildValidation({ ...validationCache.inputs, state });
+  }
+  let candles = [];
+  try {
+    candles = await getExternalDailyCandles(BENCHMARK_SYMBOL, { range: "5y" });
+  } catch {
+    candles = [];
+  }
+  const currentPrice = Number(
+    state?.marketSnapshots?.[BENCHMARK_SYMBOL]?.signal?.metrics?.lastPrice ?? candles.at(-1)?.close
+  );
+  validationCache = { createdAt: now, inputs: { candles, currentPrice } };
+  return buildValidation({ state, candles, currentPrice });
 }
 
 async function loadCandlesForRecommendation(symbol) {
