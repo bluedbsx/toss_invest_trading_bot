@@ -90,7 +90,8 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const rsiOk = currentRsi !== null && currentRsi >= params.minBuyRsi && currentRsi <= params.maxBuyRsi;
   const momentumOk = momentumPct !== null && momentumPct > 0;
   // ADX 추세강도 필터: minAdx>0이면 추세가 그 이상 강할 때만 신규매수(횡보장 회피 → 레버리지 decay 방지).
-  const minAdx = Number(settings.minAdx ?? 0);
+  // 종목별 설정(target.minAdx)을 우선하고 없으면 전역(settings.minAdx)로 폴백 — 횡보 상품만 켜기 위함.
+  const minAdx = Number(target.minAdx ?? settings.minAdx ?? 0);
   const adxOk = !(minAdx > 0) || (currentAdx !== null && currentAdx >= minAdx);
   const maxAtrPct = Number(target.maxAtrPct ?? 12);
   const volatilityOk = atrPct === null || atrPct <= maxAtrPct;
@@ -578,7 +579,7 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
     const trendOk = fastSma && slowSma && last > fastSma && fastSma > slowSma;
     const rsiOk = currentRsi !== null && currentRsi >= params.minBuyRsi && currentRsi <= params.maxBuyRsi;
     const momentumOk = momentumPct !== null && momentumPct > 0;
-    const minAdx = Number(settings.minAdx ?? 0);
+    const minAdx = Number(target.minAdx ?? settings.minAdx ?? 0);
     const adxOk = !(minAdx > 0) || (currentAdx !== null && currentAdx >= minAdx);
     const maxAtrPct = Number(target.maxAtrPct ?? 12);
     const volatilityOk = atrPct === null || atrPct <= maxAtrPct;
@@ -716,21 +717,46 @@ function recommendedFromCandidate(candidate, base) {
   };
 }
 
+// 종목별 ADX 필터 추천: 끔(0) 대비 켜는 옵션이 명확히(+4점) 나을 때만 "켜기"를 추천한다.
+// 필터는 거래 수를 줄이므로, 강한 추세 상품은 보통 끄기가 낫고 횡보가 심한 상품에서만 켜기가 유리하다.
+const ADX_RECOMMEND_MARGIN = 4;
+function recommendMinAdx({ candidate, candles, settings }) {
+  const offScore = Number(robustBacktestTarget({ target: { ...candidate, minAdx: 0 }, candles, settings }).score ?? 0);
+  let bestOn = { minAdx: 0, score: offScore };
+  for (const minAdx of [18, 22, 26]) {
+    const score = Number(robustBacktestTarget({ target: { ...candidate, minAdx }, candles, settings }).score ?? 0);
+    if (score > bestOn.score) bestOn = { minAdx, score };
+  }
+  const turnOn = bestOn.minAdx > 0 && bestOn.score >= offScore + ADX_RECOMMEND_MARGIN;
+  return {
+    minAdx: turnOn ? bestOn.minAdx : 0,
+    reason: turnOn
+      ? `ADX 추세강도 필터 켜기 추천(기준 ${bestOn.minAdx}) — 횡보 구간 매수를 걸러 점수가 ${offScore}→${bestOn.score}로 개선됩니다.`
+      : `ADX 추세강도 필터 끄기 추천 — 추세가 강해 필터가 좋은 거래를 잘라냅니다(끔 ${offScore}점 vs 최적 켬 ${bestOn.minAdx === 0 ? "없음" : bestOn.minAdx + "@" + bestOn.score + "점"}).`
+  };
+}
+
 function finalizeOptimization({ best, base, candles, settings, comboCount, label }) {
   if (!best) return null;
   const currentCandidate = { ...base, ...getStrategyParams(base) };
   const baselineBacktest = robustBacktestTarget({ target: currentCandidate, candles, settings });
   const baselineScore = Number(baselineBacktest.score ?? 0);
   const improvement = best.score - baselineScore;
+  const useBest = improvement >= OPTIMIZE_IMPROVE_MARGIN;
+  const chosen = useBest ? best.candidate : currentCandidate;
+  // 선택된 파라미터 조합 위에서 종목별 ADX 필터 켜기/끄기를 추천한다.
+  const adxRec = recommendMinAdx({ candidate: chosen, candles, settings });
+  const recommended = { ...recommendedFromCandidate(chosen, base), minAdx: adxRec.minAdx };
 
-  if (improvement < OPTIMIZE_IMPROVE_MARGIN) {
+  if (!useBest) {
     return {
-      recommended: recommendedFromCandidate(currentCandidate, base),
+      recommended,
       backtest: baselineBacktest,
       score: baselineScore,
       reasons: [
         `검증 결과는 ${baselineBacktest.summary}입니다.`,
         `${comboCount}개 후보 중 최고 점수(${best.score})가 현재 설정(${baselineScore})보다 ${OPTIMIZE_IMPROVE_MARGIN}점 이상 높지 않아, 과적합을 피하려 현재 설정 유지를 추천합니다.`,
+        adxRec.reason,
         baselineScore < 65
           ? "점수가 낮은 편이라 비중을 줄이거나 조건을 재검토하는 편이 좋습니다."
           : "현재 설정이 충분히 견고한 편입니다."
@@ -739,7 +765,7 @@ function finalizeOptimization({ best, base, candles, settings, comboCount, label
   }
 
   return {
-    recommended: recommendedFromCandidate(best.candidate, base),
+    recommended,
     backtest: best.backtest,
     score: best.score,
     reasons: [
@@ -749,6 +775,7 @@ function finalizeOptimization({ best, base, candles, settings, comboCount, label
         : best.score < 80
           ? "점수는 보통 이상이라 실전에서는 비중과 손실 한도를 함께 확인하는 편이 좋습니다."
           : "점수가 양호해 현재 후보군 중 상대적으로 안정적인 조합입니다.",
+      adxRec.reason,
       `${label} ${comboCount}개 후보 조합을 비교했고, 현재 설정보다 ${round(improvement, 0)}점 높은 조합을 골랐습니다.`
     ]
   };

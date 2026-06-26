@@ -302,3 +302,9 @@
 - 뉴스 감성(요청 1): 단순 개수 세기 → **가중 렉시콘**(강도별 가중치) + **메모리/반도체 사이클 용어**(memory glut/oversupply/inventory correction/price decline/HBM/memory shortage 등 — 이 포트폴리오 핵심 테마 악재·호재) + **부정어 처리**("no recession" 등 오탐 제거). 가중 임계값 ±1.5로 잡음 감소. getNewsRisk(악재 시 매수예산 50%)에 그대로 연결돼 더 정확한 신호.
 - 검증: 문법 OK 4파일. 뉴스 샘플 3종 분류 정확. ADX 백테스트(위 표). 라이브 동작 불변(minAdx 0).
 - 답변 기록(코드 변경 없음): ③ **갭위험은 일봉 봇이 세션간 거래 못 해 근본적으로 사용자 부담** — 다만 이벤트 차단(실적 보유 회피)·사이즈·패닉매도가 일부 완화. ⑤ **레짐편향** = 백테스트가 5년 상승장 한 레짐에 맞춰져 점수·파라미터가 낙관적인 것. 최선의 완화는 **추세추종 자체**(추세 깨지면 현금화 → 베어 레짐엔 미진입) + robust(train/val) 점수. 섹터/ADX 추가필터는 강한 추세 상품에선 오히려 수익을 깎아 미적용.
+
+### AA. 종목별 ADX 필터 추천 + ADX를 종목별 설정으로 (`src/strategy.js`, `server.js`, `public/app.js`)
+- 요청: 자동매매 켜거나 새 종목 추가 시 그 종목에 ADX 필터 켤지/끌지 추천해주는 기능.
+- 구현: ① `minAdx`를 **종목별 설정**(target.minAdx)으로 — strategy가 target.minAdx 우선, 없으면 전역 폴백. ② `recommendMinAdx`: 선택된 파라미터 위에서 minAdx 0/18/22/26을 백테스트해, **끔 대비 +4점 이상일 때만 "켜기" 추천**(필터는 거래를 줄이므로 강한 추세엔 끄기 기본). `optimizeTargetSettings`/`...Deep` 결과의 recommended.minAdx + reason에 포함. ③ pickTarget/pickStrategyFields/편집기 입력/추천 diff에 minAdx 연결.
+- 검증: MUU·SOXL → **끄기**(67/62점, 켬 개선 없음), SOXX → **켜기 26**(64→69), TQQQ → **켜기 26**(30→50). 의도대로 강한추세=끄기·횡보=켜기. 문법 OK 3파일.
+- 가정/주의: recommendMinAdx가 optimize당 robustBacktest 4회 추가(추천 호출만, 라이브 틱 무관). 종목별 minAdx 미설정 시 0(끔)으로 동작. 라이브 반영은 재시작 후(현재 MUU/SOXL은 추천도 끄기라 변화 없음).

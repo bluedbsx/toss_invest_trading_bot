@@ -1134,6 +1134,7 @@ function renderEditor() {
       ${editorInput("고점 이탈 %", target.trailingStopPct, "trailingStopPct")}
       ${editorInput("과열 매도선", target.takeProfitRsi, "takeProfitRsi")}
       ${editorInput("변동성 제한", target.maxAtrPct, "maxAtrPct")}
+      ${editorInput("ADX필터(0=끔)", target.minAdx ?? 0, "minAdx")}
       <button title="저장" data-action="save">저장</button>
       <button title="추천값 적용" data-action="recommend">추천값</button>
       <button title="정밀추천 적용" data-action="recommend-deep">정밀추천</button>
@@ -1401,7 +1402,8 @@ function renderRecommendationDiff(current, recommended) {
     takeProfitPct: "익절",
     trailingStopPct: "고점 이탈",
     takeProfitRsi: "과열 매도선",
-    maxAtrPct: "변동성 제한"
+    maxAtrPct: "변동성 제한",
+    minAdx: "ADX필터(0=끔)"
   };
   return Object.entries(labels)
     .map(([key, label]) => {

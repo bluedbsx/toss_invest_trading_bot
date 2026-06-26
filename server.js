@@ -776,7 +776,8 @@ function pickStrategyFields(target) {
     "takeProfitPct",
     "trailingStopPct",
     "takeProfitRsi",
-    "maxAtrPct"
+    "maxAtrPct",
+    "minAdx"
   ];
   return Object.fromEntries(keys.map((key) => [key, target[key]]));
 }
@@ -976,6 +977,7 @@ function pickTarget(body) {
     "trailingStopPct",
     "takeProfitRsi",
     "maxAtrPct",
+    "minAdx",
     "notes"
   ];
   return Object.fromEntries(Object.entries(body).filter(([key]) => allowed.includes(key)));
