@@ -959,15 +959,22 @@ function scoreBacktest(backtest) {
   if (backtest?.score !== undefined && !backtest.available) return Number(backtest.score);
   if (!backtest?.available) return 45;
   if (backtest.score !== undefined && backtest.robust) return Number(backtest.score);
-  const winRate = Number(backtest.winRatePct ?? 0);
+  const winRate = Number(backtest.winRatePct ?? 50);
   const totalReturn = Number(backtest.totalReturnPct ?? 0);
   const maxDrawdown = Number(backtest.maxDrawdownPct ?? 100);
   const trades = Number(backtest.trades ?? 0);
   const days = Number(backtest.days ?? 0);
+  // 위험조정 점수: 과거엔 수익률을 그대로(*0.38) 더해 고수익 레버리지 백테스트가 전부 100점으로 포화 →
+  // 낙폭(위험)을 구분하지 못하고 추천을 과대낙관으로 만들었다. Calmar(수익/낙폭)를 tanh로 압축해
+  // 비포화로 쓰고, 낙폭은 별도 패널티로 둬서 "낮은 손해"를 점수에 직접 반영한다.
+  const cappedDrawdown = Math.max(8, maxDrawdown);
+  const calmar = totalReturn / cappedDrawdown;
+  const calmarScore = 45 * Math.tanh(calmar / 12);
+  const winScore = (winRate - 50) * 0.4;
   const tradePenalty = trades < 3 ? 24 : trades < 6 ? 12 : trades < 10 ? 5 : 0;
   const dataPenalty = days < 120 ? 25 : days < 200 ? 12 : days < 252 ? 6 : 0;
-  const drawdownPenalty = maxDrawdown > 45 ? 18 : maxDrawdown > 35 ? 10 : maxDrawdown > 25 ? 5 : 0;
-  const raw = 50 + totalReturn * 0.38 + (winRate - 50) * 0.35 - maxDrawdown * 0.9 - tradePenalty - dataPenalty - drawdownPenalty;
+  const drawdownPenalty = maxDrawdown > 50 ? 25 : maxDrawdown > 40 ? 15 : maxDrawdown > 30 ? 8 : maxDrawdown > 22 ? 3 : 0;
+  const raw = 40 + calmarScore + winScore - tradePenalty - dataPenalty - drawdownPenalty;
   return round(clamp(raw, 0, 100), 0);
 }
 
