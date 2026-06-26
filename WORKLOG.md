@@ -277,3 +277,10 @@
 - 건드린 파일/함수: `server.js`(weights/apply, runAutomationIfDue), `src/strategy.js`(recommendedFromCandidate, recommendTargetSettings), `public/app.js`(renderRecommendationDiff, targetMatchesRecommendation).
 - 검증: 문법 OK 3파일. API 보정 후 비중 합 = SOXX 50.9 + SMH 49.1 = **100**, 비활성 전부 0.
 - 가정/주의: 코드 변경분(자동 0 처리)은 **봇 재시작 후** 반영됨. 재시작 전까지는 이번 API 보정 상태가 유지됨. 종목 재활성화 시 비중 0에서 시작 → 전체비중 추천으로 재배정.
+
+### X. 추천 라벨 검증·추가 + 후보 종목 스크리닝 (`public/index.html`)
+- 요청1(자동투자 켜기 체크박스 추천 검증): 7개 모두 **타당 — 수정 없음**. useVirtualSeed 켜기(원금 보호)·allowSeedTopUp 끄기(손실 자동보충 차단)·allowFractional 켜기(소액 시드 필수)·장외 방어매도 켜기(손절/급락만 정수 매도, 보호 우선)·실거래 실전때만·몰아주기 켜기·추가매수 끄기(집중 회피). 전부 보수·안전 우선이라 "저손해" 목표와 정합. 동적 추천기(recommendSafetySettings)와도 일치(useVirtualSeed:true/allowSeedTopUp:false/allowAdditionalBuys 조건부).
+- 요청3(봇 자가판단 체크박스 추천 라벨 추가): 4개에 자동투자 켜기와 동일 스타일 라벨 추가 — 안전설정 자동화 **켜기**, 전체비중 자동화 **켜기**, 종목전략 자동화 **끄기**(라이브 매매값을 자동 변경해 위험), 개선리포트 자동화 **켜기**(분석용). store.js 기본값(true/true/false/true)과 일치. 정적 파일이라 재시작 없이 새로고침 즉시 반영.
+- 요청2(추가 후보 스크리닝, 코드 변경 없음 — 분석): 다양한 ETF/주식 13종을 optimizeTargetSettings(위험조정 점수)로 백테스트.
+  - 결과(점수/수익%/낙폭%): SMH 64/123/29 · SOXX 61/167/14 · **GLD 51/65/10.3**(최저 낙폭+반도체 무상관) · MTUM 42/36/14 · IGV·QQQ·VGT·XLK 35~37(평범) · NVDA 31/88/37(단일주 고낙폭) · XLE·TLT 음수(부적합).
+  - 권고: 반도체 외 **GLD(금)** 강력 추천(손해 최소+진짜 분산), **MTUM(모멘텀 팩터)** 2순위. 기술 섹터는 반도체보다 못함. 상품 추가는 사용자 투자 결정이라 자동 적용 안 함(요청 시 추가).
