@@ -122,3 +122,15 @@
 - 초기 커밋(`89c5d84`)을 private 레포 `https://github.com/Joyanggi/toss_invest_trading_bot.git`(`origin/main`)에 푸시. 원격에 있던 GitHub 자동 생성 stub 커밋은 `--force-with-lease`로 대체.
 - 푸시 전 확인: `.env`, `data/`(state.json·decision-samples.json·backups·forensics)는 `.gitignore`로 제외됨 → 원격에 크레덴셜/운영데이터 없음(추적 파일 30개, 전부 소스/문서/템플릿).
 - 규칙 추가([`AGENTS.md`](AGENTS.md) §0): **기능 단위 작업 완료 시 Codex·Claude 모두 작성자 명시하여 `origin/main`에 커밋·푸시.** 사용자가 매번 지시하지 않아도 됨.
+
+---
+
+## 2026-06-26 (본 프로젝트 직접 작업) — Claude (Opus 4.8)
+
+### H. 이른 새벽(KST) 정규장 오판 버그 — 매수 차단 (`src/trader.js` `isUsRegularMarketOpen`)
+- 증상: 6/26 02:01~04:28 KST에 MUU·SOXL이 매수조건 충족인데 "소수점 거래 ON이라 정규장만 거래"로 HOLD(`isRegularMarket=false`). 그 시각은 ET 13:01~15:28로 **미국 정규장이 열려 있었음**(6월 EDT 정규장 = 22:30~05:00 KST).
+- 진단: `health.lastError=null`(조회 실패 아님). 원인은 토스 캘린더 `result.today.regularMarket`의 "오늘"이 **한국 날짜 기준**이라, KST 00:00~05:00에는 아직 시작 안 한 "오늘(KST) 세션"(예: 당일 22:30 KST 시작)을 반환 → `now < startTime` → 닫힘으로 오판. 실제로는 전날 KST 22:30에 시작한 세션이 진행 중이었음. (22:43 KST 매수는 정상 체결됐는데 00:00 이후로 막힌 패턴이 이를 뒷받침.)
+- 수정: `isUsRegularMarketOpen(calendar, now)`을 계층화. ① 캘린더 세션이 now를 포함하면 신뢰. ② **세션이 미래(`now < start`)면 KST 날짜 경계 가능성 → 시간 기반(ET 09:30~16:00 평일) 보정.** ③ 세션 종료 후면 false. ④ 캘린더 없음(조회 실패)이면 시간 기반 폴백(일시적 실패로 장을 닫힘 처리하지 않음). ⑤ 캘린더가 명시적으로 세션 없음(휴장)이면 false 신뢰. `isWithinRegularHoursET`는 `America/New_York` 기준이라 EDT/EST 자동 처리.
+- 검증: 단위테스트 10케이스 PASS(버그 케이스, 폴백, 휴장, 주말, 프리마켓, 종료 후 등).
+- 영향: KST 새벽 미국 정규장 시간대에 소수점 매수가 정상 실행됨(이전엔 놓침). 휴장일은 캘린더가 세션 없음으로 주면 그대로 차단; 캘린더 조회 실패+휴장이 겹치면 시간 기반이 열림으로 볼 수 있으나, 그 경우 거래소가 주문을 거절하므로 체결되진 않음.
+- **재시작 필요**: 실행 중인 봇은 다음 재시작 때 이 수정을 반영함.

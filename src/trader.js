@@ -898,11 +898,39 @@ function minutesBetween(start, end) {
   return round((endMs - startMs) / 60_000, 1);
 }
 
-export function isUsRegularMarketOpen(calendar) {
-  const session = calendar?.result?.today?.regularMarket;
+export function isUsRegularMarketOpen(calendar, now = new Date()) {
+  const t = now.getTime();
+  const today = calendar?.result?.today;
+  // 캘린더 자체가 없으면(조회 실패 등) 일시적 실패로 장을 닫힌 것으로 오판하지 않도록 시간 기반으로 판정.
+  if (!today) return isWithinRegularHoursET(now);
+  const session = today.regularMarket;
+  // 캘린더가 명시적으로 세션 없음(휴장)이라고 하면 그대로 신뢰.
   if (!session?.startTime || !session?.endTime) return false;
-  const now = Date.now();
-  return now >= new Date(session.startTime).getTime() && now <= new Date(session.endTime).getTime();
+  const start = new Date(session.startTime).getTime();
+  const end = new Date(session.endTime).getTime();
+  if (t >= start && t <= end) return true;
+  // today 세션이 아직 시작 전(미래)이면, 토스 캘린더의 "오늘"이 한국 날짜 기준이라
+  // 이른 새벽(KST 00:00~05:00)엔 전일 미국 정규장이 아직 진행 중일 수 있다 → 시간 기반으로 보정.
+  if (t < start) return isWithinRegularHoursET(now);
+  return false; // 세션 종료 후
+}
+
+// America/New_York 기준 평일 09:30~16:00(정규장) 여부. EDT/EST 전환은 Intl이 자동 처리.
+function isWithinRegularHoursET(now) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York",
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  }).formatToParts(now);
+  const weekday = parts.find((part) => part.type === "weekday")?.value;
+  let hour = Number(parts.find((part) => part.type === "hour")?.value);
+  const minute = Number(parts.find((part) => part.type === "minute")?.value);
+  if (hour === 24) hour = 0;
+  if (weekday === "Sat" || weekday === "Sun") return false;
+  const minutes = hour * 60 + minute;
+  return minutes >= 9 * 60 + 30 && minutes < 16 * 60;
 }
 
 function hydratePosition(state, symbol, price, holdings) {
