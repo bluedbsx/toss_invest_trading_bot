@@ -45,6 +45,7 @@ button {
   padding: 0 14px;
   cursor: pointer;
   font-weight: 700;
+  white-space: nowrap;
   transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
@@ -1307,6 +1308,12 @@ label small {
 .icon-button {
   width: 38px;
   padding: 0;
+}
+
+/* busy 상태에서 "요청 중" 같은 라벨이 들어가면 고정폭(38px)을 풀어 가로로 펼친다(세로 줄바꿈 방지). */
+.icon-button.is-busy {
+  width: auto;
+  padding: 0 12px;
 }
 
 .wide-icon {
