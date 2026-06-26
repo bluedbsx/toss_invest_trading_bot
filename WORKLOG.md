@@ -266,3 +266,14 @@
   - **회계 혼재 주의**: dry-run인데 과거 실거래 이력이 있어, `rebuildLiveBotPortfolio`(실거래 기준 재계산)와 `updatePaperPosition`(페이퍼 가산)이 섞여 검증패널 equity가 노이즈. **새 전략 성과는 tradeHistory의 dryRun 거래로 판단**하는 게 정확. 완전 클린 검증은 별도 DATA_DIR 페이퍼 인스턴스가 이상적(미적용).
   - **실거래 재개 경로**: 페이퍼로 게이트 통과(체결≥20·벤치초과) 확인 후 `liveTradingEnabled` ON. 그 전엔 실주문 안 나감.
   - SOXX·SMH는 상관 매우 높음(둘 다 1x 반도체) — 분산효과 제한, maxPositionPct로만 집중 방어.
+
+### W. 비중 추천 UX 정합성 — 비활성 종목 0 + 종목추천에서 비중 분리 (`server.js`, `src/strategy.js`, `public/app.js`)
+- 문제/목적(사용자 제보): ① 전체비중 추천이 **활성 종목만** 갱신해, 비활성 종목(SOXL 60·MUU 40·SNXX 16.8)이 옛 비중을 들고 있어 **비중 합계가 100을 초과해 보임**(마치 적용 안 된 것처럼). ② SOXX 카드에 "비중 49.9% → 60%"처럼 **종목별 추천(60)과 전체비중 추천(~50)이 충돌**.
+- 진단: 적용은 정상 작동(SOXX 70→적용→50.9 재현 확인). 원인은 (a) 비활성 종목 비중이 0으로 안 떨어짐, (b) 종목별 추천이 비중(allocationPct)을 base값 그대로 메아리해 전체비중 추천과 어긋남. 비중은 전체비중 추천의 영역인데 종목별 추천이 침범.
+- 수정 내용:
+  1) 전체비중 추천 적용 시(수동 `/api/recommendations/weights/apply` + 자가판단 `runAutomationIfDue`) **비활성 종목 allocationPct=0**으로 설정 → 활성 종목 합 100 유지.
+  2) 종목별 추천(`recommendedFromCandidate`, `recommendTargetSettings` 폴백)에서 **allocationPct 제거** → 종목 추천은 전략 파라미터만, 비중은 전체비중 추천만. 프런트(`renderRecommendationDiff` 라벨, `targetMatchesRecommendation`)도 비중 비교 제거.
+  3) 실행 중 봇은 옛 코드라, 현재 state의 비활성 비중을 API로 즉시 0 보정(SOXL/MUU/SNXX→0).
+- 건드린 파일/함수: `server.js`(weights/apply, runAutomationIfDue), `src/strategy.js`(recommendedFromCandidate, recommendTargetSettings), `public/app.js`(renderRecommendationDiff, targetMatchesRecommendation).
+- 검증: 문법 OK 3파일. API 보정 후 비중 합 = SOXX 50.9 + SMH 49.1 = **100**, 비활성 전부 0.
+- 가정/주의: 코드 변경분(자동 0 처리)은 **봇 재시작 후** 반영됨. 재시작 전까지는 이번 API 보정 상태가 유지됨. 종목 재활성화 시 비중 0에서 시작 → 전체비중 추천으로 재배정.

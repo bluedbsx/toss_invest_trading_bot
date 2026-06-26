@@ -382,7 +382,6 @@ export function recommendTargetSettings({ target, snapshot, candles, mode = "fas
   ];
   const params = getStrategyParams(target);
   const recommended = optimized?.recommended ?? {
-    allocationPct: Number(target.allocationPct),
     fastSmaDays: Number(params.fastSmaDays),
     slowSmaDays: Number(params.slowSmaDays),
     momentumDays: Number(params.momentumDays),
@@ -689,8 +688,9 @@ function isMoreRobustCandidate(candidate, best) {
 }
 
 function recommendedFromCandidate(candidate, base) {
+  // 비중(allocationPct)은 종목별 추천이 아니라 전체비중 추천의 영역이라 여기서 추천하지 않는다.
+  // (이전엔 base 비중을 그대로 메아리해 전체비중 추천값과 충돌해 보였다.)
   return {
-    allocationPct: Number(base.allocationPct),
     fastSmaDays: Number(candidate.fastSmaDays),
     slowSmaDays: Number(candidate.slowSmaDays),
     momentumDays: Number(candidate.momentumDays),

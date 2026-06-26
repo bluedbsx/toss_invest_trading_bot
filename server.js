@@ -158,6 +158,8 @@ async function runAutomationIfDue({ force = false } = {}) {
       for (const target of draft.targets) {
         if (weightRecommendation.weights[target.symbol] !== undefined) {
           target.allocationPct = weightRecommendation.weights[target.symbol];
+        } else if (target.enabled === false) {
+          target.allocationPct = 0;
         }
       }
       draft.lastWeightRecommendation = { ...weightRecommendation, appliedAt: new Date().toISOString() };
@@ -375,6 +377,9 @@ async function handleApi(request, response, url) {
       for (const target of draft.targets) {
         if (recommendation.weights[target.symbol] !== undefined) {
           target.allocationPct = recommendation.weights[target.symbol];
+        } else if (target.enabled === false) {
+          // 비활성 종목은 배정 대상이 아니라 비중 0으로 둬, 활성 종목 비중 합이 100을 넘어 보이지 않게 한다.
+          target.allocationPct = 0;
         }
       }
       draft.lastWeightRecommendation = {

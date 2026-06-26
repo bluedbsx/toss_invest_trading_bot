@@ -1280,7 +1280,6 @@ function renderWeightRecommendationNote(recommendation) {
 function targetMatchesRecommendation(target, recommended) {
   if (!recommended) return false;
   return [
-    "allocationPct",
     "fastSmaDays",
     "slowSmaDays",
     "momentumDays",
@@ -1391,7 +1390,6 @@ function applyEditorValues(rowEl, values) {
 
 function renderRecommendationDiff(current, recommended) {
   const labels = {
-    allocationPct: "비중",
     fastSmaDays: "빠른선",
     slowSmaDays: "느린선",
     momentumDays: "모멘텀일",
