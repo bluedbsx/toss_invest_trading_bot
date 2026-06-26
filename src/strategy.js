@@ -1,9 +1,11 @@
 import { atr, normalizeCandles, rsi, sma } from "./indicators.js";
 
 export const strategySummary = {
-  name: "Leveraged Momentum Guard v0.8 Dual-Backtest",
+  name: "Leveraged Momentum Guard v0.9 Dual-Backtest",
   purpose:
-    "레버리지 ETF를 장기 보유하지 않고 상승 추세에서만 참여하며, 손절/익절/노출 한도로 실전 리스크를 관리합니다.",
+    "레버리지 ETF를 장기 보유하지 않고 상승 추세에서만 참여하며, 손절/익절/노출 한도로 실전 리스크를 관리합니다. " +
+    "v0.9: 표준(Wilder) RSI/ATR, 수수료·슬리피지 반영 + 과적합 억제 백테스트, 한국 새벽 정규장 정상 인식, " +
+    "장중 급락 매수차단을 추세이탈 시에만 적용(건강한 눌림목 매수 허용).",
   buyRules: [
     "종목별 fastSmaDays 이동평균 > slowSmaDays 이동평균",
     "현재가 > 종목별 fastSmaDays 이동평균",
@@ -32,7 +34,7 @@ export const strategySummary = {
     "남는 투자금 몰아주기 옵션",
     "보유 중 추가매수는 별도 토글과 최소 간격으로 제한하되, 새 종목 진입은 봇 장부 기준으로 판단",
     "당일 봇 손실 한도는 작은 시드의 일상 흔들림을 감안한 최소 달러 한도를 함께 적용",
-    "일봉 기준 급락 구간에서는 신규 매수 차단",
+    "일봉 기준 급락 + 추세이탈(가격<단기선)이 겹칠 때만 신규 매수 차단(추세가 살아있는 눌림목은 허용)",
     "변동성이 기준보다 크지만 상승 조건이 강하면 신규매수를 완전 차단하지 않고 예산을 50%로 축소",
     "종목별 최대 비중과 전체 레버리지 노출 한도 적용",
     "최근 데이터 기반 단순 백테스트를 화면에 표시",
@@ -75,7 +77,13 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const trendExit = hasPosition && fastSma && last < fastSma;
   const overboughtExit = hasPosition && currentRsi && takeProfitRsi > 0 && currentRsi >= takeProfitRsi;
   const dailyMovePct = calculateDailyMovePct(normalized, last);
-  const dailyDropBlock = Number.isFinite(dailyMovePct) && dailyMovePct <= -Number(settings.intradayDropBlockPct ?? 4.5);
+  // v0.9: 장중 급락 매수차단은 "추세가 깨졌을 때(가격<단기선)"만 적용한다. 추세가 살아있는 건강한 눌림목까지
+  // 매수를 막던 v0.8 동작이 백테스트상 수익을 크게 깎고 낙폭 개선은 거의 없었기 때문(하락추세 진입은 매수조건이 이미 차단).
+  const dailyDropBlock =
+    Number.isFinite(dailyMovePct) &&
+    dailyMovePct <= -Number(settings.intradayDropBlockPct ?? 4.5) &&
+    Boolean(fastSma && last < fastSma);
+  // 패닉 매도(보유분 방어)는 일봉 백테스트가 진짜 장중 급락을 못 보므로 보수적으로 그대로 유지.
   const dailyPanicExit = hasPosition && Number.isFinite(dailyMovePct) && dailyMovePct <= -Number(settings.intradayPanicExitPct ?? 8);
   const trendOk = fastSma && slowSma && last > fastSma && fastSma > slowSma;
   const rsiOk = currentRsi !== null && currentRsi >= params.minBuyRsi && currentRsi <= params.maxBuyRsi;
@@ -513,7 +521,8 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
     const dailyDropBlock =
       includeDailyGuards &&
       Number.isFinite(dailyMovePct) &&
-      dailyMovePct <= -Number(settings.intradayDropBlockPct ?? Number.POSITIVE_INFINITY);
+      dailyMovePct <= -Number(settings.intradayDropBlockPct ?? Number.POSITIVE_INFINITY) &&
+      Boolean(fastSma && last < fastSma);
     const dailyPanicExit =
       includeDailyGuards &&
       quantity > 0 &&
