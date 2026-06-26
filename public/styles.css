@@ -305,7 +305,8 @@ label small,
   align-items: end;
   justify-content: space-between;
   gap: 16px;
-  padding: 2px 2px 0;
+  /* 패널 헤더(안쪽 16px 들여쓰기)와 좌우 정렬을 맞춘다. */
+  padding: 2px 16px 0;
 }
 
 .section-heading > div {
