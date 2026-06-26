@@ -1,4 +1,4 @@
-import { atr, normalizeCandles, rsi, sma } from "./indicators.js";
+import { adx, atr, normalizeCandles, rsi, sma } from "./indicators.js";
 
 export const strategySummary = {
   name: "Leveraged Momentum Guard v0.9 Dual-Backtest",
@@ -51,6 +51,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const slowSma = sma(closes, params.slowSmaDays);
   const currentRsi = rsi(closes, 14);
   const currentAtr = atr(normalized, 14);
+  const currentAdx = adx(normalized, 14);
   const momentumBase = closes.at(-(params.momentumDays + 1));
   const momentumPct = momentumBase ? ((last - momentumBase) / momentumBase) * 100 : null;
   const atrPct = currentAtr && last ? (currentAtr / last) * 100 : null;
@@ -88,6 +89,9 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const trendOk = fastSma && slowSma && last > fastSma && fastSma > slowSma;
   const rsiOk = currentRsi !== null && currentRsi >= params.minBuyRsi && currentRsi <= params.maxBuyRsi;
   const momentumOk = momentumPct !== null && momentumPct > 0;
+  // ADX 추세강도 필터: minAdx>0이면 추세가 그 이상 강할 때만 신규매수(횡보장 회피 → 레버리지 decay 방지).
+  const minAdx = Number(settings.minAdx ?? 0);
+  const adxOk = !(minAdx > 0) || (currentAdx !== null && currentAdx >= minAdx);
   const maxAtrPct = Number(target.maxAtrPct ?? 12);
   const volatilityOk = atrPct === null || atrPct <= maxAtrPct;
   const softVolatilityLimitPct = Math.min(30, Math.max(maxAtrPct + 8, maxAtrPct * 1.6));
@@ -127,6 +131,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     trendOk &&
     rsiOk &&
     momentumOk &&
+    adxOk &&
     volatilityTradable &&
     !dailyDropBlock
   ) {
@@ -151,6 +156,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     if (!trendOk) reasons.push("추세 조건 미충족");
     if (!rsiOk) reasons.push("RSI 조건 미충족");
     if (!momentumOk) reasons.push(`${params.momentumDays}일 모멘텀 미충족`);
+    if (!adxOk) reasons.push(`추세 강도(ADX) 약함 — 횡보 구간 매수 보류(기준 ${minAdx})`);
     if (!volatilityTradable) reasons.push("변동성 과다");
     else if (volatilitySoftOk) reasons.push("가격 흔들림 큼, 예산 축소 조건");
     if (dailyDropBlock) reasons.push(`일봉 기준 ${settings.intradayDropBlockPct}% 이상 하락 구간`);
@@ -168,6 +174,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
       fastSma: round(fastSma, 4),
       slowSma: round(slowSma, 4),
       rsi14: round(currentRsi, 2),
+      adx14: round(currentAdx, 1),
       atrPct: round(atrPct, 2),
       momentum5dPct: round(momentumPct, 2),
       momentumPct: round(momentumPct, 2),
@@ -513,6 +520,7 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
     const slowSma = sma(closes, params.slowSmaDays);
     const currentRsi = rsi(closes, 14);
     const currentAtr = atr(window, 14);
+    const currentAdx = adx(window, 14);
     const atrPct = currentAtr && last ? (currentAtr / last) * 100 : null;
     const momentumBase = closes.at(-(params.momentumDays + 1));
     const momentumPct = momentumBase ? ((last - momentumBase) / momentumBase) * 100 : null;
@@ -570,6 +578,8 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
     const trendOk = fastSma && slowSma && last > fastSma && fastSma > slowSma;
     const rsiOk = currentRsi !== null && currentRsi >= params.minBuyRsi && currentRsi <= params.maxBuyRsi;
     const momentumOk = momentumPct !== null && momentumPct > 0;
+    const minAdx = Number(settings.minAdx ?? 0);
+    const adxOk = !(minAdx > 0) || (currentAdx !== null && currentAdx >= minAdx);
     const maxAtrPct = Number(target.maxAtrPct ?? 12);
     const volatilityOk = atrPct === null || atrPct <= maxAtrPct;
     const softVolatilityLimitPct = Math.min(30, Math.max(maxAtrPct + 8, maxAtrPct * 1.6));
@@ -581,7 +591,7 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
     const volatilityTradable = volatilityOk || volatilitySoftOk;
     const buyCashMultiplier = volatilitySoftOk ? 0.5 : 1;
 
-    if (trendOk && rsiOk && momentumOk && volatilityTradable && !dailyDropBlock) {
+    if (trendOk && rsiOk && momentumOk && adxOk && volatilityTradable && !dailyDropBlock) {
       const buyCash = cash * buyCashMultiplier;
       // 매수 비용을 체결가에 반영해 받는 수량을 줄인다(수수료+슬리피지).
       quantity = buyCash / (last * (1 + cost));

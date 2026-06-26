@@ -71,41 +71,39 @@ function decodeXml(value) {
     .replace(/&#39;/g, "'");
 }
 
+// 가중 렉시콘: [영문 키워드, 한글 라벨, 가중치]. 메모리/반도체 사이클 용어를 포함해
+// 이 포트폴리오(반도체·메모리)의 진짜 테마 악재/호재를 더 잘 잡는다. 단순 개수 세기 → 강도 가중으로 고도화.
+const POSITIVE_TERMS = [
+  ["rate cut", "금리 인하 기대", 2], ["rate cuts", "금리 인하 기대", 2], ["dovish", "완화적 연준", 1.5],
+  ["soft landing", "경기 연착륙", 1], ["ai demand", "AI 수요", 2], ["hbm", "HBM 강세", 2],
+  ["data center", "데이터센터 수요", 1.5], ["strong demand", "수요 강세", 1.5], ["memory shortage", "메모리 공급부족", 2.5],
+  ["undersupply", "공급 부족", 2], ["price increase", "메모리 가격 인상", 2.5], ["price hike", "가격 인상", 2],
+  ["earnings beat", "실적 호조", 2], ["beats estimates", "실적 호조", 2], ["raises guidance", "가이던스 상향", 2.5],
+  ["raises outlook", "전망 상향", 2], ["upgrade", "투자의견 상향", 1], ["rally", "상승 흐름", 1], ["surge", "급등", 1.5]
+];
+const NEGATIVE_TERMS = [
+  ["rate hike", "금리 인상 우려", 2], ["higher for longer", "고금리 장기화", 1.5], ["hawkish", "매파적 연준", 1.5],
+  ["recession", "침체 우려", 2.5], ["slowdown", "둔화 우려", 1.5], ["memory glut", "메모리 공급과잉", 2.5],
+  ["oversupply", "공급 과잉", 2.5], ["inventory correction", "재고 조정", 2], ["price decline", "메모리 가격 하락", 2.5],
+  ["price drop", "가격 하락", 2], ["demand weakness", "수요 약세", 2], ["weak demand", "수요 약세", 2],
+  ["capex cut", "투자 축소", 2], ["guidance cut", "가이던스 하향", 2.5], ["cuts outlook", "전망 하향", 2.5],
+  ["cuts guidance", "가이던스 하향", 2.5], ["downturn", "업황 둔화", 2], ["export restriction", "수출 규제", 2],
+  ["export curb", "수출 규제", 2], ["tariff", "관세 부담", 1.5], ["misses", "실적 부진", 2],
+  ["selloff", "매도세", 1.5], ["plunge", "급락", 2], ["crash", "폭락", 2.5], ["glut", "공급과잉", 2]
+];
+// 부정어가 키워드 바로 앞에 오면 그 신호는 무시한다(예: "no recession", "rate cut unlikely"는 오탐).
+const NEGATION = /\b(no|not|without|avoid|unlikely|despite|less|lower|eas\w*)\s+\S{0,14}$/;
+
 function enrichNews(item) {
   const text = `${item.title} ${item.summary}`.toLowerCase();
-  const positiveHits = findHits(text, [
-    ["rate cut", "금리 인하 기대"],
-    ["cuts", "금리 인하 기대"],
-    ["dovish", "완화적 연준"],
-    ["soft landing", "경기 연착륙"],
-    ["ai demand", "AI 수요"],
-    ["strong demand", "수요 강세"],
-    ["earnings beat", "실적 호조"],
-    ["raises outlook", "전망 상향"],
-    ["rally", "상승 흐름"],
-    ["surge", "급등"],
-    ["gain", "상승"]
-  ]);
-  const negativeHits = findHits(text, [
-    ["rate hike", "금리 인상 우려"],
-    ["higher for longer", "고금리 장기화"],
-    ["hawkish", "매파적 연준"],
-    ["inflation", "인플레이션 부담"],
-    ["recession", "침체 우려"],
-    ["slowdown", "둔화 우려"],
-    ["export restriction", "수출 규제"],
-    ["tariff", "관세 부담"],
-    ["misses", "실적 부진"],
-    ["cuts outlook", "전망 하향"],
-    ["selloff", "매도세"],
-    ["plunge", "급락"],
-    ["drop", "하락"]
-  ]);
-  const score = positiveHits.length - negativeHits.length;
-  const sentiment = score > 0 ? "positive" : score < 0 ? "negative" : "neutral";
+  const positive = weightedHits(text, POSITIVE_TERMS);
+  const negative = weightedHits(text, NEGATIVE_TERMS);
+  const score = Math.round((positive.weight - negative.weight) * 10) / 10;
+  // 가중 임계값(±1.5)으로 미약한 신호를 중립 처리해 잡음을 줄인다.
+  const sentiment = score >= 1.5 ? "positive" : score <= -1.5 ? "negative" : "neutral";
   const signalLabel = sentiment === "positive" ? "호재 가능성" : sentiment === "negative" ? "악재 가능성" : "중립";
   const topic = detectTopic(text, item.category);
-  const reasons = [...positiveHits, ...negativeHits].slice(0, 3);
+  const reasons = [...negative.labels, ...positive.labels].slice(0, 3);
 
   return {
     ...item,
@@ -118,8 +116,17 @@ function enrichNews(item) {
   };
 }
 
-function findHits(text, entries) {
-  return entries.filter(([keyword]) => text.includes(keyword)).map(([, label]) => label);
+function weightedHits(text, terms) {
+  const labels = [];
+  let weight = 0;
+  for (const [needle, label, value] of terms) {
+    const index = text.indexOf(needle);
+    if (index < 0) continue;
+    if (NEGATION.test(text.slice(Math.max(0, index - 16), index))) continue; // 부정어 선행 → 무시
+    labels.push(label);
+    weight += value;
+  }
+  return { labels, weight };
 }
 
 function detectTopic(text, fallback) {

@@ -52,6 +52,49 @@ export function atr(candles, period = 14) {
   return atrValue;
 }
 
+// Wilder ADX: 추세의 "강도"를 0~100으로 잰다(방향 아님). 보통 <20 횡보, >25 강한 추세.
+// 레버리지 ETF는 횡보장에서 변동성으로 가치가 깎이므로(decay), ADX가 낮을 때 신규매수를 막는 데 쓴다.
+export function adx(candles, period = 14) {
+  if (!Array.isArray(candles) || candles.length <= period * 2) return null;
+  const plusDM = [];
+  const minusDM = [];
+  const tr = [];
+  for (let i = 1; i < candles.length; i += 1) {
+    const up = candles[i].high - candles[i - 1].high;
+    const down = candles[i - 1].low - candles[i].low;
+    plusDM.push(up > down && up > 0 ? up : 0);
+    minusDM.push(down > up && down > 0 ? down : 0);
+    tr.push(
+      Math.max(
+        candles[i].high - candles[i].low,
+        Math.abs(candles[i].high - candles[i - 1].close),
+        Math.abs(candles[i].low - candles[i - 1].close)
+      )
+    );
+  }
+  if (tr.length < period * 2) return null;
+  // Wilder 평활 시작값(첫 period 합)
+  let smoothTr = tr.slice(0, period).reduce((sum, value) => sum + value, 0);
+  let smoothPlus = plusDM.slice(0, period).reduce((sum, value) => sum + value, 0);
+  let smoothMinus = minusDM.slice(0, period).reduce((sum, value) => sum + value, 0);
+  const dxValues = [];
+  for (let i = period; i < tr.length; i += 1) {
+    smoothTr = smoothTr - smoothTr / period + tr[i];
+    smoothPlus = smoothPlus - smoothPlus / period + plusDM[i];
+    smoothMinus = smoothMinus - smoothMinus / period + minusDM[i];
+    const plusDI = smoothTr === 0 ? 0 : (100 * smoothPlus) / smoothTr;
+    const minusDI = smoothTr === 0 ? 0 : (100 * smoothMinus) / smoothTr;
+    const sumDI = plusDI + minusDI;
+    dxValues.push(sumDI === 0 ? 0 : (100 * Math.abs(plusDI - minusDI)) / sumDI);
+  }
+  if (dxValues.length < period) return null;
+  let adxValue = dxValues.slice(0, period).reduce((sum, value) => sum + value, 0) / period;
+  for (let i = period; i < dxValues.length; i += 1) {
+    adxValue = (adxValue * (period - 1) + dxValues[i]) / period;
+  }
+  return adxValue;
+}
+
 export function normalizeCandles(rawCandles = []) {
   return rawCandles
     .map((item) => ({

@@ -940,6 +940,7 @@ function pickSettings(body) {
     "maxLeveragedExposurePct",
     "intradayDropBlockPct",
     "intradayPanicExitPct",
+    "minAdx",
     "allowFractional",
     "allowExtendedHoursTrading",
     "allowExtendedHoursDefensiveSells",
