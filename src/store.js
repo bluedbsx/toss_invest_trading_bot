@@ -8,6 +8,10 @@ const DB_FILE = path.join(DATA_DIR, "state.json");
 const SAMPLES_FILE = path.join(DATA_DIR, "decision-samples.json");
 const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const MAX_BACKUPS = 80;
+// 저장마다(≈15초 틱마다) 백업하면 80개가 ~100분치만 커버하고 파일 생성/삭제 churn이 크다.
+// 최소 간격을 두어 백업을 묶으면 같은 80개로 훨씬 긴 기간(약 13시간)을 커버한다.
+const BACKUP_MIN_INTERVAL_MS = 10 * 60_000;
+let lastBackupAt = 0;
 let updateQueue = Promise.resolve();
 
 const defaultState = {
@@ -304,12 +308,16 @@ async function protectPersistentHistory(nextState) {
 }
 
 async function backupCurrentState() {
+  // 최소 간격 내 중복 백업은 건너뛴다(매 저장 churn 방지).
+  const now = Date.now();
+  if (now - lastBackupAt < BACKUP_MIN_INTERVAL_MS) return;
   try {
     const raw = await readFile(DB_FILE, "utf8");
     JSON.parse(raw);
     await mkdir(BACKUP_DIR, { recursive: true });
     const stamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
     await copyFile(DB_FILE, path.join(BACKUP_DIR, `state-${stamp}.json`));
+    lastBackupAt = now;
     await pruneBackups();
   } catch {
     // If current state is missing or corrupted, skip backup and let recovery use older snapshots.

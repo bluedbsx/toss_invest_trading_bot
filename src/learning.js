@@ -1,6 +1,8 @@
 import { strategySummary } from "./strategy.js";
 
-const MAX_DECISION_SAMPLES = 2000;
+// 결정 샘플은 data/decision-samples.json 사이드카에만 저장되어(state.json/백업 제외) 보관 비용이 낮다.
+// 엔진 다음 버전 개발에 쓸 이력을 더 길게 남기기 위해 상향(시간당 ~50개 기준 약 4일치).
+const MAX_DECISION_SAMPLES = 5000;
 const MAX_RECOMMENDATION_EVENTS = 300;
 const MAX_REPORTS = 50;
 
