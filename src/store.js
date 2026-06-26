@@ -1,4 +1,4 @@
-import { copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { appendFile, copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const DATA_DIR = path.resolve(process.env.DATA_DIR || "data");
@@ -6,6 +6,9 @@ const DB_FILE = path.join(DATA_DIR, "state.json");
 // learning.decisionSamples는 state.json 용량의 대부분(수 MB)을 차지하므로 사이드카 파일로 분리한다.
 // 이렇게 하면 15초마다 쓰는 state.json과 저장마다 만드는 백업이 가벼워진다(백업은 state.json만 복사).
 const SAMPLES_FILE = path.join(DATA_DIR, "decision-samples.json");
+// 롤링 working set(SAMPLES_FILE, 5000개)과 별개로, 모든 결정 샘플을 손실 없이 영구 보관하는 append-only 아카이브.
+// 엔진 다음 버전 개발/분석은 이 전체 이력을 사용한다(봇은 이 파일을 읽지 않음). 필요 시 월별 분할/압축 가능.
+const SAMPLES_ARCHIVE = path.join(DATA_DIR, "decision-samples-archive.ndjson");
 const BACKUP_DIR = path.join(DATA_DIR, "backups");
 const MAX_BACKUPS = 80;
 // 저장마다(≈15초 틱마다) 백업하면 80개가 ~100분치만 커버하고 파일 생성/삭제 churn이 크다.
@@ -173,6 +176,8 @@ export async function saveState(state, { skipBackup = false } = {}) {
   if (!skipBackup) await backupCurrentState();
   // 무거운 decisionSamples는 사이드카로 따로 저장하고, state.json에는 비운 채 기록한다.
   await writeSamples(nextState.learning?.decisionSamples ?? []);
+  // 롤링으로 사라지는 샘플까지 전부 영구 보관(append-only). 워터마크(archiveLastId)는 state.json에 함께 저장된다.
+  await appendSampleArchive(nextState);
   const slimState = { ...nextState, learning: { ...nextState.learning, decisionSamples: [] } };
   const tempFile = `${DB_FILE}.tmp-${process.pid}-${Date.now()}`;
   await writeFile(tempFile, JSON.stringify(slimState, null, 2));
@@ -211,6 +216,25 @@ async function writeSamples(samples) {
   const tempFile = `${SAMPLES_FILE}.tmp-${process.pid}-${Date.now()}`;
   await writeFile(tempFile, JSON.stringify(next));
   await rename(tempFile, SAMPLES_FILE);
+}
+
+// 마지막으로 아카이브한 샘플 id(archiveLastId) 이후에 새로 생긴 샘플만 NDJSON으로 덧붙인다.
+// decisionSamples는 최신순(newest-first)이므로 워터마크 위치 앞쪽이 새 샘플 → 시간순(오래된 것부터)으로 기록.
+// 처음(워터마크 없음)에는 현재 working set 전체를 한 번 기록해 아카이브를 시드한다.
+async function appendSampleArchive(state) {
+  const learning = state.learning ?? {};
+  const samples = Array.isArray(learning.decisionSamples) ? learning.decisionSamples : [];
+  if (!samples.length) return;
+  const lastId = learning.archiveLastId;
+  const index = lastId ? samples.findIndex((sample) => sample.id === lastId) : -1;
+  const fresh = index === -1 ? samples.slice() : samples.slice(0, index);
+  if (!fresh.length) return;
+  const lines = fresh
+    .reverse()
+    .map((sample) => JSON.stringify(sample))
+    .join("\n");
+  await appendFile(SAMPLES_ARCHIVE, lines + "\n");
+  learning.archiveLastId = samples[0].id;
 }
 
 export function updateState(mutator) {
