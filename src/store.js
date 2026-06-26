@@ -1,0 +1,353 @@
+import { copyFile, mkdir, readFile, readdir, rename, rm, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+const DATA_DIR = path.resolve(process.env.DATA_DIR || "data");
+const DB_FILE = path.join(DATA_DIR, "state.json");
+// learning.decisionSamples는 state.json 용량의 대부분(수 MB)을 차지하므로 사이드카 파일로 분리한다.
+// 이렇게 하면 15초마다 쓰는 state.json과 저장마다 만드는 백업이 가벼워진다(백업은 state.json만 복사).
+const SAMPLES_FILE = path.join(DATA_DIR, "decision-samples.json");
+const BACKUP_DIR = path.join(DATA_DIR, "backups");
+const MAX_BACKUPS = 80;
+let updateQueue = Promise.resolve();
+
+const defaultState = {
+  settings: {
+    monitoringEnabled: false,
+    liveTradingEnabled: false,
+    dryRun: true,
+    allocationUsd: 1000,
+    cashBufferUsd: 50,
+    useVirtualSeed: true,
+    allowSeedTopUp: false,
+    maxDailyLossPct: 4.5,
+    maxPositionPct: 40,
+    maxLeveragedExposurePct: 105,
+    intradayDropBlockPct: 4.5,
+    intradayPanicExitPct: 8,
+    allowFractional: true,
+    allowExtendedHoursTrading: false,
+    allowExtendedHoursDefensiveSells: true,
+    redistributeUnusedAllocation: true,
+    allowAdditionalBuys: false,
+    additionalBuyCooldownMinutes: 240,
+    autoSafetyRecommendations: true,
+    autoWeightRecommendations: true,
+    autoTargetRecommendations: false,
+    autoLearningReports: true,
+    autoRecommendationIntervalMinutes: 360,
+    pollIntervalSec: 60,
+    lastRunAt: null,
+    accountSeq: "",
+    botStartedAt: "2026-06-21T00:00:00.000+09:00",
+    modeNote: "LIVE_TRADING=false이면 실제 주문 대신 dry-run 로그만 남깁니다."
+  },
+  targets: [
+    {
+      symbol: "SOXL",
+      name: "Direxion Daily Semiconductor Bull 3X ETF",
+      enabled: true,
+      riskProfile: "aggressive",
+      allocationPct: 45,
+      leverage: "3x",
+      stopLossPct: 8,
+      fastSmaDays: 20,
+      slowSmaDays: 50,
+      momentumDays: 5,
+      minBuyRsi: 45,
+      maxBuyRsi: 72,
+      partialTakeProfitPct: 11,
+      partialTakeProfitSellPct: 40,
+      takeProfitPct: 18,
+      trailingStopPct: 11,
+      takeProfitRsi: 78,
+      maxAtrPct: 13,
+      notes: "반도체 지수 3배. 변동성 확대 구간에서는 비중 축소."
+    },
+    {
+      symbol: "MUU",
+      name: "Direxion Daily MU Bull 2X ETF",
+      enabled: true,
+      riskProfile: "high",
+      allocationPct: 35,
+      leverage: "2x",
+      stopLossPct: 9,
+      fastSmaDays: 20,
+      slowSmaDays: 50,
+      momentumDays: 5,
+      minBuyRsi: 45,
+      maxBuyRsi: 72,
+      partialTakeProfitPct: 12,
+      partialTakeProfitSellPct: 40,
+      takeProfitPct: 20,
+      trailingStopPct: 12,
+      takeProfitRsi: 80,
+      maxAtrPct: 15,
+      notes: "Micron 단일종목 2배. 실적/메모리 사이클 뉴스 민감."
+    },
+    {
+      symbol: "SNXX",
+      name: "Tradr 2X Long SNDK Daily ETF",
+      enabled: true,
+      riskProfile: "high",
+      allocationPct: 20,
+      leverage: "2x",
+      stopLossPct: 10,
+      fastSmaDays: 20,
+      slowSmaDays: 50,
+      momentumDays: 5,
+      minBuyRsi: 45,
+      maxBuyRsi: 72,
+      partialTakeProfitPct: 13,
+      partialTakeProfitSellPct: 35,
+      takeProfitPct: 22,
+      trailingStopPct: 13,
+      takeProfitRsi: 80,
+      maxAtrPct: 16,
+      notes: "SNDK 단일종목 2배. 유동성과 스프레드 점검 필요."
+    }
+  ],
+  positions: {},
+  performance: {
+    realizedPnlUsd: 0,
+    totalBuyAmountUsd: 0,
+    totalSellAmountUsd: 0
+  },
+  botBudget: null,
+  externalTrackedHoldings: {},
+  tradeHistory: [],
+  orderEvents: [],
+  marketSnapshots: {},
+  riskGuard: null,
+  news: [],
+  automation: {
+    lastRunAt: null,
+    lastActions: [],
+    lastError: null
+  },
+  learning: {
+    version: "learning-v1",
+    decisionSamples: [],
+    recommendationEvents: [],
+    closedCycles: [],
+    reports: [],
+    lastReport: null,
+    updatedAt: null
+  },
+  health: {
+    status: "idle",
+    lastError: null,
+    lastApiSyncAt: null,
+    tossConnected: false,
+    mockMode: true
+  }
+};
+
+export async function loadState() {
+  await mkdir(DATA_DIR, { recursive: true });
+  try {
+    const raw = await readFile(DB_FILE, "utf8");
+    const parsed = JSON.parse(raw);
+    const merged = mergeDefaults(parsed);
+    merged.learning.decisionSamples = await loadSamples(parsed.learning?.decisionSamples);
+    return merged;
+  } catch {
+    const recovered = await loadLatestBackup();
+    if (recovered) {
+      await saveState(recovered, { skipBackup: true });
+      const merged = mergeDefaults(recovered);
+      merged.learning.decisionSamples = await loadSamples(recovered.learning?.decisionSamples);
+      return merged;
+    }
+    await saveState(defaultState, { skipBackup: true });
+    return structuredClone(defaultState);
+  }
+}
+
+export async function saveState(state, { skipBackup = false } = {}) {
+  await mkdir(DATA_DIR, { recursive: true });
+  const nextState = await protectPersistentHistory(mergeDefaults(state));
+  if (!skipBackup) await backupCurrentState();
+  // 무거운 decisionSamples는 사이드카로 따로 저장하고, state.json에는 비운 채 기록한다.
+  await writeSamples(nextState.learning?.decisionSamples ?? []);
+  const slimState = { ...nextState, learning: { ...nextState.learning, decisionSamples: [] } };
+  const tempFile = `${DB_FILE}.tmp-${process.pid}-${Date.now()}`;
+  await writeFile(tempFile, JSON.stringify(slimState, null, 2));
+  await rename(tempFile, DB_FILE);
+}
+
+// 사이드카에서 decisionSamples를 읽고, 없으면 구버전 state.json 인라인 샘플에서 가져온다(자동 마이그레이션).
+// 사이드카가 비었는데 인라인이 더 많으면(마이그레이션 직전 등) 더 긴 쪽을 채택해 데이터 유실을 막는다.
+async function loadSamples(legacyInline) {
+  const inline = Array.isArray(legacyInline) ? legacyInline : [];
+  try {
+    const raw = await readFile(SAMPLES_FILE, "utf8");
+    const samples = JSON.parse(raw);
+    if (Array.isArray(samples)) return samples.length >= inline.length ? samples : inline;
+  } catch {
+    // 사이드카 없음 — 구버전 인라인 샘플로 폴백.
+  }
+  return inline;
+}
+
+async function writeSamples(samples) {
+  let next = Array.isArray(samples) ? samples : [];
+  try {
+    const raw = await readFile(SAMPLES_FILE, "utf8");
+    const current = JSON.parse(raw);
+    if (Array.isArray(current)) {
+      if (next.length < current.length) {
+        next = current; // 실수로 줄어드는 것 방지(append-only 로그)
+      } else if (next.length === current.length && next[0]?.id === current[0]?.id) {
+        return; // 변경 없음(설정 저장 등) — 6MB 재기록 생략
+      }
+    }
+  } catch {
+    // 사이드카 없음 — 새로 생성.
+  }
+  const tempFile = `${SAMPLES_FILE}.tmp-${process.pid}-${Date.now()}`;
+  await writeFile(tempFile, JSON.stringify(next));
+  await rename(tempFile, SAMPLES_FILE);
+}
+
+export function updateState(mutator) {
+  const operation = updateQueue.then(async () => {
+    const state = await loadState();
+    const result = await mutator(state);
+    await saveState(state);
+    return result ?? state;
+  });
+  updateQueue = operation.catch(() => {});
+  return operation;
+}
+
+// 트레이더 틱은 시작 시점의 상태로 길게 작업한 뒤 저장하므로, 그 사이 API/자가판단이 바꾼
+// 사용자 설정·종목·뉴스·자동화 기록을 덮어쓸 수 있다(lost update).
+// 저장을 같은 큐로 직렬화하고, 사용자/다른 경로가 소유하는 영역은 디스크 최신값을 우선해 보존한다.
+// 트레이더가 소유하는 필드(포지션, 시세 스냅샷, 체결 이력, 결정 샘플 등)만 트레이더 결과로 반영한다.
+const TRADER_OWNED_SETTINGS = ["lastRunAt", "dryRun", "accountSeq"];
+
+export function saveTraderState(traderState) {
+  const operation = updateQueue.then(async () => {
+    const current = await loadState();
+    const merged = {
+      ...traderState,
+      settings: {
+        ...current.settings,
+        ...Object.fromEntries(
+          TRADER_OWNED_SETTINGS.map((key) => [key, traderState.settings?.[key]]).filter(([, value]) => value !== undefined)
+        )
+      },
+      targets: current.targets,
+      news: current.news,
+      automation: current.automation,
+      learning: {
+        ...current.learning,
+        decisionSamples: traderState.learning?.decisionSamples ?? current.learning?.decisionSamples ?? [],
+        closedCycles: traderState.learning?.closedCycles ?? current.learning?.closedCycles ?? []
+      }
+    };
+    await saveState(merged);
+    return merged;
+  });
+  updateQueue = operation.catch(() => {});
+  return operation;
+}
+
+function mergeDefaults(state) {
+  return {
+    ...structuredClone(defaultState),
+    ...state,
+    settings: { ...defaultState.settings, ...(state.settings ?? {}) },
+    health: { ...defaultState.health, ...(state.health ?? {}) },
+    targets: mergeTargets(state.targets),
+    positions: state.positions ?? {},
+    performance: { ...defaultState.performance, ...(state.performance ?? {}) },
+    botBudget: state.botBudget ?? null,
+    externalTrackedHoldings: state.externalTrackedHoldings ?? {},
+    tradeHistory: state.tradeHistory ?? [],
+    orderEvents: state.orderEvents ?? [],
+    marketSnapshots: state.marketSnapshots ?? {},
+    riskGuard: state.riskGuard ?? null,
+    news: state.news ?? [],
+    automation: { ...defaultState.automation, ...(state.automation ?? {}) },
+    learning: {
+      ...defaultState.learning,
+      ...(state.learning ?? {}),
+      decisionSamples: state.learning?.decisionSamples ?? [],
+      recommendationEvents: state.learning?.recommendationEvents ?? [],
+      closedCycles: state.learning?.closedCycles ?? [],
+      reports: state.learning?.reports ?? []
+    }
+  };
+}
+
+async function protectPersistentHistory(nextState) {
+  try {
+    const raw = await readFile(DB_FILE, "utf8");
+    const current = mergeDefaults(JSON.parse(raw));
+    if ((nextState.tradeHistory?.length ?? 0) < (current.tradeHistory?.length ?? 0)) {
+      nextState.tradeHistory = current.tradeHistory;
+    }
+    if ((nextState.orderEvents?.length ?? 0) < (current.orderEvents?.length ?? 0)) {
+      nextState.orderEvents = current.orderEvents;
+    }
+    // decisionSamples는 사이드카(decision-samples.json)에서 자체 축소 방지 처리되므로 여기서는 다루지 않는다.
+    if ((nextState.learning?.recommendationEvents?.length ?? 0) < (current.learning?.recommendationEvents?.length ?? 0)) {
+      nextState.learning.recommendationEvents = current.learning.recommendationEvents;
+    }
+    // closedCycles는 체결 이력에서 매번 재계산되는 파생 데이터라 길이 보호 대상에서 제외한다.
+    // (보호하면 재계산으로 줄어든 결과를 막아 positions와 어긋난 stale 사이클이 남는다.)
+  } catch {
+    // No prior state to protect.
+  }
+  return nextState;
+}
+
+async function backupCurrentState() {
+  try {
+    const raw = await readFile(DB_FILE, "utf8");
+    JSON.parse(raw);
+    await mkdir(BACKUP_DIR, { recursive: true });
+    const stamp = new Date().toISOString().replaceAll(":", "-").replaceAll(".", "-");
+    await copyFile(DB_FILE, path.join(BACKUP_DIR, `state-${stamp}.json`));
+    await pruneBackups();
+  } catch {
+    // If current state is missing or corrupted, skip backup and let recovery use older snapshots.
+  }
+}
+
+async function loadLatestBackup() {
+  try {
+    const files = (await readdir(BACKUP_DIR))
+      .filter((file) => file.startsWith("state-") && file.endsWith(".json"))
+      .sort()
+      .reverse();
+    for (const file of files) {
+      try {
+        const raw = await readFile(path.join(BACKUP_DIR, file), "utf8");
+        return JSON.parse(raw);
+      } catch {
+        // Try the next backup.
+      }
+    }
+  } catch {
+    return null;
+  }
+  return null;
+}
+
+async function pruneBackups() {
+  const files = (await readdir(BACKUP_DIR))
+    .filter((file) => file.startsWith("state-") && file.endsWith(".json"))
+    .sort()
+    .reverse();
+  await Promise.all(files.slice(MAX_BACKUPS).map((file) => rm(path.join(BACKUP_DIR, file), { force: true })));
+}
+
+function mergeTargets(targets) {
+  if (!Array.isArray(targets)) return defaultState.targets;
+  return targets.map((target) => {
+    const defaultTarget = defaultState.targets.find((item) => item.symbol === target.symbol) ?? {};
+    return { ...defaultTarget, ...target };
+  });
+}

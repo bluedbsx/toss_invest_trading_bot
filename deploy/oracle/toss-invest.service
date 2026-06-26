@@ -1,0 +1,22 @@
+[Unit]
+Description=Toss Invest auto trading dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=tossinvest
+Group=tossinvest
+WorkingDirectory=/opt/toss-invest/app
+EnvironmentFile=/etc/toss-invest/toss-invest.env
+ExecStart=/usr/bin/node /opt/toss-invest/app/server.js
+Restart=always
+RestartSec=10
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/toss-invest/data
+
+[Install]
+WantedBy=multi-user.target

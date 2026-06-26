@@ -1,0 +1,14 @@
+{
+  "name": "toss-invest-terminal",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Toss Invest Open API auto-trading dashboard for leveraged US ETFs.",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

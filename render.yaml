@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: toss-invest-terminal
+    runtime: node
+    plan: free
+    buildCommand: ""
+    startCommand: "node server.js"
+    envVars:
+      - key: LIVE_TRADING
+        value: "false"
+      - key: NEWS_REFRESH_MINUTES
+        value: "30"
