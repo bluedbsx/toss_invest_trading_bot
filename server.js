@@ -800,7 +800,10 @@ function recommendationMatchesTarget(target, recommendation) {
 function recommendSafetySettings(state) {
   const activeTargets = state.targets.filter((target) => target.enabled !== false);
   const scoredTargets = activeTargets.map((target) => {
-    const score = Number(target.lastStrategyReview?.score ?? state.marketSnapshots?.[target.symbol]?.backtest?.score ?? 55);
+    // 엔진 버전이 바뀐 뒤의 옛 리뷰 점수를 쓰지 않도록, 현재 엔진 리뷰만 신뢰하고 아니면 현재 스냅샷 백테스트로 폴백.
+    const review = target.lastStrategyReview;
+    const reviewScore = review && review.engineVersion === strategySummary.name ? review.score : undefined;
+    const score = Number(reviewScore ?? state.marketSnapshots?.[target.symbol]?.backtest?.score ?? 55);
     const leverage = parseLeverageText(target.leverage);
     const allocation = Number(target.allocationPct ?? 0);
     const atr = Number(state.marketSnapshots?.[target.symbol]?.signal?.metrics?.atrPct ?? target.maxAtrPct ?? 12);
