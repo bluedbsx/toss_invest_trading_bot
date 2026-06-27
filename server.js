@@ -434,6 +434,7 @@ async function handleApi(request, response, url) {
         trailingStopPct: Number(body.trailingStopPct || 10),
         takeProfitRsi: Number(body.takeProfitRsi || 78),
         maxAtrPct: Number(body.maxAtrPct || 12),
+        minAdx: Number(body.minAdx || 0),
         notes: body.notes || ""
       });
     });

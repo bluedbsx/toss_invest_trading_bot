@@ -100,6 +100,7 @@ const defaultState = {
     totalBuyAmountUsd: 0,
     totalSellAmountUsd: 0
   },
+  paperSession: null,
   botBudget: null,
   externalTrackedHoldings: {},
   tradeHistory: [],
@@ -273,6 +274,7 @@ function mergeDefaults(state) {
     targets: mergeTargets(state.targets),
     positions: state.positions ?? {},
     performance: { ...defaultState.performance, ...(state.performance ?? {}) },
+    paperSession: state.paperSession ?? null,
     botBudget: state.botBudget ?? null,
     externalTrackedHoldings: state.externalTrackedHoldings ?? {},
     tradeHistory: state.tradeHistory ?? [],

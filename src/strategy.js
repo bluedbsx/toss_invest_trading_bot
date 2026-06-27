@@ -3,15 +3,16 @@ import { adx, atr, normalizeCandles, rsi, sma } from "./indicators.js";
 export const strategySummary = {
   name: "Leveraged Momentum Guard v0.9 Dual-Backtest",
   purpose:
-    "레버리지 ETF를 장기 보유하지 않고 상승 추세에서만 참여하며, 손절/익절/노출 한도로 실전 리스크를 관리합니다. " +
+    "고변동 성장주/ETF를 장기 보유하지 않고 상승 추세에서만 참여하며, 손절/익절/노출 한도로 실전 리스크를 관리합니다. " +
     "v0.9: 표준(Wilder) RSI/ATR, 수수료·슬리피지 반영 + 과적합 억제 백테스트, 한국 새벽 정규장 정상 인식, " +
-    "장중 급락 매수차단을 추세이탈 시에만 적용(건강한 눌림목 매수 허용).",
+    "당일 급락 신규매수 차단 재활성, ADX 선택 필터, 뉴스·거시 예산 축소를 반영합니다.",
   buyRules: [
     "종목별 fastSmaDays 이동평균 > slowSmaDays 이동평균",
     "현재가 > 종목별 fastSmaDays 이동평균",
     "종목별 momentumDays 모멘텀 > 0%",
     "RSI가 종목별 minBuyRsi~maxBuyRsi 사이",
-    "ATR 비율이 종목별 maxAtrPct 이하"
+    "ATR 비율이 종목별 maxAtrPct 이하",
+    "종목별 ADX 필터가 켜진 경우 기준 추세강도 이상"
   ],
   sellRules: [
     "현재가가 종목별 fastSmaDays 이동평균 아래로 이탈",
@@ -34,7 +35,7 @@ export const strategySummary = {
     "남는 투자금 몰아주기 옵션",
     "보유 중 추가매수는 별도 토글과 최소 간격으로 제한하되, 새 종목 진입은 봇 장부 기준으로 판단",
     "당일 봇 손실 한도는 작은 시드의 일상 흔들림을 감안한 최소 달러 한도를 함께 적용",
-    "일봉 기준 급락 + 추세이탈(가격<단기선)이 겹칠 때만 신규 매수 차단(추세가 살아있는 눌림목은 허용)",
+    "당일 시가 대비 급락 구간에서는 신규 매수를 차단해 낙하 칼날 진입을 피함",
     "변동성이 기준보다 크지만 상승 조건이 강하면 신규매수를 완전 차단하지 않고 예산을 50%로 축소",
     "종목별 최대 비중과 전체 레버리지 노출 한도 적용",
     "최근 데이터 기반 단순 백테스트를 화면에 표시",

@@ -6,7 +6,7 @@
 // 시드 증액 게이트 기준(시스템 자체의 buildNextActions 기준과 일치시켜 교차검증 가능하게 둠).
 export const GATE_MIN_CYCLES = 5; // 왕복(매수-매도) 사이클 최소 표본
 export const GATE_MIN_FILLS = 20; // 최종 체결(BUY+SELL) 최소 표본
-export const BENCHMARK_SYMBOL = "QQQ"; // 벤치마크 = 나스닥100(QQQ). 봇 목표는 "지수 단순보유보다 확실히 높은 수익"(§JJ). 환경변수로 변경 가능.
+export const BENCHMARK_SYMBOL = process.env.BENCHMARK_SYMBOL || "QQQ"; // 기본 벤치마크 = 나스닥100(QQQ). 필요하면 BENCHMARK_SYMBOL 환경변수로 변경.
 
 // 봇에 투입된 자본의 현금흐름을 복원한다.
 // 초기 시드(botStartedAt) + 이후 "일회성 봇 자금 추가"(budget-add) 이벤트들의 시간/금액.
@@ -51,7 +51,7 @@ function closeAt(candles, at) {
   return Number((chosen ?? candles[0])?.close ?? null);
 }
 
-// 벤치마크: 각 현금흐름을 그 시점 SOXL 종가로 매수해 보유했다면의 현재 가치.
+// 벤치마크: 각 현금흐름을 그 시점 BENCHMARK_SYMBOL 종가로 매수해 보유했다면의 현재 가치.
 export function computeBenchmark({ flows, candles, currentPrice }) {
   const latest = Number(currentPrice ?? candles?.at?.(-1)?.close);
   if (!(latest > 0) || !candles?.length) {
@@ -90,23 +90,24 @@ export function computeMaxDrawdown(equityCurve = []) {
   return round(mdd, 2);
 }
 
-// 봇 실거래 지표: 승률·손익비·기대값. 왕복 사이클(closedCycles)을 우선 사용(FIFO 매칭이라 가장 정확).
+// 봇 거래 지표: 현재 모드에 맞춰 paper 세션 또는 live 체결만 집계한다.
+// live에서는 왕복 사이클(closedCycles)을 우선 사용(FIFO 매칭이라 가장 정확).
 export function computeBotTradeMetrics(state) {
-  const cycles = (state?.learning?.closedCycles ?? []).filter((cycle) => Number.isFinite(Number(cycle.realizedPnlUsd)));
+  const scope = tradeMetricScope(state);
+  const cycles = scope.cycles.filter((cycle) => Number.isFinite(Number(cycle.realizedPnlUsd)));
   const source = cycles.length
     ? cycles.map((cycle) => Number(cycle.realizedPnlUsd))
-    : (state?.tradeHistory ?? [])
-        .filter((trade) => trade.side === "SELL" && Number.isFinite(Number(trade.realizedPnlUsd)))
+    : scope.sellTrades
         .map((trade) => Number(trade.realizedPnlUsd));
   const wins = source.filter((pnl) => pnl > 0);
   const losses = source.filter((pnl) => pnl < 0);
   const grossWin = wins.reduce((sum, pnl) => sum + pnl, 0);
   const grossLoss = Math.abs(losses.reduce((sum, pnl) => sum + pnl, 0));
-  const finalTrades = (state?.tradeHistory ?? []).filter((trade) => trade.syncStatus === "FINAL" || trade.dryRun).length;
   return {
+    basis: scope.basis,
     closedCount: source.length,
-    cycleCount: cycles.length,
-    finalTradeCount: finalTrades,
+    cycleCount: cycles.length || scope.sellTrades.length,
+    finalTradeCount: scope.finalTrades.length,
     winCount: wins.length,
     lossCount: losses.length,
     winRatePct: source.length ? round((wins.length / source.length) * 100, 1) : null,
@@ -115,6 +116,49 @@ export function computeBotTradeMetrics(state) {
     grossWinUsd: round(grossWin, 2),
     grossLossUsd: round(grossLoss, 2),
     avgPnlUsd: source.length ? round((grossWin - grossLoss) / source.length, 2) : null
+  };
+}
+
+function tradeMetricScope(state) {
+  const activeSymbols = new Set(
+    (state?.targets ?? [])
+      .filter((target) => target.enabled !== false)
+      .map((target) => String(target.symbol ?? "").toUpperCase())
+      .filter(Boolean)
+  );
+  const inActiveUniverse = (item) => {
+    if (!activeSymbols.size) return true;
+    return activeSymbols.has(String(item?.symbol ?? "").toUpperCase());
+  };
+  const paperMode = Boolean(state?.settings?.dryRun || state?.settings?.liveTradingEnabled === false);
+  const paperStartedAt = state?.paperSession?.startedAt ? new Date(state.paperSession.startedAt).getTime() : 0;
+  const afterPaperStart = (trade) => {
+    if (!paperStartedAt) return true;
+    const at = new Date(trade?.requestedAt ?? 0).getTime();
+    return Number.isFinite(at) && at >= paperStartedAt;
+  };
+
+  if (paperMode) {
+    const finalTrades = (state?.tradeHistory ?? []).filter(
+      (trade) => trade.dryRun && afterPaperStart(trade) && inActiveUniverse(trade)
+    );
+    return {
+      basis: "paper",
+      cycles: [],
+      finalTrades,
+      sellTrades: finalTrades.filter((trade) => trade.side === "SELL" && Number.isFinite(Number(trade.realizedPnlUsd)))
+    };
+  }
+
+  const cycles = (state?.learning?.closedCycles ?? []).filter(inActiveUniverse);
+  const finalTrades = (state?.tradeHistory ?? []).filter(
+    (trade) => !trade.dryRun && trade.syncStatus === "FINAL" && inActiveUniverse(trade)
+  );
+  return {
+    basis: "live",
+    cycles,
+    finalTrades,
+    sellTrades: finalTrades.filter((trade) => trade.side === "SELL" && Number.isFinite(Number(trade.realizedPnlUsd)))
   };
 }
 

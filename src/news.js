@@ -1,3 +1,7 @@
+const NEWS_SYMBOLS = ["MU", "TSM", "WDC", "GOOGL", "QQQ", "SOXL", "MUU", "SNXX", "SOXX", "SMH"];
+const GOOGLE_NEWS_QUERY =
+  "(Federal Reserve OR FOMC OR inflation OR semiconductor OR Micron OR TSMC OR \"Western Digital\" OR Alphabet OR Google OR AI) -Bitcoin -crypto when:7d";
+
 const FEEDS = [
   {
     source: "Federal Reserve",
@@ -6,13 +10,12 @@ const FEEDS = [
   },
   {
     source: "Google News",
-    url:
-      "https://news.google.com/rss/search?q=(Federal%20Reserve%20OR%20FOMC%20OR%20semiconductor%20OR%20Micron%20OR%20Sandisk)%20-AAPL%20-Bitcoin%20-crypto%20when:7d&hl=ko&gl=KR&ceid=KR:ko",
+    url: `https://news.google.com/rss/search?q=${encodeURIComponent(GOOGLE_NEWS_QUERY)}&hl=ko&gl=KR&ceid=KR:ko`,
     category: "Macro"
   },
   {
     source: "Yahoo Finance",
-    url: "https://feeds.finance.yahoo.com/rss/2.0/headline?s=SOXL,MUU,SNXX&region=US&lang=en-US",
+    url: `https://feeds.finance.yahoo.com/rss/2.0/headline?s=${NEWS_SYMBOLS.join(",")}&region=US&lang=en-US`,
     category: "Tickers"
   }
 ];
@@ -118,7 +121,8 @@ const TOPIC_TAGS = [
 const TICKER_TAGS = [
   [/\bmicron\b|\bmuu?\b/, "MU"], [/\bsandisk\b|\bsndk\b|\bsnxx\b/, "SNDK"], [/\bnvidia\b|\bnvda\b/, "NVDA"],
   [/\bsoxl\b/, "SOXL"], [/\bsoxx\b/, "SOXX"], [/\bsmh\b/, "SMH"], [/\bintel\b|\bintc\b/, "INTC"],
-  [/\bamd\b/, "AMD"], [/\btsmc\b|\btsm\b/, "TSM"], [/\bbroadcom\b|\bavgo\b/, "AVGO"], [/\bqqq\b/, "QQQ"]
+  [/\bamd\b/, "AMD"], [/\btsmc\b|\btsm\b/, "TSM"], [/\bbroadcom\b|\bavgo\b/, "AVGO"], [/\bwestern digital\b|\bwdc\b/, "WDC"],
+  [/\balphabet\b|\bgoogle\b|\bgoogl\b|\bgoog\b/, "GOOGL"], [/\bqqq\b|nasdaq 100/, "QQQ"]
 ];
 function buildTags(text) {
   const topics = TOPIC_TAGS.filter(([re]) => re.test(text)).map(([, label]) => label);
@@ -164,8 +168,11 @@ function weightedHits(text, terms) {
 
 function detectTopic(text, fallback) {
   if (text.includes("fed") || text.includes("fomc") || text.includes("rate")) return "연준/금리";
-  if (text.includes("semiconductor") || text.includes("chip") || text.includes("ai")) return "반도체/AI";
+  if (text.includes("semiconductor") || text.includes("chip") || /\bai\b/.test(text)) return "반도체/AI";
   if (text.includes("micron") || text.includes("mu ")) return "Micron/MUU";
+  if (text.includes("tsmc") || text.includes("tsm ")) return "TSMC/TSM";
+  if (text.includes("western digital") || text.includes("wdc")) return "Western Digital/WDC";
+  if (text.includes("alphabet") || text.includes("google")) return "Alphabet/GOOGL";
   if (text.includes("sandisk") || text.includes("sndk")) return "SanDisk/SNXX";
   return fallback === "Tickers" ? "종목 뉴스" : "거시 뉴스";
 }

@@ -789,7 +789,7 @@ function renderValidation() {
   const cards = [
     ["봇 수익률", v.botReturnPct != null ? pct(v.botReturnPct) : "-", `자산 ${money(v.equityUsd)} · 시드 ${money(v.seedUsd)}`],
     [
-      "벤치마크 (SOXL 보유)",
+      `벤치마크 (${b.symbol ?? "QQQ"} 보유)`,
       b.available ? pct(b.returnPct) : "대기",
       b.available ? `같은 현금흐름 보유 시 ${money(b.valueUsd)}` : "가격 데이터 없음"
     ],
@@ -801,7 +801,7 @@ function renderValidation() {
     [
       "승률 · 손익비",
       `${m.winRatePct != null ? pct(m.winRatePct) : "-"} · ${m.profitFactor != null ? m.profitFactor : "표본부족"}`,
-      `왕복 ${m.cycleCount ?? 0} · 체결 ${m.finalTradeCount ?? 0}`
+      `왕복 ${m.cycleCount ?? 0} · 체결 ${m.finalTradeCount ?? 0} · ${m.basis === "paper" ? "연습 기준" : "실거래 기준"}`
     ],
     ["최대낙폭 (MDD)", v.maxDrawdownPct != null ? pct(v.maxDrawdownPct) : "-", `일별 자산 ${v.equityCurvePoints ?? 0}일 적립`]
   ];
@@ -1354,7 +1354,8 @@ function targetMatchesRecommendation(target, recommended) {
     "takeProfitPct",
     "trailingStopPct",
     "takeProfitRsi",
-    "maxAtrPct"
+    "maxAtrPct",
+    "minAdx"
   ].every((key) => {
     if (recommended[key] === undefined) return true;
     return Math.abs(Number(target[key]) - Number(recommended[key])) < 0.0001;
@@ -1381,8 +1382,8 @@ function renderSafetyRecommendationText(recommendation) {
     `손실경고 ${pct(r.maxDailyLossPct)}`,
     `종목최대 ${pct(r.maxPositionPct)}`,
     `레버리지한도 ${pct(r.maxLeveragedExposurePct)}`,
-    `일봉급락대기 ${pct(r.intradayDropBlockPct)}`,
-    `일봉급락매도 ${pct(r.intradayPanicExitPct)}`,
+    `당일급락대기 ${pct(r.intradayDropBlockPct)}`,
+    `당일급락방어 ${pct(r.intradayPanicExitPct)}`,
     `추가매수 ${r.allowAdditionalBuys ? "허용" : "차단"}`,
     `간격 ${r.additionalBuyCooldownMinutes}분`
   ].join(" · ");

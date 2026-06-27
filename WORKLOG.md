@@ -396,3 +396,35 @@
 - store.js 기본값: **SOXX/SMH(보수적 1x) 폴백 유지**(데이터 손실 시 안전 복구용). 실제 운영 타깃은 state.json(위 4종).
 - **사용자 밤 검토 항목:** ① 종목/비중 승인 ② 실거래 ON 여부 ③ 실제 SOXL/MUU 보유분 처리 ④ 듀얼엔진 선택기 구현 여부. **코드 변경(§HH/§II/§FF/§GG/§JJ)은 봇 재시작 후 반영.**
 - 캐비엇: 5년 단일 상승레짐 백테스트라 낙관 편향, 단일주 개별 악재 리스크, 과거≠미래. 페이퍼 검증 통과 전 실증액 보류 권장.
+
+### 2026-06-27 — Codex
+- 문제/목적:
+  - Claude §HH~§JJ 이후 현재 코드/문서/검증 경로를 교차검토. 실제 로직과 화면/문서 설명이 어긋난 부분, 새 1x 종목 구성(MU·TSM·WDC·GOOGL)으로 바뀐 뒤에도 옛 SOXL/MUU/SNXX 중심으로 남은 리스크 경로, 그리고 dry-run 페이퍼 검증이 과거 실거래/옛 페이퍼 churn과 섞이는 문제를 정리.
+- 진단(근거):
+  - `strategySummary`와 UI 설명은 아직 "당일 급락 차단=추세이탈 시에만"이라고 설명했지만, §HH 코드가 이미 추세 조건 없이 당일 급락 시 신규매수를 차단하도록 되돌려 실제 동작과 불일치.
+  - 검증 모듈은 벤치마크를 QQQ로 바꿨는데 UI/README 일부가 SOXL buy-and-hold로 표시.
+  - `src/eventRisk.js`, `src/news.js`가 SOXL/MUU/SNXX 중심이라 새 활성 종목(MU/TSM/WDC/GOOGL)에 정적 거시 이벤트·뉴스 피드/관련도 판단이 충분히 적용되지 않음. 특히 `ai` 부분문자열이 `raises` 같은 단어에도 매칭되는 잡음 확인.
+  - `runOnce`가 dry-run이어도 실계좌 동기화 후 `rebuildLiveBotPortfolio`로 `state.positions/performance`를 라이브 장부로 덮어써, §CC에서 기록된 페이퍼 churn(반복 dry BUY)과 §JJ의 "주말 페이퍼 검증" 목적이 충돌.
+  - `targetMatchesRecommendation`/학습 스냅샷/신규 종목 생성 경로에서 `minAdx`가 일부 빠져 ADX 추천값 저장 여부와 사후 분석이 어긋날 수 있음.
+- 수정 내용:
+  - 전략/검증/README/설정 설명을 현재 로직(당일 시가 대비 급락 시 신규매수 대기, QQQ 벤치마크, ADX 선택 필터, 경제 캘린더 반영)과 맞춤.
+  - 정적 매크로 이벤트는 모든 종목에 적용되도록 `symbols:["*"]` 처리, Micron 이벤트는 MU/MUU 모두 적용. 뉴스 피드는 MU/TSM/WDC/GOOGL/QQQ까지 확장하고, 종목별 관련도 정규식을 현재 구성에 맞게 보강.
+  - dry-run 전용 `paperSession`을 도입. dry-run 시작 또는 활성 종목/주요 안전설정 변경 시 종이 장부를 새로 시작하고, dry-run 중에는 라이브 체결 동기화가 paper `positions/performance`를 덮어쓰지 않게 함. 실거래 복귀 시 paper 장부를 먼저 비우고 실제 체결 이력으로 라이브 장부를 재구성.
+  - 검증 지표와 개선 리포트가 현재 모드에 맞춰 paper 세션 이후 dry-run 거래 또는 live 현재 활성 종목 체결만 집계하도록 스코프 분리.
+  - `minAdx`를 신규 종목 생성, 추천 저장 판정, 학습 target snapshot에 포함. mock 가격표도 현재 종목을 인식하도록 갱신.
+- 건드린 파일/함수:
+  - `src/trader.js`: `runOnce`, `syncOrdersOnly`, `syncExecutedBotOrders`, `ensureDryRunPaperSession`, `markPaperSessionInactive`, `paperTargetSignature`
+  - `src/validation.js`: `BENCHMARK_SYMBOL`, `computeBotTradeMetrics`, `tradeMetricScope`
+  - `src/learning.js`: `buildLearningReport`, scoped sample/trade/cycle helpers, `pickTargetSnapshot`
+  - `src/eventRisk.js`: macro 이벤트 전체 종목 적용, 현재 종목 뉴스 관련도
+  - `src/news.js`: RSS 티커/검색어 확장, 태그/토픽 보강
+  - `src/strategy.js`, `public/app.js`, `public/index.html`, `README.md`, `server.js`, `src/store.js`, `src/tossClient.js`
+- 검증 방법과 결과:
+  - `/Users/joyanggi/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node --check server.js && for f in src/*.js public/app.js; do ... --check "$f"; done` PASS.
+  - `git diff --check` PASS.
+  - 단위성 스크립트 확인: MU/TSM도 CPI 정적 이벤트 차단 적용, GOOGL은 `raises` 안의 `ai`에 오탐하지 않고 Fed rate 악재에는 예산 50% 축소, paper 검증 지표는 세션 이후/활성종목 dry-run 거래만 집계.
+  - 격리 mock 서버(`DATA_DIR=/tmp/...`, `PORT=3999`, 토스 키 공란)로 `/api/state`, `/api/run-once`, `/api/recommendations/weights`, `/api/learning/report` 200 OK. `paperSession.active=true`, validation basis=`paper`, benchmark=`QQQ` 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - `paperSession`은 코드 배포 후 다음 트레이더 틱에서 운영 `state.json`에 생성된다. 데이터 파일은 커밋하지 않았음.
+  - 실거래를 다시 켜면 paper 장부를 비우고 라이브 체결 이력에서 장부를 재구성한다. 실제 계좌에 남은 SOXL/MUU 보유분은 사용자가 수동 처리하거나, 라이브 전환 시 봇 대상/보유 정책을 다시 확인해야 한다.
+  - 정적 실적 이벤트는 여전히 수동 갱신이 필요하다. 이번 수정은 매크로 이벤트 전체 종목 적용과 MU 보강까지이며, TSM/WDC/GOOGL의 향후 실적일 자동 수집은 별도 과제.

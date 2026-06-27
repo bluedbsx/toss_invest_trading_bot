@@ -88,9 +88,9 @@ export function recordRecommendationEvent(state, type, payload) {
 
 export function buildLearningReport(state) {
   const learning = ensureLearningState(state);
-  const samples = learning.decisionSamples ?? [];
+  const samples = scopedDecisionSamples(state, learning.decisionSamples ?? []);
   const recentSamples = samples.slice(0, 500);
-  const trades = state.tradeHistory ?? [];
+  const trades = scopedTrades(state, state.tradeHistory ?? []);
   const closedCycles = learning.closedCycles ?? [];
   const finalTrades = trades.filter((trade) => trade.syncStatus === "FINAL" || trade.dryRun);
   const buyTrades = finalTrades.filter((trade) => trade.side === "BUY");
@@ -136,13 +136,14 @@ export function buildLearningReport(state) {
     })
   );
   const recommendationCounts = countBy(learning.recommendationEvents ?? [], (event) => event.type);
-  const cycleWins = closedCycles.filter((cycle) => Number(cycle.realizedPnlUsd ?? 0) > 0).length;
+  const scopedCycles = scopedClosedCycles(state, closedCycles);
+  const cycleWins = scopedCycles.filter((cycle) => Number(cycle.realizedPnlUsd ?? 0) > 0).length;
   const cycleRealizedPnlUsd = round(
-    closedCycles.reduce((sum, cycle) => sum + Number(cycle.realizedPnlUsd ?? 0), 0),
+    scopedCycles.reduce((sum, cycle) => sum + Number(cycle.realizedPnlUsd ?? 0), 0),
     2
   );
-  const dataQuality = assessDataQuality({ samples, finalTrades, sellTrades, closedCycles });
-  const nextActions = buildNextActions({ samples, finalTrades, sellTrades, closedCycles, topSkips, dataQuality });
+  const dataQuality = assessDataQuality({ samples, finalTrades, sellTrades, closedCycles: scopedCycles });
+  const nextActions = buildNextActions({ samples, finalTrades, sellTrades, closedCycles: scopedCycles, topSkips, dataQuality });
   const report = {
     id: `${Date.now()}-learning-report`,
     generatedAt: new Date().toISOString(),
@@ -157,8 +158,8 @@ export function buildLearningReport(state) {
       realizedPnlUsd,
       totalBuyUsd,
       totalSellUsd,
-      closedCycles: closedCycles.length,
-      cycleWinRatePct: closedCycles.length ? round((cycleWins / closedCycles.length) * 100, 1) : null,
+      closedCycles: scopedCycles.length,
+      cycleWinRatePct: scopedCycles.length ? round((cycleWins / scopedCycles.length) * 100, 1) : null,
       cycleRealizedPnlUsd,
       recommendationEvents: learning.recommendationEvents.length
     },
@@ -176,6 +177,48 @@ export function buildLearningReport(state) {
   learning.reports = learning.reports.slice(0, MAX_REPORTS);
   learning.updatedAt = report.generatedAt;
   return report;
+}
+
+function scopedDecisionSamples(state, samples) {
+  return (samples ?? []).filter((sample) => inActiveUniverse(state, sample) && afterPaperSessionStart(state, sample.collectedAt));
+}
+
+function scopedTrades(state, trades) {
+  const paperMode = Boolean(state?.settings?.dryRun || state?.settings?.liveTradingEnabled === false);
+  return (trades ?? []).filter((trade) => {
+    if (!inActiveUniverse(state, trade)) return false;
+    if (paperMode) return Boolean(trade.dryRun) && afterPaperSessionStart(state, trade.requestedAt);
+    return !trade.dryRun;
+  });
+}
+
+function scopedClosedCycles(state, cycles) {
+  const paperMode = Boolean(state?.settings?.dryRun || state?.settings?.liveTradingEnabled === false);
+  if (paperMode) return [];
+  return (cycles ?? []).filter((cycle) => inActiveUniverse(state, cycle));
+}
+
+function inActiveUniverse(state, item) {
+  const activeSymbols = activeSymbolSet(state);
+  if (!activeSymbols.size) return true;
+  return activeSymbols.has(String(item?.symbol ?? "").toUpperCase());
+}
+
+function activeSymbolSet(state) {
+  return new Set(
+    (state?.targets ?? [])
+      .filter((target) => target.enabled !== false)
+      .map((target) => String(target.symbol ?? "").toUpperCase())
+      .filter(Boolean)
+  );
+}
+
+function afterPaperSessionStart(state, at) {
+  const paperMode = Boolean(state?.settings?.dryRun || state?.settings?.liveTradingEnabled === false);
+  const startedAt = state?.paperSession?.startedAt ? new Date(state.paperSession.startedAt).getTime() : 0;
+  if (!paperMode || !startedAt) return true;
+  const time = new Date(at ?? 0).getTime();
+  return Number.isFinite(time) && time >= startedAt;
 }
 
 function buildNextActions({ samples, finalTrades, sellTrades, closedCycles, topSkips, dataQuality }) {
@@ -289,7 +332,8 @@ function pickTargetSnapshot(target) {
     "takeProfitPct",
     "trailingStopPct",
     "takeProfitRsi",
-    "maxAtrPct"
+    "maxAtrPct",
+    "minAdx"
   ];
   return Object.fromEntries(keys.map((key) => [key, target?.[key]]));
 }

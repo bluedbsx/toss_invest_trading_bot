@@ -226,7 +226,18 @@ function mockResponse(path, query, body) {
 }
 
 function mockPrice(symbol) {
-  const prices = { SOXL: 279.29, MUU: 1080.08, SNXX: 42.78 };
+  const prices = {
+    MU: 141.2,
+    TSM: 224.4,
+    WDC: 74.8,
+    GOOGL: 178.6,
+    QQQ: 540.5,
+    SOXL: 279.29,
+    MUU: 1080.08,
+    SNXX: 42.78,
+    SOXX: 609.9,
+    SMH: 621.12
+  };
   return String(prices[symbol] ?? 100);
 }
 

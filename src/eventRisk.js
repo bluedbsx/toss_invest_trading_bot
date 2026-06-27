@@ -3,7 +3,7 @@ const EVENTS = [
     id: "mu-2026-q3",
     title: "Micron FY Q3 실적 발표",
     type: "earnings",
-    symbols: ["MUU"],
+    symbols: ["MU", "MUU"],
     startsAt: "2026-06-24T20:30:00Z",
     preBlockHours: 72,
     postBlockHours: 12,
@@ -13,7 +13,7 @@ const EVENTS = [
     id: "cpi-2026-06",
     title: "미국 CPI 6월 발표",
     type: "macro",
-    symbols: ["SOXL", "MUU", "SNXX"],
+    symbols: ["*"],
     startsAt: "2026-07-14T12:30:00Z",
     preBlockHours: 24,
     postBlockHours: 8,
@@ -23,7 +23,7 @@ const EVENTS = [
     id: "fomc-2026-07",
     title: "FOMC 금리 결정",
     type: "macro",
-    symbols: ["SOXL", "MUU", "SNXX"],
+    symbols: ["*"],
     startsAt: "2026-07-29T18:00:00Z",
     preBlockHours: 24,
     postBlockHours: 8,
@@ -33,7 +33,7 @@ const EVENTS = [
     id: "cpi-2026-07",
     title: "미국 CPI 7월 발표",
     type: "macro",
-    symbols: ["SOXL", "MUU", "SNXX"],
+    symbols: ["*"],
     startsAt: "2026-08-12T12:30:00Z",
     preBlockHours: 24,
     postBlockHours: 8,
@@ -54,7 +54,7 @@ const EVENTS = [
     id: "fomc-2026-09",
     title: "FOMC 금리 결정",
     type: "macro",
-    symbols: ["SOXL", "MUU", "SNXX"],
+    symbols: ["*"],
     startsAt: "2026-09-16T18:00:00Z",
     preBlockHours: 24,
     postBlockHours: 8,
@@ -63,7 +63,8 @@ const EVENTS = [
 ];
 
 export function getEventRisk(symbol, now = new Date()) {
-  const applicable = EVENTS.filter((event) => event.symbols.includes(symbol))
+  const normalizedSymbol = String(symbol ?? "").toUpperCase();
+  const applicable = EVENTS.filter((event) => eventAppliesToSymbol(event, normalizedSymbol))
     .map((event) => ({ ...event, distanceMs: new Date(event.startsAt).getTime() - now.getTime() }))
     .sort((a, b) => Math.abs(a.distanceMs) - Math.abs(b.distanceMs));
   const active = applicable.find((event) => isInWindow(event, now));
@@ -165,6 +166,12 @@ function summarizeEvent(event) {
   };
 }
 
+function eventAppliesToSymbol(event, symbol) {
+  if (!symbol) return false;
+  if (event.type === "macro") return true;
+  return (event.symbols ?? []).map((item) => String(item).toUpperCase()).includes(symbol);
+}
+
 function isRecent(publishedAt, now, hours) {
   const time = new Date(publishedAt).getTime();
   if (!Number.isFinite(time)) return false;
@@ -173,8 +180,24 @@ function isRecent(publishedAt, now, hours) {
 
 function isRelevant(symbol, item) {
   const text = `${item.title ?? ""} ${item.summary ?? ""} ${item.koreanSummary ?? ""}`.toLowerCase();
-  if (symbol === "SOXL") return /fed|fomc|rate|cpi|inflation|semiconductor|chip|ai|반도체|연준|금리|인플레이션/.test(text);
-  if (symbol === "MUU") return /micron|\bmu\b|memory|dram|hbm|반도체|메모리|실적/.test(text);
-  if (symbol === "SNXX") return /sandisk|sndk|nand|storage|메모리|스토리지|실적/.test(text);
-  return text.includes(symbol.toLowerCase());
+  const normalizedSymbol = String(symbol ?? "").toUpperCase();
+  const macroRelevant = /\bfed\b|fomc|\brates?\b|\bcpi\b|\bpce\b|\bppi\b|inflation|\bgdp\b|\bjobs?\b|unemployment|연준|금리|인플레이션|고용|실업|경기/.test(text);
+  if (macroRelevant) return true;
+  if (["SOXL", "SOXX", "SMH"].includes(normalizedSymbol)) return /semiconductor|chip|\bai\b|nvidia|tsmc|반도체/.test(text);
+  if (["MU", "MUU"].includes(normalizedSymbol)) return /micron|\bmu\b|\bmuu\b|memory|dram|hbm|반도체|메모리|실적/.test(text);
+  if (["SNXX", "SNDK"].includes(normalizedSymbol)) return /sandisk|\bsndk\b|\bsnxx\b|nand|storage|메모리|스토리지|실적/.test(text);
+  if (normalizedSymbol === "TSM") return /\btsm\b|tsmc|taiwan semiconductor|semiconductor|반도체/.test(text);
+  if (normalizedSymbol === "WDC") return /\bwdc\b|western digital|nand|storage|memory|스토리지|메모리/.test(text);
+  if (normalizedSymbol === "GOOGL") return /\bgoogl\b|\bgoog\b|alphabet|google|\bai\b|cloud|advertising|검색|광고/.test(text);
+  if (normalizedSymbol === "QQQ") return /\bqqq\b|nasdaq|nasdaq 100|technology|tech stocks|기술주|나스닥/.test(text);
+  return hasTickerToken(text, normalizedSymbol);
+}
+
+function hasTickerToken(text, symbol) {
+  if (!symbol) return false;
+  return new RegExp(`(^|[^a-z0-9])${escapeRegExp(symbol.toLowerCase())}([^a-z0-9]|$)`).test(text);
+}
+
+function escapeRegExp(value) {
+  return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }

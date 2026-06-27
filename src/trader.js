@@ -56,12 +56,6 @@ export class Trader {
   }
 
   async runOnce(state) {
-    const managedTargets = state.targets.filter(
-      (target) => target.enabled || Number(state.positions?.[target.symbol]?.quantity ?? 0) > 0
-    );
-    const symbols = managedTargets.map((target) => target.symbol);
-    const priceResponse = symbols.length ? await this.tossClient.getPrices(symbols) : { result: [] };
-    const prices = Object.fromEntries((priceResponse.result ?? []).map((item) => [item.symbol, item]));
     const calendar = await this.safe(() => this.tossClient.getUsCalendar(), null);
     const isRegularMarket = isUsRegularMarketOpen(calendar);
     const holdings = await this.safe(() => this.tossClient.getHoldings(), null);
@@ -81,9 +75,18 @@ export class Trader {
     state.settings.accountSeq = process.env.TOSS_ACCOUNT_SEQ || state.settings.accountSeq || "";
     state.account = holdings?.result ?? state.account ?? null;
     state.eventCalendar = listEventCalendar();
+    if (liveTradingAllowed) markPaperSessionInactive(state);
     if (!this.tossClient.isMockMode()) {
-      await syncExecutedBotOrders(state, this.tossClient, { holdings });
+      await syncExecutedBotOrders(state, this.tossClient, { holdings, updatePortfolio: liveTradingAllowed });
     }
+    if (!liveTradingAllowed) ensureDryRunPaperSession(state);
+
+    const managedTargets = state.targets.filter(
+      (target) => target.enabled || Number(state.positions?.[target.symbol]?.quantity ?? 0) > 0
+    );
+    const symbols = managedTargets.map((target) => target.symbol);
+    const priceResponse = symbols.length ? await this.tossClient.getPrices(symbols) : { result: [] };
+    const prices = Object.fromEntries((priceResponse.result ?? []).map((item) => [item.symbol, item]));
 
     const preparedTargets = [];
     const exposure = summarizeExposure(state, managedTargets, prices);
@@ -256,7 +259,9 @@ export class Trader {
       if (!this.tossClient.isMockMode()) {
         const holdings = await this.tossClient.getHoldings();
         state.account = holdings?.result ?? state.account ?? null;
-        await syncExecutedBotOrders(state, this.tossClient, { forceRecovery: true, holdings });
+        const liveTradingAllowed = process.env.LIVE_TRADING === "true" && state.settings.liveTradingEnabled;
+        if (liveTradingAllowed) markPaperSessionInactive(state);
+        await syncExecutedBotOrders(state, this.tossClient, { forceRecovery: true, holdings, updatePortfolio: liveTradingAllowed });
       }
       state.health = {
         ...state.health,
@@ -464,8 +469,83 @@ function localDayKey(date) {
   }).format(date);
 }
 
-async function syncExecutedBotOrders(state, tossClient, { forceRecovery = false, holdings = null } = {}) {
-  if (forceRecovery || shouldRecoverBotOrders(state) || hasHoldingShortfall(state, holdings)) {
+function ensureDryRunPaperSession(state) {
+  const signature = paperTargetSignature(state);
+  if (state.paperSession?.active && state.paperSession.targetSignature === signature) return;
+  state.paperSession = {
+    active: true,
+    startedAt: new Date().toISOString(),
+    targetSignature: signature,
+    reason: "dry-run 페이퍼 장부를 현재 활성 종목 기준으로 새로 시작"
+  };
+  // dry-run 검증은 현재 후보 전략의 종이 장부여야 한다. 과거 실거래 장부는 tradeHistory에 남아 있고,
+  // 실거래를 다시 켜면 syncExecutedBotOrders가 체결 이력으로 라이브 장부를 다시 재구성한다.
+  state.positions = {};
+  state.performance = {
+    realizedPnlUsd: 0,
+    totalBuyAmountUsd: 0,
+    totalSellAmountUsd: 0
+  };
+  state.botBudget = null;
+  pushEvent(state, "BOT", "PAPER_SESSION", "dry-run 페이퍼 장부를 현재 활성 종목 기준으로 새로 시작했습니다.");
+}
+
+function markPaperSessionInactive(state) {
+  if (!state.paperSession?.active) return;
+  state.positions = {};
+  state.performance = {
+    realizedPnlUsd: 0,
+    totalBuyAmountUsd: 0,
+    totalSellAmountUsd: 0
+  };
+  state.botBudget = null;
+  state.paperSession = {
+    ...state.paperSession,
+    active: false,
+    endedAt: new Date().toISOString(),
+    reason: "실거래 장부로 복귀"
+  };
+}
+
+function paperTargetSignature(state = {}) {
+  const settings = state.settings ?? {};
+  return JSON.stringify(
+    {
+      settings: {
+        allocationUsd: Number(settings.allocationUsd ?? 0),
+        cashBufferUsd: Number(settings.cashBufferUsd ?? 0),
+        maxDailyLossPct: Number(settings.maxDailyLossPct ?? 0),
+        maxPositionPct: Number(settings.maxPositionPct ?? 0),
+        maxLeveragedExposurePct: Number(settings.maxLeveragedExposurePct ?? 0),
+        intradayDropBlockPct: Number(settings.intradayDropBlockPct ?? 0),
+        intradayPanicExitPct: Number(settings.intradayPanicExitPct ?? 0),
+        allowAdditionalBuys: Boolean(settings.allowAdditionalBuys),
+        minAdx: Number(settings.minAdx ?? 0)
+      },
+      targets: (state.targets ?? [])
+        .filter((target) => target.enabled !== false)
+        .map((target) => ({
+          symbol: target.symbol,
+          allocationPct: Number(target.allocationPct ?? 0),
+          leverage: target.leverage ?? "",
+          fastSmaDays: Number(target.fastSmaDays ?? 0),
+          slowSmaDays: Number(target.slowSmaDays ?? 0),
+          momentumDays: Number(target.momentumDays ?? 0),
+          minBuyRsi: Number(target.minBuyRsi ?? 0),
+          maxBuyRsi: Number(target.maxBuyRsi ?? 0),
+          stopLossPct: Number(target.stopLossPct ?? 0),
+          takeProfitPct: Number(target.takeProfitPct ?? 0),
+          trailingStopPct: Number(target.trailingStopPct ?? 0),
+          maxAtrPct: Number(target.maxAtrPct ?? 0),
+          minAdx: Number(target.minAdx ?? 0)
+        }))
+        .sort((left, right) => String(left.symbol).localeCompare(String(right.symbol)))
+    }
+  );
+}
+
+async function syncExecutedBotOrders(state, tossClient, { forceRecovery = false, holdings = null, updatePortfolio = true } = {}) {
+  if (updatePortfolio && (forceRecovery || shouldRecoverBotOrders(state) || hasHoldingShortfall(state, holdings))) {
     await recoverBotOrdersFromTossHistory(state, tossClient, holdings);
   }
   const syncable = state.tradeHistory.filter((trade) => trade.orderId && !trade.dryRun && trade.syncStatus !== "FINAL");
@@ -474,6 +554,7 @@ async function syncExecutedBotOrders(state, tossClient, { forceRecovery = false,
     const order = detail.result ?? detail;
     applyExecutionToTrade(state, trade, order);
   }
+  if (!updatePortfolio) return;
   rebuildLiveBotPortfolio(state);
   reconcileBotPositionsWithHoldings(state, holdings);
 }
