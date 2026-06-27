@@ -94,6 +94,7 @@ async function refresh() {
   renderBeginnerHero();
   renderSettings();
   renderTargets();
+  renderLedger();
   renderAccount();
   renderValidation();
   renderSignals();
@@ -332,13 +333,48 @@ function renderBeginnerHero() {
 function renderPublicIp() {
   const publicIp = state.runtime?.publicIp ?? {};
   const ipText = publicIp.ip || "조회 실패";
-  $("#publicIpText").textContent = ipText;
-  $("#copyPublicIp").disabled = !publicIp.ip;
-  $("#publicIpNote").textContent = publicIp.error
+  if ($("#publicIpText")) $("#publicIpText").textContent = ipText;
+  if ($("#copyPublicIp")) $("#copyPublicIp").disabled = !publicIp.ip;
+  const note = publicIp.error
     ? publicIp.error
     : publicIp.ip
       ? `${formatTime(publicIp.checkedAt)} 확인 · 토스 허용 IP에 추가`
       : "공인 IP를 확인하고 있습니다.";
+  if ($("#publicIpNote")) $("#publicIpNote").textContent = note;
+  const chip = document.querySelector(".header-ip");
+  if (chip) chip.title = `토스 허용 IP에 등록할 공인 IP · ${note}`;
+}
+
+function renderLedger() {
+  const badge = $("#ledgerModeBadge");
+  const host = $("#ledgerStatus");
+  if (!badge || !host) return;
+  const mode = state.ledgerMode ?? (state.settings?.dryRun === false ? "live" : "paper");
+  const isLive = mode === "live";
+  badge.textContent = isLive ? "실거래 장부" : "페이퍼 검증";
+  badge.className = `badge ${isLive ? "sell" : "neutral"}`;
+  const startedAt = isLive
+    ? state.settings?.botStartedAt
+    : state.paperSession?.startedAt ?? state.settings?.botStartedAt;
+  const history = state.ledgerHistory ?? [];
+  const historyHtml = history.length
+    ? `<details class="ledger-history">
+        <summary>지난 장부 기록 ${history.length}건</summary>
+        <div class="ledger-history-list">${history
+          .map(
+            (epoch) => `<div class="ledger-epoch">
+              <span>${epoch.mode === "live" ? "실거래" : "페이퍼"} · ${escapeHtml(epoch.reason ?? "")}</span>
+              <small>${formatTime(epoch.startedAt)} ~ ${formatTime(epoch.endedAt)} · 실현 ${money(epoch.realizedPnlUsd)} · 거래 ${epoch.tradeCount ?? 0}건</small>
+            </div>`
+          )
+          .join("")}</div>
+      </details>`
+    : "";
+  host.innerHTML = `<p class="ledger-line ${isLive ? "live" : ""}">${
+    isLive
+      ? "실제 체결로 장부를 쌓는 중입니다."
+      : "현재 후보 전략을 종이 장부로 검증 중입니다(실주문 없음)."
+  } <span class="muted">· 장부 시작 ${formatTime(startedAt)}</span></p>${historyHtml}`;
 }
 
 async function copyPublicIp() {
@@ -1275,7 +1311,7 @@ function renderEditor() {
     rowEl.className = `editor-row ${target.enabled === false ? "is-disabled" : ""}`;
     rowEl.innerHTML = `
       <div class="editor-row-head">
-        <div>
+        <div class="editor-row-title">
           <strong>${escapeHtml(target.symbol)}</strong>
           <span>${escapeHtml(target.name ?? target.symbol)}</span>
         </div>
@@ -1285,21 +1321,32 @@ function renderEditor() {
           <button title="삭제" data-action="delete">삭제</button>
         </div>
       </div>
-      ${editorInput("종목", target.symbol, "symbol", true)}
-      ${editorInput("비중 %", target.allocationPct, "allocationPct")}
-      ${editorInput("빠른선", target.fastSmaDays ?? 20, "fastSmaDays")}
-      ${editorInput("느린선", target.slowSmaDays ?? 50, "slowSmaDays")}
-      ${editorInput("모멘텀일", target.momentumDays ?? 5, "momentumDays")}
-      ${editorInput("매수RSI하", target.minBuyRsi ?? 45, "minBuyRsi")}
-      ${editorInput("매수RSI상", target.maxBuyRsi ?? 72, "maxBuyRsi")}
-      ${editorInput("손절 %", target.stopLossPct, "stopLossPct")}
-      ${editorInput("1차익절 %", target.partialTakeProfitPct ?? 10, "partialTakeProfitPct")}
-      ${editorInput("일부매도 %", target.partialTakeProfitSellPct ?? 40, "partialTakeProfitSellPct")}
-      ${editorInput("익절 %", target.takeProfitPct ?? 18, "takeProfitPct")}
-      ${editorInput("고점 이탈 %", target.trailingStopPct, "trailingStopPct")}
-      ${editorInput("과열 매도선", target.takeProfitRsi, "takeProfitRsi")}
-      ${editorInput("변동성 제한", target.maxAtrPct, "maxAtrPct")}
-      ${editorInput("ADX필터(0=끔)", target.minAdx ?? 0, "minAdx")}
+      <div class="editor-fields">
+        <div class="editor-group">
+          <p class="editor-group-title">비중 · 위험관리</p>
+          <div class="editor-group-grid">
+            ${editorInput("비중 %", target.allocationPct, "allocationPct")}
+            ${editorInput("손절 %", target.stopLossPct, "stopLossPct")}
+            ${editorInput("1차익절 %", target.partialTakeProfitPct ?? 10, "partialTakeProfitPct")}
+            ${editorInput("일부매도 %", target.partialTakeProfitSellPct ?? 40, "partialTakeProfitSellPct")}
+            ${editorInput("익절 %", target.takeProfitPct ?? 18, "takeProfitPct")}
+            ${editorInput("고점 이탈 %", target.trailingStopPct, "trailingStopPct")}
+            ${editorInput("변동성 제한", target.maxAtrPct, "maxAtrPct")}
+          </div>
+        </div>
+        <div class="editor-group">
+          <p class="editor-group-title">추세 · 신호</p>
+          <div class="editor-group-grid">
+            ${editorInput("빠른선", target.fastSmaDays ?? 20, "fastSmaDays")}
+            ${editorInput("느린선", target.slowSmaDays ?? 50, "slowSmaDays")}
+            ${editorInput("모멘텀일", target.momentumDays ?? 5, "momentumDays")}
+            ${editorInput("매수RSI 하", target.minBuyRsi ?? 45, "minBuyRsi")}
+            ${editorInput("매수RSI 상", target.maxBuyRsi ?? 72, "maxBuyRsi")}
+            ${editorInput("과열 매도선", target.takeProfitRsi, "takeProfitRsi")}
+            ${editorInput("ADX필터(0=끔)", target.minAdx ?? 0, "minAdx")}
+          </div>
+        </div>
+      </div>
       <p class="recommendation-note" data-role="recommendation-note"></p>
     `;
     renderTargetRecommendationNote(rowEl.querySelector('[data-role="recommendation-note"]'), target);

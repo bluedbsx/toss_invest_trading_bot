@@ -497,3 +497,11 @@
 - 가정/주의(다른 에이전트가 검토해야 할 점):
   - 초기화는 사용자가 서버 정지 후 `node scripts/reset-ledger.js` 실행(데이터는 gitignore, 커밋 안 함). 실거래 토글은 검증 후 사용자 판단으로 켠다.
   - 매수 과열 추격 차단(진입 전 과확장 가드)은 전략 행동 변경이라 별도 승인 후 적용 예정(이번엔 미적용).
+
+### 2026-06-27 (밤) UI — Claude (Opus 4.8)
+- 목적: 사용자 요청 ④ 전체 UI/UX 가독성·사용성 개선(빽빽함/비정상 여백/정렬/카드 순서/종목설정 인풋 2줄/IP 카드).
+- 수정 내용:
+  - `public/index.html`: 상단 IP 카드(connection-panel) 제거 → 헤더 status-strip에 `허용 IP` 칩으로 축약(복사/새로고침 포함). 봇 포트폴리오 패널에 장부 모드 배지(`#ledgerModeBadge`)+상태(`#ledgerStatus`) 추가. 카드 재배치: 고위험 엔진 실험실을 검증↔자동투자 켜기 사이(자리 부족)에서 하단 참고영역으로 이동+collapsible 전환. 개선 데이터(learning)를 종목설정↔자가판단 사이에서 자가판단 아래로 이동(설정 패널 연속 배치). 종목 설정 카드의 인풋을 `비중·위험관리` / `추세·신호` 두 그룹으로 묶고 중복 종목 인풋 제거.
+  - `public/app.js`: `renderLedger()` 추가(장부 모드/시작시각/지난 장부 기록 ledgerHistory 표시, 구 백엔드에선 dryRun으로 폴백). `renderEditor` 그룹형 재구성. `renderPublicIp` 헤더 칩 title 반영 + null 가드.
+  - `public/styles.css`: 여백 완화(shell gap 16→22, panel padding 16→18/20, panel-head 14→16, choice/control/market/workspace gap 상향). 헤더 IP 칩/장부 상태/에디터 그룹 스타일 신규. section-heading 좌측 정렬 패널 콘텐츠(19px)와 픽셀 일치. 모바일 미디어쿼리에서 editor-fields 1열·IP칩 풀폭.
+- 검증: `node --check public/app.js` PASS, section/details 태그 균형(8/8·5/5), 필요한 DOM id 전부 존재, 정적 자산 localhost:3000 정상 서빙, 구 백엔드 /api/state로도 UI 비파괴(ledger 폴백). 시각 확인은 사용자 브라우저 새로고침으로 진행.

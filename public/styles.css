@@ -203,11 +203,47 @@ h2 {
   font-size: 13px;
 }
 
+.header-ip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 3px 6px 3px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.header-ip-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.header-ip strong {
+  font-size: 14px;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.chip-btn {
+  min-height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.header-ip .icon-button {
+  width: 30px;
+  min-height: 30px;
+}
+
 .shell {
   display: grid;
-  gap: 16px;
+  gap: 22px;
   min-width: 0;
-  padding: 18px clamp(12px, 4vw, 36px) 40px;
+  padding: 24px clamp(14px, 4vw, 40px) 56px;
 }
 
 .connection-panel {
@@ -270,13 +306,13 @@ label small,
 
 .control-panel,
 .panel {
-  padding: 16px;
+  padding: 18px 18px 20px;
 }
 
 .panel-head {
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
 }
 
 .panel-actions {
@@ -305,9 +341,9 @@ label small,
   align-items: flex-start;
   justify-content: flex-start;
   gap: 16px;
-  /* 패널은 padding 16px + border 1px = 콘텐츠가 17px 들여쓰기되므로, 섹션 헤딩도 17px로 맞춰
+  /* 패널은 padding 18px + border 1px = 콘텐츠가 19px 들여쓰기되므로, 섹션 헤딩도 19px로 맞춰
      "1단계"와 패널의 "2단계" 좌측 정렬을 픽셀 단위로 일치시킨다(테두리 1px 보정). */
-  padding: 2px 17px 0;
+  padding: 4px 19px 0;
 }
 
 .section-heading > div {
@@ -323,7 +359,7 @@ label small,
 .control-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 14px;
 }
 
 label span {
@@ -392,16 +428,16 @@ label small {
 .choice-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
 .choice-card {
   display: grid;
   grid-template-columns: auto 1fr auto;
-  gap: 8px 12px;
+  gap: 10px 12px;
   align-items: center;
-  padding: 12px;
+  padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: #0d131a;
@@ -452,7 +488,7 @@ label small {
 .market-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 12px;
+  gap: 14px;
 }
 
 .ticker-card {
@@ -868,7 +904,65 @@ label small {
 .workspace {
   display: grid;
   grid-template-columns: 1.1fr 1fr 1fr;
-  gap: 12px;
+  gap: 14px;
+}
+
+.ledger-status {
+  margin: -4px 0 12px;
+}
+
+.ledger-line {
+  padding: 9px 11px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ledger-line.live {
+  border-color: rgba(255, 92, 122, 0.3);
+}
+
+.ledger-history {
+  margin-top: 8px;
+  font-size: 12px;
+}
+
+.ledger-history summary {
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+}
+
+.ledger-history summary::-webkit-details-marker {
+  display: none;
+}
+
+.ledger-history-list {
+  display: grid;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.ledger-epoch {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: #0d131a;
+}
+
+.ledger-epoch span {
+  color: var(--text);
+  font-size: 12px;
+}
+
+.ledger-epoch small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .table-list,
@@ -1397,13 +1491,17 @@ label small {
   min-width: 0;
 }
 
+.editor-grid {
+  gap: 14px;
+}
+
 .editor-row {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
-  gap: 10px;
-  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px;
   border: 1px solid var(--line-soft);
-  border-radius: 8px;
+  border-radius: 10px;
   background: #0d131a;
 }
 
@@ -1412,26 +1510,60 @@ label small {
 }
 
 .editor-row-head {
-  grid-column: 1 / -1;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 12px;
   align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line-soft);
 }
 
-.editor-row-head strong,
-.editor-row-head span {
+.editor-row-title strong,
+.editor-row-title span {
   display: block;
 }
 
-.editor-row-head strong {
-  font-size: 16px;
+.editor-row-title strong {
+  font-size: 17px;
 }
 
-.editor-row-head span {
+.editor-row-title span {
   margin-top: 3px;
   color: var(--muted);
   font-size: 12px;
+}
+
+.editor-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.editor-group {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.editor-group-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.editor-group-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(92px, 1fr));
+  gap: 10px;
+}
+
+.editor-group-grid label span {
+  margin-bottom: 5px;
+  font-size: 11px;
+  line-height: 1.3;
+  min-height: 26px;
 }
 
 .editor-actions {
@@ -1679,12 +1811,12 @@ label small {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .editor-row {
-    grid-column: 1 / -1;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .editor-fields {
+    grid-template-columns: 1fr;
   }
 
-  .recommendation-note {
-    grid-column: 1 / -1;
+  .header-ip {
+    flex: 1 1 100%;
+    justify-content: flex-start;
   }
 }

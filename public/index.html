@@ -8,11 +8,18 @@
   </head>
   <body>
     <header class="topbar">
-      <div>
+      <div class="topbar-title">
         <p class="eyebrow">Toss Invest Open API</p>
         <h1>자동투자 관리</h1>
       </div>
       <div class="status-strip">
+        <div class="header-ip" title="토스 허용 IP에 등록할 공인 IP">
+          <span class="header-ip-label">허용 IP</span>
+          <strong id="publicIpText">확인 중</strong>
+          <button id="copyPublicIp" type="button" class="chip-btn">복사</button>
+          <button id="refreshPublicIp" type="button" class="icon-button" title="공인 IP 새로고침" aria-label="공인 IP 새로고침">↻</button>
+          <small id="publicIpNote" class="public-ip-note" hidden></small>
+        </div>
         <span id="mockBadge" class="badge neutral">DRY</span>
         <span id="statusText" class="status-text">loading</span>
         <button id="runOnce" class="icon-button" title="지금 한 번 실행" aria-label="지금 한 번 실행">↻</button>
@@ -22,18 +29,6 @@
     </header>
 
     <main class="shell">
-      <section class="connection-panel">
-        <div class="connection-grid">
-          <div class="public-ip-box">
-            <span>토스 허용 IP에 등록할 공인 IP</span>
-            <strong id="publicIpText">확인 중</strong>
-            <button id="copyPublicIp" type="button">복사</button>
-            <button id="refreshPublicIp" type="button">새로고침</button>
-            <small id="publicIpNote" class="public-ip-note"></small>
-          </div>
-        </div>
-      </section>
-
       <section class="section-heading">
         <div>
           <p class="eyebrow">1단계</p>
@@ -48,10 +43,12 @@
           <div class="panel-head">
             <h2>봇 포트폴리오</h2>
             <div class="panel-actions compact-actions">
+              <span id="ledgerModeBadge" class="badge neutral">페이퍼</span>
               <button id="syncOrders">체결 동기화</button>
               <span id="accountMode" class="badge neutral">mock</span>
             </div>
           </div>
+          <div id="ledgerStatus" class="ledger-status"></div>
           <div id="accountSummary" class="account-summary"></div>
           <div class="budget-add-control">
             <label>
@@ -90,18 +87,6 @@
         </div>
         <div id="validationSummary" class="learning-grid"></div>
         <div id="validationGateDetail" class="learning-actions"></div>
-      </section>
-
-      <section class="panel high-risk-panel">
-        <div class="panel-head">
-          <div>
-            <h2>고위험 엔진 실험실</h2>
-            <p class="section-note">레버리지 전용 엔진은 실매매와 분리해 paper-only로 설계·검증합니다.</p>
-          </div>
-          <span id="highRiskMode" class="badge neutral">paper-only</span>
-        </div>
-        <div id="highRiskSummary" class="learning-grid high-risk-grid"></div>
-        <div id="highRiskPlan" class="high-risk-plan"></div>
       </section>
 
       <section class="control-panel">
@@ -232,21 +217,6 @@
         <div id="targetEditor" class="editor-grid"></div>
       </section>
 
-      <section class="panel learning-panel">
-        <div class="panel-head">
-          <div>
-            <h2>개선 데이터</h2>
-            <p class="section-note">paper/live 판단 기록을 모아 다음 전략 개선 근거로 씁니다.</p>
-          </div>
-          <div class="panel-actions compact-actions">
-            <span id="learningLastAuto" class="muted"></span>
-            <button id="refreshLearningReport">개선 리포트 갱신</button>
-          </div>
-        </div>
-        <div id="learningSummary" class="learning-grid"></div>
-        <div id="learningActions" class="learning-actions"></div>
-      </section>
-
       <section class="panel automation-panel">
         <div class="panel-head">
           <div>
@@ -292,6 +262,33 @@
         </div>
         <p id="automationNote" class="recommendation-note"></p>
       </section>
+
+      <section class="panel learning-panel">
+        <div class="panel-head">
+          <div>
+            <h2>개선 데이터</h2>
+            <p class="section-note">paper/live 판단 기록을 모아 다음 전략 개선 근거로 씁니다.</p>
+          </div>
+          <div class="panel-actions compact-actions">
+            <span id="learningLastAuto" class="muted"></span>
+            <button id="refreshLearningReport">개선 리포트 갱신</button>
+          </div>
+        </div>
+        <div id="learningSummary" class="learning-grid"></div>
+        <div id="learningActions" class="learning-actions"></div>
+      </section>
+
+      <details class="panel high-risk-panel collapsible-panel">
+        <summary class="panel-head">
+          <div>
+            <h2>고위험 엔진 실험실</h2>
+            <p class="section-note">레버리지 전용 엔진은 실매매와 분리해 paper-only로 설계·검증합니다.</p>
+          </div>
+          <span id="highRiskMode" class="badge neutral">paper-only</span>
+        </summary>
+        <div id="highRiskSummary" class="learning-grid high-risk-grid"></div>
+        <div id="highRiskPlan" class="high-risk-plan"></div>
+      </details>
 
       <details class="panel strategy-panel collapsible-panel">
         <summary class="panel-head">
