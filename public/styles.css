@@ -305,8 +305,9 @@ label small,
   align-items: end;
   justify-content: space-between;
   gap: 16px;
-  /* 패널 헤더(안쪽 16px 들여쓰기)와 좌우 정렬을 맞춘다. */
-  padding: 2px 16px 0;
+  /* 패널은 padding 16px + border 1px = 콘텐츠가 17px 들여쓰기되므로, 섹션 헤딩도 17px로 맞춰
+     "1단계"와 패널의 "2단계" 좌측 정렬을 픽셀 단위로 일치시킨다(테두리 1px 보정). */
+  padding: 2px 17px 0;
 }
 
 .section-heading > div {

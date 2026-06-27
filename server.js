@@ -54,6 +54,19 @@ server.listen(port, () => {
   console.log(`Toss Invest Terminal running on http://localhost:${port}`);
 });
 setInterval(() => runAutomationIfDue().catch(() => {}), 60_000);
+// 개선 리포트 자동 갱신: autoLearningReports가 켜져 있으면 주기적으로(30분) 스스로 돌린다.
+// 저장된 데이터만 분석하는 가벼운 작업이라 외부 호출이 없다. 마지막 자동 실행 시각도 남긴다.
+const LEARNING_AUTO_INTERVAL_MS = 30 * 60_000;
+refreshLearningReportIfEnabled();
+setInterval(() => refreshLearningReportIfEnabled().catch(() => {}), LEARNING_AUTO_INTERVAL_MS);
+async function refreshLearningReportIfEnabled() {
+  const state = await loadState();
+  if (!state.settings?.autoLearningReports) return;
+  await updateState((draft) => {
+    buildLearningReport(draft);
+    draft.learning.lastAutoReportAt = new Date().toISOString();
+  });
+}
 
 // 봇 자가판단: 켜진 자동화 항목(안전설정/전체비중/종목전략/개선리포트)을 검토 주기마다 한 번씩 실행한다.
 // - force=true(수동 "지금 자가판단 실행")이면 주기와 상관없이 즉시 실행한다.
@@ -581,6 +594,7 @@ async function refreshNews() {
     const news = await fetchNews();
     await updateState((draft) => {
       draft.news = news;
+      draft.health.lastNewsRefreshAt = new Date().toISOString();
     });
   } catch (error) {
     await updateState((draft) => {

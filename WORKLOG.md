@@ -315,3 +315,8 @@
 - 수정: ① news.js 부정 렉시콘에 collapse/rout/meltdown/crater/tumble/slump/bear market/wipeout/destroy wealth 추가(실사례 누락 보강). ② eventRisk.js getNewsRisk를 **가중 합 기반**으로 — `weightedScore <= -3`이면 단일이라도 강한 악재에 매수예산 50% 축소(기존 개수 기준 보완).
 - 검증: 보강 후 폭락 헤드라인 4건 악재 분류. 가중 트리거: 강한 악재 1건 → 0.5, 중립 → 1.0. 문법 OK.
 - 가정/주의: 라이브 반영 재시작 후. 36h 윈도우는 유지(스윙 전략엔 적정, 오래된 폭락이 계속 매수를 막지 않게). 진짜 실시간 방어는 추세추종.
+
+### CC. 자동 갱신 타이머·시각 표시 + 헤딩 정렬 1px + 버전업 판단 (`server.js`, `public/*`)
+- 요청1(뉴스/개선리포트 자동 주기 + 마지막 실행 시각): 뉴스는 이미 30분 타이머(NEWS_REFRESH_MINUTES) — `refreshNews`에 `health.lastNewsRefreshAt` 기록 추가. 개선리포트는 **30분 자동 타이머 신설**(`refreshLearningReportIfEnabled`, autoLearningReports 켜짐 시, 외부호출 없는 분석이라 가벼움) + `learning.lastAutoReportAt` 기록. UI: 뉴스 패널·개선데이터 패널 헤더에 "자동 갱신 HH:MM · 30분 주기" 표시.
+- 요청3(헤딩 정렬): §L이 패널 콘텐츠 들여쓰기를 16px로 봤으나 패널은 padding16+border1=**17px**라 1단계가 1px 왼쪽(x52 vs 53). `.section-heading` padding 16→**17px**로 픽셀 일치.
+- 요청2(버전업 판단 — 코드변경 없음, 분석): 데이터품질 **100은 "수량" 지표**(샘플 2575·주문 68·사이클 6)지, 검증된 성과가 아님. 실제 **왕복 사이클 6건뿐 + 승률 33% + 실현 −$11**(여전히 손실). buyCount 61 vs sellCount 7은 **페이퍼 churn 인공물**(dryRun인데 syncExecutedBotOrders/rebuildLiveBotPortfolio가 실거래 기준으로 포지션을 매틱 덮어써 페이퍼 포지션이 지워지고 매틱 재매수 — §V "회계 혼재"가 발현). → **검증된 근거가 없어 v1.0 재학습 부적절.** 엔진은 이미 이번 세션에 다수 개선(v0.9 drop-block, 위험조정 점수, ADX 추천, 뉴스, 회계수정)됨 = 사실상의 버전업. 진짜 v1.0은 **깨끗한 페이퍼/실거래 사이클이 게이트를 통과**해야 가능. 권고: 별도 DATA_DIR 페이퍼 인스턴스로 churn 없는 검증 데이터 축적(미적용, 사용자 선택).

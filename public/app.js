@@ -1019,6 +1019,11 @@ function budgetStatusText(budget) {
 }
 
 function renderNews() {
+  const syncEl = $("#newsLastSync");
+  if (syncEl) {
+    const at = state.health?.lastNewsRefreshAt;
+    syncEl.textContent = at ? `자동 갱신 ${formatTime(at)} · 30분 주기` : "연준 / 거시 / 종목";
+  }
   $("#newsList").innerHTML = state.news.length
     ? state.news
         .map(
@@ -1060,6 +1065,12 @@ function renderStrategy() {
 function renderLearning() {
   const learning = state.learning ?? {};
   const report = learning.lastReport;
+  const autoEl = $("#learningLastAuto");
+  if (autoEl) {
+    autoEl.textContent = learning.lastAutoReportAt
+      ? `자동 갱신 ${formatTime(learning.lastAutoReportAt)} · 30분 주기`
+      : "자동 갱신 대기 · 30분 주기";
+  }
   const summary = report?.summary ?? {};
   const quality = report?.dataQuality ?? {};
   const cards = [
