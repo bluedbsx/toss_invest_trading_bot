@@ -8,6 +8,7 @@ import { fetchNews } from "./src/news.js";
 import { loadState, saveState, saveTraderState, updateState } from "./src/store.js";
 import {
   optimizeTargetSettings,
+  isCurrentStrategyEngine,
   recommendPortfolioWeights,
   recommendTargetSettings,
   robustBacktestTarget,
@@ -485,7 +486,7 @@ async function handleApi(request, response, url) {
           reviewedAt: new Date().toISOString()
         };
         target.lastRecommendation.appliedAt = new Date().toISOString();
-      } else if (target.lastRecommendation?.engineVersion === strategySummary.name) {
+      } else if (isCurrentStrategyEngine(target.lastRecommendation?.engineVersion)) {
         target.lastStrategyReview = null;
       }
     });
@@ -853,7 +854,7 @@ function summarizeTargetRecommendation(currentTarget, recommendation) {
 }
 
 function recommendationMatchesTarget(target, recommendation) {
-  if (!recommendation?.recommended || recommendation.engineVersion !== strategySummary.name) return false;
+  if (!recommendation?.recommended || !isCurrentStrategyEngine(recommendation.engineVersion)) return false;
   return Object.entries(recommendation.recommended).every(([key, value]) => {
     const current = target[key];
     if (typeof value === "number") return Math.abs(Number(current) - value) < 0.000001;
@@ -866,7 +867,7 @@ function recommendSafetySettings(state) {
   const scoredTargets = activeTargets.map((target) => {
     // 엔진 버전이 바뀐 뒤의 옛 리뷰 점수를 쓰지 않도록, 현재 엔진 리뷰만 신뢰하고 아니면 현재 스냅샷 백테스트로 폴백.
     const review = target.lastStrategyReview;
-    const reviewScore = review && review.engineVersion === strategySummary.name ? review.score : undefined;
+    const reviewScore = review && isCurrentStrategyEngine(review.engineVersion) ? review.score : undefined;
     const score = Number(reviewScore ?? state.marketSnapshots?.[target.symbol]?.backtest?.score ?? 55);
     const leverage = parseLeverageText(target.leverage);
     const allocation = Number(target.allocationPct ?? 0);

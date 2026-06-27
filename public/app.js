@@ -1327,7 +1327,7 @@ function renderWeightRecommendationNote(recommendation) {
   const note = $("#weightRecommendationNote");
   if (!note) return;
   if (!recommendation?.weights) {
-    note.textContent = "전체비중 추천은 활성 종목들의 변동성, 모멘텀, 레버리지, 이벤트/뉴스 위험을 함께 보고 계산합니다.";
+    note.textContent = "전체비중 추천은 활성 종목들의 변동성, 모멘텀, 배율, 이벤트/뉴스 위험을 함께 보고 계산합니다.";
     return;
   }
   const weights = Object.entries(recommendation.weights)
@@ -1366,7 +1366,7 @@ function renderSafetyRecommendationNote(recommendation) {
   const note = $("#safetyRecommendationNote");
   if (!note) return;
   if (!recommendation?.recommended) {
-    note.textContent = "안전설정 추천은 자동투자 금액을 제외하고 현금버퍼, 당일 손실 한도, 레버리지 한도, 급락 기준을 계산합니다.";
+    note.textContent = "안전설정 추천은 자동투자 금액을 제외하고 현금버퍼, 당일 손실 한도, 총 위험노출 한도, 급락 기준을 계산합니다.";
     return;
   }
   const prefix = recommendation.canceled ? "최근 안전설정 추천 취소" : "최근 안전설정 추천";
@@ -1381,7 +1381,7 @@ function renderSafetyRecommendationText(recommendation) {
     `현금 ${money(r.cashBufferUsd)}`,
     `손실경고 ${pct(r.maxDailyLossPct)}`,
     `종목최대 ${pct(r.maxPositionPct)}`,
-    `레버리지한도 ${pct(r.maxLeveragedExposurePct)}`,
+    `노출한도 ${pct(r.maxLeveragedExposurePct)}`,
     `당일급락대기 ${pct(r.intradayDropBlockPct)}`,
     `당일급락방어 ${pct(r.intradayPanicExitPct)}`,
     `추가매수 ${r.allowAdditionalBuys ? "허용" : "차단"}`,
@@ -1422,7 +1422,8 @@ function summarizeTargetRecommendationForUi(beforeTarget, recommendation, engine
 }
 
 function isCurrentEngineResult(result) {
-  return Boolean(result?.engineVersion && result.engineVersion === state.strategy?.name);
+  const aliases = state.strategy?.aliases ?? [];
+  return Boolean(result?.engineVersion && (result.engineVersion === state.strategy?.name || aliases.includes(result.engineVersion)));
 }
 
 function currentStrategyName() {

@@ -160,7 +160,7 @@ function sleep(ms) {
 
 function mockResponse(path, query, body) {
   if (path === "/api/v1/prices") {
-    const symbols = String(query?.symbols ?? "SOXL,MUU,SNXX").split(",");
+    const symbols = String(query?.symbols ?? "MU,TSM,WDC,GOOGL").split(",");
     return {
       result: symbols.map((symbol) => ({
         symbol,
@@ -172,7 +172,7 @@ function mockResponse(path, query, body) {
   }
 
   if (path === "/api/v1/candles") {
-    return { result: { candles: mockCandles(query?.symbol ?? "SOXL", Number(query?.count ?? 80)), nextBefore: null } };
+    return { result: { candles: mockCandles(query?.symbol ?? "MU", Number(query?.count ?? 80)), nextBefore: null } };
   }
 
   if (path === "/api/v1/market-calendar/US") {

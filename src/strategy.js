@@ -1,9 +1,10 @@
 import { adx, atr, normalizeCandles, rsi, sma } from "./indicators.js";
 
 export const strategySummary = {
-  name: "Leveraged Momentum Guard v0.9 Dual-Backtest",
+  name: "Adaptive Momentum Guard v0.9 Dual-Backtest",
+  aliases: ["Leveraged Momentum Guard v0.9 Dual-Backtest"],
   purpose:
-    "고변동 성장주/ETF를 장기 보유하지 않고 상승 추세에서만 참여하며, 손절/익절/노출 한도로 실전 리스크를 관리합니다. " +
+    "1x 성장주/ETF와 레버리지 ETF 모두를 종목별 파라미터로 다루되, 장기 방치하지 않고 상승 추세에서만 참여하며 손절/익절/노출 한도로 실전 리스크를 관리합니다. " +
     "v0.9: 표준(Wilder) RSI/ATR, 수수료·슬리피지 반영 + 과적합 억제 백테스트, 한국 새벽 정규장 정상 인식, " +
     "당일 급락 신규매수 차단 재활성, ADX 선택 필터, 뉴스·거시 예산 축소를 반영합니다.",
   buyRules: [
@@ -43,6 +44,13 @@ export const strategySummary = {
   ]
 };
 
+export function isCurrentStrategyEngine(engineVersion) {
+  return Boolean(
+    engineVersion &&
+      (engineVersion === strategySummary.name || strategySummary.aliases?.includes(engineVersion))
+  );
+}
+
 export function evaluateTarget({ target, candles, price, position, settings, isRegularMarket, eventRisk, newsRisk, calendarRisk, botBudget }) {
   const normalized = normalizeCandles(candles);
   const closes = normalized.map((item) => item.close);
@@ -81,8 +89,8 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const dailyMovePct = calculateDailyMovePct(normalized, last);
   // §HH: 당일(시가 대비) 급락 시 신규매수 차단을 재활성화한다.
   // §N(일봉 백테스트)은 이 가드가 수익만 깎는다고 봤지만, 일봉 백테스트는 §U가 라이브에서 확인한
-  // 레버리지 장중/갭 급락(꼬리손실)을 못 본다. 목표가 "저손해 + 레버리지(SOXL/MUU)"이므로,
-  // 추세가 살아있어도 당일 큰 급락엔 낙하 칼날 매수를 막는 §U(가드 강화) 쪽을 채택한다.
+  // 고변동 종목의 장중/갭 급락(꼬리손실)을 못 본다. 현재 1x 단일주도 갭 리스크가 크므로,
+  // 추세가 살아있어도 당일 큰 급락엔 낙하 칼날 매수를 막는 §U 계열 가드를 유지한다.
   // (이전 v0.9의 'last<fastSma' 조건은 매수조건 trendOk와 상호배타라 사실상 무효였음 — 그 무효를 해소.)
   const dailyDropBlock =
     Number.isFinite(dailyMovePct) && dailyMovePct <= -Number(settings.intradayDropBlockPct ?? 4.5);

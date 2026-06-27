@@ -428,3 +428,26 @@
   - `paperSession`은 코드 배포 후 다음 트레이더 틱에서 운영 `state.json`에 생성된다. 데이터 파일은 커밋하지 않았음.
   - 실거래를 다시 켜면 paper 장부를 비우고 라이브 체결 이력에서 장부를 재구성한다. 실제 계좌에 남은 SOXL/MUU 보유분은 사용자가 수동 처리하거나, 라이브 전환 시 봇 대상/보유 정책을 다시 확인해야 한다.
   - 정적 실적 이벤트는 여전히 수동 갱신이 필요하다. 이번 수정은 매크로 이벤트 전체 종목 적용과 MU 보강까지이며, TSM/WDC/GOOGL의 향후 실적일 자동 수집은 별도 과제.
+
+### 2026-06-27 — Codex
+- 문제/목적:
+  - 현재 운영 종목이 MU·TSM·WDC·GOOGL 1x 구성인데, 전략명과 일부 UI/문서가 여전히 "레버리지" 중심으로 보여 사용자가 실제 동작을 오해할 수 있는 문제를 정리.
+- 진단(근거):
+  - `strategySummary.name`과 README가 `Leveraged Momentum Guard v0.9 Dual-Backtest`를 표시.
+  - 안전설정 화면의 `레버리지 총노출 한도`/`레버리지한도` 문구는 1x 종목 운용 상태에서는 과하게 좁은 표현.
+  - mock Toss 기본 티커가 SOXL/MUU/SNXX라 격리 테스트 기본값도 현재 운영 구성과 어긋남.
+- 수정 내용:
+  - 표시 전략명을 `Adaptive Momentum Guard v0.9 Dual-Backtest`로 변경하고, 이전 `Leveraged...` 이름은 alias로 남겨 저장된 추천/검토가 이름 변경만으로 무효 처리되지 않게 함.
+  - 서버와 프런트의 엔진 버전 비교가 alias를 인식하도록 보강.
+  - README/설정 화면/추천 안내 문구를 1x와 레버리지 모두에 맞는 "배율", "총 위험노출" 중심 표현으로 수정.
+  - mock 기본 티커를 현재 1x 운영 구성(MU/TSM/WDC/GOOGL)으로 변경.
+- 건드린 파일/함수:
+  - `src/strategy.js`: `strategySummary`, `isCurrentStrategyEngine`, 당일 급락 가드 설명
+  - `server.js`: 엔진 버전 호환 비교
+  - `public/app.js`: 엔진 버전 호환 비교, 추천 안내 문구
+  - `public/index.html`, `README.md`, `src/indicators.js`, `src/tossClient.js`
+- 검증 방법과 결과:
+  - `rg`로 사용자 노출 `Leveraged Momentum Guard`, `레버리지 총노출`, `레버리지한도` 잔존 여부 확인. 남은 `Leveraged...`는 호환 alias뿐.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 이번 변경은 표시/호환성 정리이며 매수·매도 판단 로직 자체는 바꾸지 않음.
+  - 고위험/레버리지 전용 엔진은 별도 설계가 필요한 큰 변경이라 이번 커밋에는 넣지 않음.

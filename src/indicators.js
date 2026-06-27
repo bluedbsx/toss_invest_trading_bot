@@ -53,7 +53,7 @@ export function atr(candles, period = 14) {
 }
 
 // Wilder ADX: 추세의 "강도"를 0~100으로 잰다(방향 아님). 보통 <20 횡보, >25 강한 추세.
-// 레버리지 ETF는 횡보장에서 변동성으로 가치가 깎이므로(decay), ADX가 낮을 때 신규매수를 막는 데 쓴다.
+// 레버리지 ETF나 고변동 단일주는 횡보장에서 휩쏘가 잦으므로, ADX가 낮을 때 신규매수를 막는 데 쓴다.
 export function adx(candles, period = 14) {
   if (!Array.isArray(candles) || candles.length <= period * 2) return null;
   const plusDM = [];

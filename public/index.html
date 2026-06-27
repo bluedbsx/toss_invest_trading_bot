@@ -140,14 +140,14 @@
             <small>한 종목이 자동투자 시드에서 차지할 수 있는 최대 비중입니다.</small>
           </label>
           <label>
-            <span>레버리지 총노출 한도</span>
+            <span>총 위험노출 한도</span>
             <input id="maxLeveragedExposurePct" type="number" min="20" max="300" step="5" />
-            <small>2배/3배 효과를 감안한 전체 위험 한도입니다.</small>
+            <small>1배는 그대로, 2배/3배 상품은 배율을 감안해 계산하는 전체 위험 한도입니다.</small>
           </label>
           <label>
             <span>당일 급락 매수대기</span>
             <input id="intradayDropBlockPct" type="number" min="1" max="30" step="0.5" />
-            <small>당일 시가 대비 이 이상 하락하면 새 매수를 기다립니다. 레버리지·고변동 종목의 낙하 칼날 진입을 피하기 위한 장치입니다.</small>
+            <small>당일 시가 대비 이 이상 하락하면 새 매수를 기다립니다. 1배 단일주와 레버리지 상품 모두의 낙하 칼날 진입을 피하기 위한 장치입니다.</small>
           </label>
           <label>
             <span>당일 급락 방어매도</span>
