@@ -44,12 +44,17 @@ export async function fetchEconomicCalendar({ daysBack = 4, daysAhead = 14 } = {
 export function getCalendarRisk(calendar = [], now = new Date()) {
   const t = now.getTime();
   const high = (Array.isArray(calendar) ? calendar : []).filter((event) => event.highImpact);
+  // 최근 5일 거시 기조(개별 이벤트가 지나도 지속되는 배경) → 강한 악재면 예산 축소 바닥값.
+  // 호재 기조여도 예산을 1 위로 키우지 않는다(거시 낙관으로 사이즈를 부풀리지 않음 — 축소 전용).
+  const tone = summarizeMacroTone(calendar, now);
+  const toneMultiplier = tone.score <= -5 ? 0.6 : tone.score <= -3 ? 0.8 : 1;
+
   const imminent = high.find((event) => {
     const d = new Date(event.date).getTime();
     return Number.isFinite(d) && !event.released && d > t && d - t <= 4 * 3_600_000;
   });
   if (imminent) {
-    return { blocked: true, budgetMultiplier: 0, label: "지표 발표 임박", reason: `${imminent.title} 발표 임박(4시간 내) — 신규매수 차단`, event: summarize(imminent) };
+    return { blocked: true, budgetMultiplier: 0, label: "지표 발표 임박", reason: `${imminent.title} 발표 임박(4시간 내) — 신규매수 차단`, event: summarize(imminent), macroTone: tone };
   }
   // 최근 8시간 내 발표된 악재 중 가장 강한 것으로 축소 강도 결정.
   const recentBad = high
@@ -59,17 +64,26 @@ export function getCalendarRisk(calendar = [], now = new Date()) {
     })
     .sort((a, b) => a.biasScore - b.biasScore)[0];
   if (recentBad) {
-    const multiplier = recentBad.biasScore <= -1.8 ? 0.4 : recentBad.biasScore <= -0.9 ? 0.6 : 0.75;
-    return { blocked: false, budgetMultiplier: multiplier, label: `지표 ${recentBad.biasStrength} 악재`, reason: `${recentBad.title} · ${recentBad.biasReason}`, event: summarize(recentBad) };
+    const eventMult = recentBad.biasScore <= -1.8 ? 0.4 : recentBad.biasScore <= -0.9 ? 0.6 : 0.75;
+    const multiplier = Math.min(eventMult, toneMultiplier); // 단일 악재와 거시 기조 중 더 강한 축소
+    const toneNote = toneMultiplier < 1 ? ` · 거시 ${tone.tone}` : "";
+    return { blocked: false, budgetMultiplier: multiplier, label: `지표 ${recentBad.biasStrength} 악재`, reason: `${recentBad.title} · ${recentBad.biasReason}${toneNote}`, event: summarize(recentBad), macroTone: tone };
   }
   const upcoming = high.find((event) => {
     const d = new Date(event.date).getTime();
     return !event.released && Number.isFinite(d) && d > t && d - t <= 24 * 3_600_000;
   });
-  if (upcoming) {
-    return { blocked: false, budgetMultiplier: 0.7, label: "지표 발표 예정", reason: `${upcoming.title} 24시간 내 발표 예정`, event: summarize(upcoming) };
+  const upcomingMult = upcoming ? 0.7 : 1;
+  const multiplier = Math.min(upcomingMult, toneMultiplier);
+  if (multiplier < 1) {
+    // 임박 단일 악재가 없어도, 24h 내 예정 또는 5일 거시 기조가 강한 악재면 예산 축소.
+    const parts = [];
+    if (upcoming) parts.push(`${upcoming.title} 24시간 내 발표 예정`);
+    if (toneMultiplier < 1) parts.push(`최근 5일 거시 ${tone.tone}(${tone.label})`);
+    const label = toneMultiplier < upcomingMult ? "거시 악재 기조" : "지표 발표 예정";
+    return { blocked: false, budgetMultiplier: multiplier, label, reason: parts.join(" · "), event: upcoming ? summarize(upcoming) : null, macroTone: tone };
   }
-  return { blocked: false, budgetMultiplier: 1, label: "지표 영향 낮음", reason: null, event: null };
+  return { blocked: false, budgetMultiplier: 1, label: "지표 영향 낮음", reason: null, event: null, macroTone: tone };
 }
 
 // 최근 발표(기본 5일) 지표들의 biasScore를 합산해 거시 기조를 요약한다.

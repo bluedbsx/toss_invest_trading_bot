@@ -351,3 +351,10 @@
 - **라이브 매매 영향(중요)**: getCalendarRisk의 예산축소는 `bias==="악재"`만 반영하므로, 노동지표를 "혼조"로 바꾸면 **약한 고용 발표 후 8h 매수예산 축소(과거 50%)가 사라짐**(노동은 정보용으로 강등). 인플레·금리·성장 악재의 축소와 고영향 임박 4h 차단은 그대로. 즉 "노동 데이터는 양면적이라 매수를 흔들지 않는다"로 변경 — 금리민감 포트폴리오엔 더 정직하나, 베어 신호 하나가 줄어드는 trade-off. (macroTone은 현재 디스플레이 전용 — 매수예산에 직접 반영 안 함. 원하면 추후 연결 가능.)
 - 검증: judgeBias 11케이스(인플레 상회/하회, GDP, 금리 인하/인상, 핫 NFP→혼조, 청구급증→혼조, 예정/부합/강도라벨) + getCalendarRisk(임박 차단/강한악재 0.4/노동혼조 무영향) + macroTone 합산 = 14건 PASS. 격리 mock 부팅: `/api/state.macroTone` "호재 우위 +4(23건)", ADP→혼조 렌더, 에러 0.
 - 주의: **라이브 반영 재시작 후**. 방향 규칙은 여전히 휴리스틱(레짐 의존 — 같은 지표도 시장 국면 따라 반응 다름). macroTone을 매매에 직접 연결할지는 사용자/Codex 판단.
+
+### GG. 매크로 톤(거시 기조)을 매수예산에 연결 (`src/calendar.js`) — Claude (Opus 4.8)
+- 요청: §FF에서 디스플레이 전용이던 `macroTone`(최근 5일 biasScore 합산)을 매매(매수예산)에 연결.
+- 구현: `getCalendarRisk`가 `summarizeMacroTone`을 계산해 **toneMultiplier**(합 ≤ −5 → 0.6, ≤ −3 → 0.8, 그 외 1)를 만들고, 기존 이벤트 기반 축소(임박 차단/최근 단일악재 0.4~0.75/24h 예정 0.7)와 **`Math.min`으로 결합**. 단일 악재가 지나가도 5일 거시 기조가 강한 악재면 축소가 지속됨. **호재 기조여도 1 위로 증액하지 않음**(축소 전용 — 거시 낙관으로 사이즈 부풀리기 방지). 모든 분기 반환에 `macroTone` 첨부.
+- 배선 확인: trader.js가 `getCalendarRisk(state.economicCalendar)` → evaluateTarget로 전달, strategy.js가 `budgetMultiplier = round(Math.min(event, news, calendar, volatility))`에 `calendarRisk.budgetMultiplier` 포함(strategy.js:202) + `calendarRisk.blocked` 시 매수 차단. 즉 거시 기조 축소가 실제 매수 사이징에 반영됨.
+- 검증: getCalendarRisk 7케이스 PASS — 거시 합 −6→0.6(라벨 "거시 악재 기조")·−3.5→0.8·−1→1·호재 +6→1(증액 없음)·단일악재와 min(0.75+0.6→0.6, 0.4+0.6→0.4)·임박 차단 0.
+- 라이브 영향(중요): 봇이 **최근 5일 거시 악재 기조가 강하면 매수 규모를 60~80%로 축소**(레버리지 포트폴리오 다운사이드 방어 강화). 재시작 후 반영. 임계(−3/−5)는 휴리스틱이라 데이터 쌓이며 재튜닝 가능.
