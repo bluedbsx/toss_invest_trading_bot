@@ -19,7 +19,7 @@ import { TossClient } from "./src/tossClient.js";
 import { Trader } from "./src/trader.js";
 import { buildLearningReport, recordRecommendationEvent } from "./src/learning.js";
 import { buildValidation, BENCHMARK_SYMBOL } from "./src/validation.js";
-import { fetchEconomicCalendar } from "./src/calendar.js";
+import { fetchEconomicCalendar, summarizeMacroTone } from "./src/calendar.js";
 import { enforceDashboardAuth } from "./src/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -243,6 +243,7 @@ async function handleApi(request, response, url) {
         decisionSampleCount: state.learning?.decisionSamples?.length ?? 0
       },
       validation,
+      macroTone: summarizeMacroTone(state.economicCalendar),
       strategy: strategySummary,
       runtime: {
         liveTradingEnv: process.env.LIVE_TRADING === "true",

@@ -1060,23 +1060,32 @@ function renderCalendar() {
     host.innerHTML = `<p class="recommendation-note">경제 캘린더를 불러오는 중입니다(자동 갱신).</p>`;
     return;
   }
-  host.innerHTML = cal
-    .slice(0, 40)
-    .map((event) => {
-      const biasClass = event.bias === "호재" ? "buy" : event.bias === "악재" ? "sell" : "neutral";
-      const stars = event.importance >= 1 ? "★★" : event.importance >= 0 ? "★" : "";
-      return `
+  const tone = state.macroTone;
+  const toneClass = tone?.tone === "호재 우위" ? "buy" : tone?.tone === "악재 우위" ? "sell" : "neutral";
+  const toneHtml = tone
+    ? `<div class="macro-tone"><span class="badge ${toneClass}">거시 기조 ${escapeHtml(tone.tone)}</span><small>${escapeHtml(tone.label)}${
+        tone.drivers?.length ? ` · ${escapeHtml(tone.drivers.join(", "))}` : ""
+      }</small></div>`
+    : "";
+  host.innerHTML =
+    toneHtml +
+    cal
+      .slice(0, 40)
+      .map((event) => {
+        const biasClass = event.bias === "호재" ? "buy" : event.bias === "악재" ? "sell" : "neutral";
+        const stars = event.importance >= 1 ? "★★" : event.importance >= 0 ? "★" : "";
+        return `
         <div class="calendar-item ${event.released ? "released" : "upcoming"}">
           <div class="cal-row">
             <span class="cal-title">${event.highImpact ? "🔴 " : ""}${escapeHtml(event.title)}${
-        event.period ? ` <small>(${escapeHtml(event.period)})</small>` : ""
-      }</span>
-            <span class="badge ${biasClass}">${escapeHtml(event.bias)}</span>
+          event.period ? ` <small>(${escapeHtml(event.period)})</small>` : ""
+        }</span>
+            <span class="badge ${biasClass}">${escapeHtml(event.biasLabel || event.bias)}</span>
           </div>
           <div class="cal-meta">${escapeHtml(formatCalDate(event.date))} · ${stars} · ${escapeHtml(event.biasReason || "")}</div>
         </div>`;
-    })
-    .join("");
+      })
+      .join("");
 }
 
 function formatCalDate(iso) {

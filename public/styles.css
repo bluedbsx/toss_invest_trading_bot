@@ -817,6 +817,19 @@ label small {
   gap: 8px;
 }
 
+.macro-tone {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.macro-tone small {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 .calendar-item {
   border: 1px solid var(--line-soft);
   border-radius: 8px;
