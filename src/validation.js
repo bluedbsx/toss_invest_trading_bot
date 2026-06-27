@@ -6,7 +6,7 @@
 // 시드 증액 게이트 기준(시스템 자체의 buildNextActions 기준과 일치시켜 교차검증 가능하게 둠).
 export const GATE_MIN_CYCLES = 5; // 왕복(매수-매도) 사이클 최소 표본
 export const GATE_MIN_FILLS = 20; // 최종 체결(BUY+SELL) 최소 표본
-export const BENCHMARK_SYMBOL = "SOXL"; // 사용자가 지정한 벤치마크(대표 3x 레버리지 레그). 가중바스켓은 추후 옵션.
+export const BENCHMARK_SYMBOL = "QQQ"; // 벤치마크 = 나스닥100(QQQ). 봇 목표는 "지수 단순보유보다 확실히 높은 수익"(§JJ). 환경변수로 변경 가능.
 
 // 봇에 투입된 자본의 현금흐름을 복원한다.
 // 초기 시드(botStartedAt) + 이후 "일회성 봇 자금 추가"(budget-add) 이벤트들의 시간/금액.
