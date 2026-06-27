@@ -177,8 +177,6 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     reasons,
     metrics: {
       lastPrice: round(last, 4),
-      sma20: round(fastSma, 4),
-      sma50: round(slowSma, 4),
       fastSma: round(fastSma, 4),
       slowSma: round(slowSma, 4),
       rsi14: round(currentRsi, 2),
