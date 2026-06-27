@@ -478,27 +478,13 @@ function ensureDryRunPaperSession(state) {
     targetSignature: signature,
     reason: "dry-run 페이퍼 장부를 현재 활성 종목 기준으로 새로 시작"
   };
-  // dry-run 검증은 현재 후보 전략의 종이 장부여야 한다. 과거 실거래 장부는 tradeHistory에 남아 있고,
-  // 실거래를 다시 켜면 syncExecutedBotOrders가 체결 이력으로 라이브 장부를 다시 재구성한다.
-  state.positions = {};
-  state.performance = {
-    realizedPnlUsd: 0,
-    totalBuyAmountUsd: 0,
-    totalSellAmountUsd: 0
-  };
-  state.botBudget = null;
+  // dry-run 검증 범위는 validation/learning에서 paperSession.startedAt 이후 거래로 제한한다.
+  // 기존 봇 장부를 지우면 포트폴리오/성과 카드가 데이터 유실처럼 보이므로, 장부 표시는 보존한다.
   pushEvent(state, "BOT", "PAPER_SESSION", "dry-run 페이퍼 장부를 현재 활성 종목 기준으로 새로 시작했습니다.");
 }
 
 function markPaperSessionInactive(state) {
   if (!state.paperSession?.active) return;
-  state.positions = {};
-  state.performance = {
-    realizedPnlUsd: 0,
-    totalBuyAmountUsd: 0,
-    totalSellAmountUsd: 0
-  };
-  state.botBudget = null;
   state.paperSession = {
     ...state.paperSession,
     active: false,

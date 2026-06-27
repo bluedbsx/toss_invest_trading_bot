@@ -31,12 +31,6 @@
             <button id="refreshPublicIp" type="button">새로고침</button>
             <small id="publicIpNote" class="public-ip-note"></small>
           </div>
-          <div class="public-ip-box">
-            <span>모바일에서 접속할 주소</span>
-            <strong id="mobileUrlText">확인 중</strong>
-            <button id="copyMobileUrl" type="button">복사</button>
-            <small id="mobileUrlNote" class="public-ip-note"></small>
-          </div>
         </div>
       </section>
 
@@ -45,9 +39,9 @@
           <p class="eyebrow">1단계</p>
           <h2>자동투자 대상</h2>
         </div>
-        <p>각 종목을 켜거나 끄고, 지금 판단이 매수/매도/대기 중 어디인지 확인합니다.</p>
+        <p>켜진 종목만 먼저 보고, 꺼진 종목은 접어서 보관합니다.</p>
       </section>
-      <section class="market-grid" id="targetGrid"></section>
+      <section class="target-area" id="targetGrid"></section>
 
       <section class="workspace">
         <div class="panel account-panel">
@@ -98,12 +92,24 @@
         <div id="validationGateDetail" class="learning-actions"></div>
       </section>
 
+      <section class="panel high-risk-panel">
+        <div class="panel-head">
+          <div>
+            <h2>고위험 엔진 실험실</h2>
+            <p class="section-note">레버리지 전용 엔진은 실매매와 분리해 paper-only로 설계·검증합니다.</p>
+          </div>
+          <span id="highRiskMode" class="badge neutral">paper-only</span>
+        </div>
+        <div id="highRiskSummary" class="learning-grid high-risk-grid"></div>
+        <div id="highRiskPlan" class="high-risk-plan"></div>
+      </section>
+
       <section class="control-panel">
         <div class="panel-head">
           <div>
             <p class="eyebrow">2단계</p>
             <h2>자동투자 켜기</h2>
-            <p class="section-note">조건을 계속 확인할지 정합니다. 실거래 잠금이 꺼져 있으면 주문은 나가지 않습니다.</p>
+            <p class="section-note">모니터링과 주문 잠금을 분리해 관리합니다.</p>
           </div>
           <div class="toggle-block">
             <span id="monitoringLabel">꺼짐</span>
@@ -165,43 +171,43 @@
             <input id="useVirtualSeed" type="checkbox" />
             <strong>정해둔 봇 자금만 사용</strong>
             <span id="virtualSeedLabel">켜짐</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 손실이 나면 다음 매수 가능 금액도 줄어들어 장기투자 자금을 자동으로 끌어오지 않습니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 봇 원금 안에서만 다음 매수를 계산합니다.</small>
           </label>
           <label class="choice-card danger-choice">
             <input id="allowSeedTopUp" type="checkbox" />
             <strong>원금 보충 허용</strong>
             <span id="seedTopUpLabel">꺼짐</span>
-            <small><b class="recommend-off">추천: 끄기</b> · 손실 후에도 시작 원금까지 계좌 현금을 다시 끌어와 주문할 수 있게 합니다.</small>
+            <small><b class="recommend-off">추천: 끄기</b> · 손실분을 계좌 현금으로 자동 보충하지 않습니다.</small>
           </label>
           <label class="choice-card">
             <input id="allowFractional" type="checkbox" />
             <strong>소수점 거래 허용</strong>
             <span id="fractionalLabel">켜짐</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 금액이 1주 가격보다 적을 때 정규장에서 시장가 금액 주문을 시도합니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 작은 금액도 정규장에서 주문할 수 있습니다.</small>
           </label>
           <label class="choice-card danger-choice">
             <input id="allowExtendedHoursDefensiveSells" type="checkbox" />
             <strong>장외 방어매도 허용</strong>
             <span id="extendedHoursLabel">정규장만</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 장외 신규매수와 일반 익절은 막고, 손절·급락·고점이탈 매도만 정수 수량으로 허용합니다. 소수점 거래가 켜져 있어도 정수 보유분만 팔 수 있습니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 장외에는 손절·급락 방어매도만 제한적으로 허용합니다.</small>
           </label>
           <label class="choice-card danger-choice">
             <input id="liveTradingEnabled" type="checkbox" />
             <strong>실제 주문 허용</strong>
             <span id="liveTradingLabel">잠김</span>
-            <small><b class="recommend-caution">추천: 실전 운용 때만 켜기</b> · 금액과 종목 ON/OFF를 확인한 뒤 켭니다.</small>
+            <small><b class="recommend-caution">추천: 검증 후 켜기</b> · 환경변수와 이 토글이 모두 켜져야 실주문입니다.</small>
           </label>
           <label class="choice-card">
             <input id="redistributeUnusedAllocation" type="checkbox" />
             <strong>남는 투자금 몰아주기</strong>
             <span id="redistributeLabel">켜짐</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 매수 조건이 맞은 종목끼리만 투자 가능 금액을 다시 나눕니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 매수 조건이 맞은 종목끼리만 예산을 나눕니다.</small>
           </label>
           <label class="choice-card danger-choice">
             <input id="allowAdditionalBuys" type="checkbox" />
             <strong>보유 중 추가매수</strong>
             <span id="additionalBuyLabel">꺼짐</span>
-            <small><b class="recommend-off">추천: 끄기</b> · 이미 산 종목도 조건이 계속 맞으면 일정 간격 후 다시 살 수 있게 합니다.</small>
+            <small><b class="recommend-off">추천: 끄기</b> · 같은 종목을 반복 매수하지 않게 막습니다.</small>
           </label>
         </div>
         <div class="button-row">
@@ -215,7 +221,7 @@
         <div class="panel-head">
           <div>
             <h2>종목 설정</h2>
-            <p class="section-note">익숙해진 뒤 비중과 손절 기준을 조정하세요.</p>
+            <p class="section-note">값을 바꾸면 자동 저장됩니다. 전략 계산은 정밀추천만 사용합니다.</p>
           </div>
           <div class="panel-actions">
             <button id="recommendWeights">전체비중 추천</button>
@@ -230,7 +236,7 @@
         <div class="panel-head">
           <div>
             <h2>개선 데이터</h2>
-            <p class="section-note">매매 판단과 추천 계산의 근거를 쌓아서 다음 전략 버전업에 사용합니다.</p>
+            <p class="section-note">paper/live 판단 기록을 모아 다음 전략 개선 근거로 씁니다.</p>
           </div>
           <div class="panel-actions compact-actions">
             <span id="learningLastAuto" class="muted"></span>
@@ -245,7 +251,7 @@
         <div class="panel-head">
           <div>
             <h2>봇 자가판단</h2>
-            <p class="section-note">추천, 비중, 안전설정, 개선 리포트를 백그라운드에서 자동으로 갱신합니다.</p>
+            <p class="section-note">추천과 리포트를 정해진 주기로 갱신합니다.</p>
           </div>
           <span id="automationSummary" class="badge neutral">대기</span>
         </div>
@@ -254,25 +260,25 @@
             <input id="autoSafetyRecommendations" type="checkbox" />
             <strong>안전설정 자동화</strong>
             <span id="autoSafetyLabel">꺼짐</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 당일손실한도, 노출한도, 현금버퍼를 주기적으로 재검토합니다. 방어 설정이라 자동 적용해도 안전합니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 방어 설정을 주기적으로 재검토합니다.</small>
           </label>
           <label class="choice-card">
             <input id="autoWeightRecommendations" type="checkbox" />
             <strong>전체비중 자동화</strong>
             <span id="autoWeightLabel">꺼짐</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 백테스트와 현재 신호 기준으로 종목별 기본 비중을 재계산합니다. 위험조정 점수로만 배분해 비교적 안전합니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 위험조정 점수로 기본 비중을 다시 계산합니다.</small>
           </label>
           <label class="choice-card danger-choice">
             <input id="autoTargetRecommendations" type="checkbox" />
             <strong>종목전략 자동화</strong>
             <span id="autoTargetLabel">꺼짐</span>
-            <small><b class="recommend-off">추천: 끄기</b> · 종목별 매수/매도 기준(손절·익절·RSI)을 자동 변경합니다. 라이브 매매 행동을 바꾸므로 추천값은 직접 검토 후 적용이 안전합니다. 보유 중인 종목은 보류합니다.</small>
+            <small><b class="recommend-off">추천: 끄기</b> · 매수/매도 기준을 바꾸므로 직접 확인이 안전합니다.</small>
           </label>
           <label class="choice-card">
             <input id="autoLearningReports" type="checkbox" />
             <strong>개선리포트 자동화</strong>
             <span id="autoLearningLabel">꺼짐</span>
-            <small><b class="recommend-on">추천: 켜기</b> · 매매 판단과 체결 결과를 모아 개선 데이터 리포트를 갱신합니다. 매매에 영향 없는 분석용이라 켜두면 좋습니다.</small>
+            <small><b class="recommend-on">추천: 켜기</b> · 분석용 리포트만 갱신합니다.</small>
           </label>
           <label>
             <span>자동 검토 주기</span>
@@ -316,17 +322,6 @@
         </summary>
         <div id="calendarList" class="calendar-list"></div>
       </details>
-
-      <details class="panel rate-panel collapsible-panel">
-        <summary class="panel-head">
-          <div>
-            <h2>토스 요청 한도</h2>
-          </div>
-          <span id="rateLimitUpdatedAt" class="muted">대기</span>
-        </summary>
-        <div id="actionRequestPreview" class="request-preview"></div>
-        <div id="rateLimitList" class="rate-limit-list"></div>
-      </details>
     </main>
 
     <template id="targetCardTemplate">
@@ -369,14 +364,14 @@
           <span class="event-risk">이벤트: 확인 중</span>
           <span class="news-risk">뉴스: 확인 중</span>
         </div>
-        <div class="strategy-box">
-          <div class="strategy-box-head">
+        <details class="strategy-box compact-strategy">
+          <summary class="strategy-box-head">
             <strong>적용 전략</strong>
             <span class="strategy-score badge neutral">점수 대기</span>
-          </div>
+          </summary>
           <div class="strategy-details"></div>
           <p class="strategy-review"></p>
-        </div>
+        </details>
         <p class="reason"></p>
       </article>
     </template>

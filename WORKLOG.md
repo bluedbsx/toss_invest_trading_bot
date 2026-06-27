@@ -451,3 +451,33 @@
 - 가정/주의(다른 에이전트가 검토해야 할 점):
   - 이번 변경은 표시/호환성 정리이며 매수·매도 판단 로직 자체는 바꾸지 않음.
   - 고위험/레버리지 전용 엔진은 별도 설계가 필요한 큰 변경이라 이번 커밋에는 넣지 않음.
+
+### 2026-06-27 — Codex
+- 문제/목적:
+  - 데스크톱 UI QA. 사용자가 지적한 `1단계` 정렬, 비활성 종목 카드 과다 노출, 종목 설정 버튼 과밀, 고위험 엔진 진행상태 부재, 토스 요청한도 카드 불필요, 로딩 스피너 찌그러짐, 그리고 paperSession 도입 후 봇 포트폴리오/검증/개선 데이터가 사라진 것처럼 보이는 문제를 정리.
+- 진단(근거):
+  - `paperSession` 시작 시 `state.positions/performance/botBudget`을 0으로 초기화해, 거래 이력과 백업은 남아 있는데 대시보드의 봇 포트폴리오와 검증 기준 자산이 비어 보였음.
+  - `data/decision-samples.json` 사이드카에는 4,594개 샘플이 남아 있었고, 최신 백업(`data/backups/state-2026-06-27T12-13-42-713Z.json`)에는 MUU/SOXL 장부, 성과, 6개 closed cycle이 보존되어 있었음.
+  - 자동투자 대상은 활성/비활성 종목을 한 화면에 모두 보여 정보량이 많았고, 종목 설정은 추천값/정밀추천/내 저장값/저장 버튼이 함께 있어 데스크톱에서도 버튼 밀도가 높았음.
+- 수정 내용:
+  - dry-run paperSession 생성/종료 시 기존 봇 장부를 지우지 않도록 `src/trader.js`를 수정. 검증/학습의 paper 스코프는 `paperSession.startedAt` 기준으로 유지.
+  - 운영 `data/state.json`은 최신 백업에서 장부/성과/closed cycle만 복구하고, 현재 설정/종목 ON-OFF는 보존. 데이터 파일은 커밋하지 않음.
+  - `1단계` 섹션 좌측 정렬 고정, 활성 종목만 먼저 노출, 자동매매 OFF 종목은 기본 접힘 영역으로 이동.
+  - 종목 설정을 카드형 자동저장 UI로 변경. `추천값`, `내 저장값`, `저장` 버튼 제거, `정밀추천`과 `삭제`만 유지. 입력 변경 시 debounce 후 자동 저장.
+  - 고위험 엔진 실험실 카드를 추가해 레버리지 후보, paper/live 기록, 왕복 손익, 실거래 승격 조건을 표시.
+  - 토스 요청한도 카드는 화면에서 제거하되, 버튼 요청한도 보호 로직은 유지.
+  - 모바일 접속 카드 제거, 판단 목록에서 꺼진 종목 반복 표시 축소, 종목 카드의 세부 전략 설명은 기본 접힘으로 변경, 전체비중 추천 문구와 안전/자동화 설명을 축약.
+  - `.spinner`를 inline-block 정사각형으로 고정해 로딩 애니메이션 찌그러짐을 방지.
+- 건드린 파일/함수:
+  - `src/trader.js`: `ensureDryRunPaperSession`, `markPaperSessionInactive`
+  - `public/app.js`: `renderTargets`, `appendTargetCard`, `renderHighRiskEngine`, `renderEditor`, `scheduleTargetAutoSave`, `renderSignals`, rate-limit UI guard, 검증/추천 문구
+  - `public/index.html`: 고위험 엔진 카드, 비활성 target area, 종목 설정/자동화 문구, 요청한도 카드 제거
+  - `public/styles.css`: target 접힘 UI, 카드형 editor, 고위험 카드, compact strategy details, spinner
+  - `README.md`: 종목 설정 정밀추천/자동저장 설명
+- 검증 방법과 결과:
+  - 문법/정적 검사: `node --check server.js`, `for f in src/*.js public/app.js; do node --check "$f"; done`, `git diff --check` PASS.
+  - API 확인: `/api/state`에서 positions `MUU,SOXL`, equity `$85.67`, validation attached, basis `paper`, learning report present 확인. `/api/learning/report` POST 정상.
+  - 브라우저 QA: localhost 새 코드 로드, 콘솔 error/warn 없음, 가로 overflow 없음, `1단계`/h2 left 동일 x좌표, 비활성 카드 기본 접힘, 요청한도/모바일 카드 제거, editor 버튼 `정밀추천/삭제`만 표시, 자동저장 상태 `저장됨` 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 현재 검증 카드의 수익률은 복구된 현재 봇 장부 기준이고, 승률/손익비 표본은 이번 paper 세션 이후 거래만 본다. UI에 이 기준을 명시함.
+  - 고위험 엔진 카드는 진행상태 표시용이며, 실제 레버리지 전용 엔진 분리/별도 paper 장부 구현은 다음 기능 단위로 남김.

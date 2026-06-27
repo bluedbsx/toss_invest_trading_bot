@@ -7,6 +7,7 @@ const progressHost = createProgressHost();
 let progressHideTimer = null;
 let lastActionRequestPreview = null;
 let state = null;
+const targetAutoSaveTimers = new Map();
 
 await refresh();
 setInterval(refresh, 20_000);
@@ -24,7 +25,7 @@ $("#saveAutomation").addEventListener("click", saveAutomationSettings);
 $("#runAutomationNow").addEventListener("click", runAutomationNow);
 $("#recommendSafety").addEventListener("click", recommendSafetySettings);
 $("#copyPublicIp").addEventListener("click", copyPublicIp);
-$("#copyMobileUrl").addEventListener("click", copyMobileUrl);
+if ($("#copyMobileUrl")) $("#copyMobileUrl").addEventListener("click", copyMobileUrl);
 $("#refreshPublicIp").addEventListener("click", refreshPublicIp);
 $("#testConnection").addEventListener("click", async () => {
   const result = await runTossAction("testConnection", "/api/test-connection", $("#testConnection"), { refreshAfter: false });
@@ -101,9 +102,10 @@ async function refresh() {
   renderCalendar();
   renderStrategy();
   renderLearning();
+  renderHighRiskEngine();
   renderAutomation();
   renderEditor();
-  renderRateLimits();
+  updateRateLimitedButtons(state?.runtime?.rateLimits);
   renderWeightRecommendationNote(state.lastWeightRecommendation);
   renderSafetyRecommendationNote(state.lastSafetyRecommendation);
 }
@@ -163,7 +165,7 @@ async function recommendSafetySettings() {
   const button = $("#recommendSafety");
   try {
     setButtonBusy(button, true, "계산 중");
-    showProgress("안전설정 추천 계산 중", "자동투자 금액은 유지하고, 활성 종목 점수·비중·레버리지·변동성을 보고 방어 설정을 계산합니다.");
+    showProgress("안전설정 추천 계산 중", "자동투자 금액은 유지하고, 활성 종목 점수·비중·배율·변동성을 보고 방어 설정을 계산합니다.");
     const currentSettings = readSettingsForm();
     const recommendation = await post("/api/recommendations/safety", { settings: currentSettings });
     applySafetyInputs(recommendation.recommended);
@@ -351,6 +353,7 @@ async function copyPublicIp() {
 }
 
 function renderMobileUrl() {
+  if (!$("#mobileUrlText") || !$("#copyMobileUrl") || !$("#mobileUrlNote")) return;
   const localNetwork = state.runtime?.localNetwork ?? {};
   const primary = localNetwork.primary;
   $("#mobileUrlText").textContent = primary?.url || "조회 실패";
@@ -477,7 +480,10 @@ function renderTradingSessionControls() {
 
 function renderRateLimits() {
   const rateLimits = state.runtime?.rateLimits;
-  if (!rateLimits) return;
+  if (!rateLimits || !$("#rateLimitUpdatedAt") || !$("#actionRequestPreview") || !$("#rateLimitList")) {
+    updateRateLimitedButtons(rateLimits);
+    return;
+  }
   $("#rateLimitUpdatedAt").textContent = `갱신 ${formatTime(rateLimits.generatedAt)}`;
   if (lastActionRequestPreview && Date.now() < lastActionRequestPreview.expiresAt) {
     renderActionPreviewContent(lastActionRequestPreview.actionKey, rateLimits, lastActionRequestPreview.detail);
@@ -517,14 +523,20 @@ function showActionRequestPreview(actionKey, snapshot, detail) {
     detail,
     expiresAt: Date.now() + 15_000
   };
-  renderActionPreviewContent(actionKey, snapshot, detail);
   state = state ? { ...state, runtime: { ...state.runtime, rateLimits: snapshot } } : state;
+  if (!$("#actionRequestPreview")) {
+    updateRateLimitedButtons(snapshot);
+    return;
+  }
+  renderActionPreviewContent(actionKey, snapshot, detail);
   renderRateLimitListOnly(snapshot);
 }
 
 function renderActionPreviewContent(actionKey, snapshot, detail) {
+  const host = $("#actionRequestPreview");
+  if (!host) return;
   const action = snapshot.actions?.[actionKey];
-  $("#actionRequestPreview").innerHTML = `
+  host.innerHTML = `
     <strong>${escapeHtml(action?.label ?? "요청")}</strong>
     <p>${escapeHtml(detail)}</p>
     ${renderActionRequestSummary(action, snapshot.groups)}
@@ -533,7 +545,7 @@ function renderActionPreviewContent(actionKey, snapshot, detail) {
 
 function renderRateLimitListOnly(snapshot) {
   if (!snapshot?.groups || !$("#rateLimitList")) return;
-  $("#rateLimitUpdatedAt").textContent = `갱신 ${formatTime(snapshot.generatedAt)}`;
+  if ($("#rateLimitUpdatedAt")) $("#rateLimitUpdatedAt").textContent = `갱신 ${formatTime(snapshot.generatedAt)}`;
   $("#rateLimitList").innerHTML = Object.entries(snapshot.groups)
     .map(([key, group]) => renderRateLimitItem(key, group))
     .join("");
@@ -593,60 +605,95 @@ function countRequestDelta(before, after) {
 
 function renderTargets() {
   targetGrid.innerHTML = "";
-  const template = $("#targetCardTemplate");
-  for (const target of state.targets) {
-    const snapshot = state.marketSnapshots[target.symbol] ?? {};
-    const signal = target.enabled ? snapshot.signal ?? {} : { action: "HOLD", reasons: ["종목 자동매매 OFF"], metrics: snapshot.signal?.metrics ?? {} };
-    const metrics = signal.metrics ?? {};
-    const position = snapshot.position ?? {};
-    const backtest = snapshot.backtest ?? {};
-    const card = template.content.cloneNode(true);
-    card.querySelector(".symbol").textContent = target.symbol;
-    card.querySelector(".name").textContent = target.name;
-    card.querySelector(".target-toggle").checked = Boolean(target.enabled);
-    card.querySelector(".target-toggle").addEventListener("change", async (event) => {
-      await patch(`/api/targets/${target.symbol}`, { enabled: event.target.checked });
-      await refresh();
-    });
-    card.querySelector(".last-price").textContent = money(metrics.lastPrice);
-    const action = card.querySelector(".action");
-    action.textContent = actionLabel(signal.action ?? "HOLD");
-    action.className = `action badge ${(signal.action ?? "").toLowerCase()}`;
-    card.querySelector(".rsi").textContent = value(metrics.rsi14);
-    card.querySelector(".atr").textContent = pct(metrics.atrPct);
-    card.querySelector(".momentum").textContent = pct(metrics.momentumPct ?? metrics.momentum5dPct);
-    card.querySelector(".backtest").textContent = backtest.available
-      ? `${pct(backtest.winRatePct)} · ${pct(backtest.totalReturnPct)}`
-      : "대기";
-    card.querySelector(".allocation").textContent = state.settings.redistributeUnusedAllocation
-      ? `몰아주기 · 기본 ${target.allocationPct}%`
-      : `${target.allocationPct}%`;
-    card.querySelector(".position-label").textContent = position.active
-      ? `보유 ${value(position.quantity)}주 · 평균 ${money(position.averagePrice)}`
-      : "보유 없음";
-    const risk = signal.risk ?? {};
-    const eventRisk = risk.event;
-    const newsRisk = risk.news;
-    const eventEl = card.querySelector(".event-risk");
-    const newsEl = card.querySelector(".news-risk");
-    eventEl.textContent = eventRisk?.blocked
-      ? `이벤트: 신규매수 대기 (${eventRisk.activeEvent?.title ?? "중요 일정"})`
-      : eventRisk?.upcomingEvent
-        ? `이벤트: 예정 ${formatShortDate(eventRisk.upcomingEvent.startsAt)}`
-        : "이벤트: 특별 일정 없음";
-    eventEl.className = `event-risk ${eventRisk?.blocked ? "danger" : "calm"}`;
-    newsEl.textContent =
-      newsRisk?.budgetMultiplier < 1
-        ? `뉴스: 비중 축소 (${newsRisk.label})`
-        : `뉴스: ${newsRisk?.label ?? "중립"}`;
-    newsEl.className = `news-risk ${newsRisk?.budgetMultiplier < 1 ? "danger" : "calm"}`;
-    renderTargetStrategy(card, target, snapshot);
-    card.querySelector(".mini-chart").innerHTML = renderMiniChartCanvas();
-    card.querySelector(".reason").textContent = plainReasons(signal.reasons ?? []).slice(0, 3).join(" · ");
-    const chartRoot = card.querySelector(".mini-chart");
-    targetGrid.append(card);
-    drawCandleChart(chartRoot.querySelector("canvas"), snapshot.chart, position.active);
+  targetGrid.className = "target-area";
+  const enabledTargets = state.targets.filter((target) => target.enabled !== false);
+  const disabledTargets = state.targets.filter((target) => target.enabled === false);
+  const enabledGrid = document.createElement("div");
+  enabledGrid.className = "market-grid";
+  targetGrid.append(enabledGrid);
+  const chartJobs = [];
+
+  if (!enabledTargets.length) {
+    enabledGrid.innerHTML = `<div class="empty-panel">켜진 자동투자 종목이 없습니다. 접힌 종목에서 필요한 종목을 다시 켜세요.</div>`;
   }
+  for (const target of enabledTargets) appendTargetCard(target, enabledGrid, chartJobs);
+
+  if (disabledTargets.length) {
+    const details = document.createElement("details");
+    details.className = "disabled-targets";
+    details.innerHTML = `
+      <summary class="disabled-targets-summary">
+        <div>
+          <strong>자동매매 OFF 종목</strong>
+          <small>${disabledTargets.map((target) => target.symbol).join(" · ")}</small>
+        </div>
+        <span class="badge neutral">${disabledTargets.length}개</span>
+      </summary>
+      <div class="market-grid disabled-market-grid"></div>
+    `;
+    const disabledGrid = details.querySelector(".disabled-market-grid");
+    for (const target of disabledTargets) appendTargetCard(target, disabledGrid, chartJobs);
+    targetGrid.append(details);
+  }
+
+  for (const job of chartJobs) drawCandleChart(job.canvas, job.chart, job.active);
+}
+
+function appendTargetCard(target, container, chartJobs) {
+  const template = $("#targetCardTemplate");
+  const snapshot = state.marketSnapshots[target.symbol] ?? {};
+  const signal = target.enabled ? snapshot.signal ?? {} : { action: "HOLD", reasons: ["종목 자동매매 OFF"], metrics: snapshot.signal?.metrics ?? {} };
+  const metrics = signal.metrics ?? {};
+  const position = snapshot.position ?? {};
+  const backtest = snapshot.backtest ?? {};
+  const card = template.content.cloneNode(true);
+  const article = card.querySelector(".ticker-card");
+  if (target.enabled === false) article.classList.add("is-disabled");
+  card.querySelector(".symbol").textContent = target.symbol;
+  card.querySelector(".name").textContent = target.name;
+  card.querySelector(".target-toggle").checked = Boolean(target.enabled);
+  card.querySelector(".target-toggle").addEventListener("change", async (event) => {
+    await patch(`/api/targets/${target.symbol}`, { enabled: event.target.checked });
+    await refresh();
+  });
+  card.querySelector(".last-price").textContent = money(metrics.lastPrice);
+  const action = card.querySelector(".action");
+  action.textContent = actionLabel(signal.action ?? "HOLD");
+  action.className = `action badge ${(signal.action ?? "").toLowerCase()}`;
+  card.querySelector(".rsi").textContent = value(metrics.rsi14);
+  card.querySelector(".atr").textContent = pct(metrics.atrPct);
+  card.querySelector(".momentum").textContent = pct(metrics.momentumPct ?? metrics.momentum5dPct);
+  card.querySelector(".backtest").textContent = backtest.available
+    ? `${pct(backtest.winRatePct)} · ${pct(backtest.totalReturnPct)}`
+    : "대기";
+  card.querySelector(".allocation").textContent = state.settings.redistributeUnusedAllocation
+    ? `몰아주기 · 기본 ${target.allocationPct}%`
+    : `${target.allocationPct}%`;
+  card.querySelector(".position-label").textContent = position.active
+    ? `보유 ${value(position.quantity)}주 · 평균 ${money(position.averagePrice)}`
+    : "보유 없음";
+  const risk = signal.risk ?? {};
+  const eventRisk = risk.event;
+  const newsRisk = risk.news;
+  const eventEl = card.querySelector(".event-risk");
+  const newsEl = card.querySelector(".news-risk");
+  eventEl.textContent = eventRisk?.blocked
+    ? `이벤트: 신규매수 대기 (${eventRisk.activeEvent?.title ?? "중요 일정"})`
+    : eventRisk?.upcomingEvent
+      ? `이벤트: 예정 ${formatShortDate(eventRisk.upcomingEvent.startsAt)}`
+      : "이벤트: 특별 일정 없음";
+  eventEl.className = `event-risk ${eventRisk?.blocked ? "danger" : "calm"}`;
+  newsEl.textContent =
+    newsRisk?.budgetMultiplier < 1
+      ? `뉴스: 비중 축소 (${newsRisk.label})`
+      : `뉴스: ${newsRisk?.label ?? "중립"}`;
+  newsEl.className = `news-risk ${newsRisk?.budgetMultiplier < 1 ? "danger" : "calm"}`;
+  renderTargetStrategy(card, target, snapshot);
+  card.querySelector(".mini-chart").innerHTML = renderMiniChartCanvas();
+  card.querySelector(".reason").textContent = plainReasons(signal.reasons ?? []).slice(0, 3).join(" · ");
+  const chartRoot = card.querySelector(".mini-chart");
+  container.append(card);
+  chartJobs.push({ canvas: chartRoot.querySelector("canvas"), chart: snapshot.chart, active: position.active });
 }
 
 function renderTargetStrategy(card, target, snapshot) {
@@ -704,8 +751,8 @@ function renderTargetStrategy(card, target, snapshot) {
   if (!review && !snapshotBacktest) {
     reviewEl.innerHTML = `<p class="review-empty">${escapeHtml(
       rawReview || rawSnapshotBacktest
-        ? "전략 엔진이 바뀌어 추천값 또는 백테스트 재계산이 필요합니다."
-        : "추천값 버튼을 누르면 외부 데이터로 점수와 검증구간을 계산합니다."
+        ? "전략 엔진이 바뀌어 정밀추천 또는 백테스트 재계산이 필요합니다."
+        : "정밀추천을 누르면 외부 데이터로 점수와 검증구간을 계산해 자동 저장합니다."
     )}</p>`;
     return;
   }
@@ -716,8 +763,6 @@ function renderTargetStrategy(card, target, snapshot) {
   if (scoreLine || impactLine) {
     rows.push(reviewLine("점수", [scoreLine, impactLine ? `영향 ${impactLine}` : null].filter(Boolean).join(" · ")));
   }
-  if (coverage?.included?.length) rows.push(reviewChips("방어 포함", coverage.included, "on"));
-  if (coverage?.excluded?.length) rows.push(reviewChips("미포함", coverage.excluded, "off"));
   reviewEl.innerHTML = rows.join("");
 }
 
@@ -816,16 +861,22 @@ function renderValidation() {
   const checks = (g.checks ?? [])
     .map((check) => `<span class="diff-chip ${check.pass ? "" : "changed"}">${check.pass ? "✓" : "✗"} ${escapeHtml(check.label)}</span>`)
     .join(" ");
+  const basisNote =
+    m.basis === "paper"
+      ? "<br><small>수익률은 현재 봇 장부 기준이고, 승률·손익비 표본은 이번 paper 세션 이후 거래만 봅니다.</small>"
+      : "";
   detail.innerHTML = `
     <p class="recommendation-note">
       <strong>${g.ready ? "✅ 증액 게이트 통과" : "⏸ 증액 보류"}</strong> ${escapeHtml(g.verdict ?? "")}
       <br>${checks}
-      <br><small>${escapeHtml(g.note ?? "")}</small>
+      <br><small>${escapeHtml(g.note ?? "")}</small>${basisNote}
     </p>`;
 }
 
 function renderSignals() {
-  const rows = state.targets.map((target) => {
+  const rows = state.targets
+    .filter((target) => target.enabled !== false || Boolean(state.positions?.[target.symbol]))
+    .map((target) => {
     const signal = target.enabled
       ? state.marketSnapshots[target.symbol]?.signal
       : { action: "HOLD", reasons: ["종목 자동매매 OFF"], metrics: state.marketSnapshots[target.symbol]?.signal?.metrics ?? {} };
@@ -1016,7 +1067,7 @@ function budgetStatusText(budget) {
   if (budget.cashBufferUsd >= budget.cashForBudgetUsd) {
     return { kind: "warn", text: `남겨둘 현금 ${money(budget.cashBufferUsd)}이 봇 현금보다 커서 새 매수는 대기합니다.` };
   }
-  return { kind: "warn", text: "비중 한도나 레버리지 한도 때문에 새 매수 가능 금액이 없습니다." };
+  return { kind: "warn", text: "비중 한도나 총 위험노출 한도 때문에 새 매수 가능 금액이 없습니다." };
 }
 
 function renderNews() {
@@ -1176,12 +1227,64 @@ function renderLearning() {
   `;
 }
 
+function renderHighRiskEngine() {
+  const summaryHost = $("#highRiskSummary");
+  const planHost = $("#highRiskPlan");
+  const modeBadge = $("#highRiskMode");
+  if (!summaryHost || !planHost || !modeBadge) return;
+  const highRiskTargets = (state.targets ?? []).filter((target) => parseLeverageText(target.leverage) > 1);
+  const highRiskSymbols = new Set(highRiskTargets.map((target) => target.symbol));
+  const highRiskTrades = (state.tradeHistory ?? []).filter((trade) => highRiskSymbols.has(trade.symbol));
+  const paperTrades = highRiskTrades.filter((trade) => trade.dryRun);
+  const liveTrades = highRiskTrades.filter((trade) => !trade.dryRun);
+  const highRiskCycles = (state.learning?.closedCycles ?? []).filter((cycle) => highRiskSymbols.has(cycle.symbol));
+  const pnl = highRiskCycles.reduce((sum, cycle) => sum + Number(cycle.realizedPnlUsd ?? 0), 0);
+  const activeCount = highRiskTargets.filter((target) => target.enabled !== false).length;
+  modeBadge.textContent = activeCount ? "확인 필요" : "paper-only";
+  modeBadge.className = `badge ${activeCount ? "sell" : "neutral"}`;
+
+  const cards = [
+    ["후보", highRiskTargets.length ? highRiskTargets.map((target) => target.symbol).join(" · ") : "없음", "2x 이상 종목"],
+    ["현재 상태", activeCount ? `${activeCount}개 켜짐` : "실매매 분리", activeCount ? "고위험 종목 ON 확인 필요" : "1배 엔진과 분리 관찰"],
+    ["누적 기록", `${highRiskTrades.length}건`, `paper ${paperTrades.length} · live ${liveTrades.length}`],
+    ["왕복 손익", money(pnl), `사이클 ${highRiskCycles.length}건`]
+  ];
+  summaryHost.innerHTML = cards
+    .map(
+      ([label, value, note]) => `
+        <div class="learning-card">
+          <span>${escapeHtml(label)}</span>
+          <strong>${escapeHtml(String(value))}</strong>
+          <small>${escapeHtml(note)}</small>
+        </div>
+      `
+    )
+    .join("");
+
+  planHost.innerHTML = `
+    <div class="risk-step done"><b>1</b><span>실계좌 운용은 1배 엔진이 담당</span></div>
+    <div class="risk-step"><b>2</b><span>레버리지 전용 엔진은 별도 paper 장부와 성과표로 개발</span></div>
+    <div class="risk-step"><b>3</b><span>왕복 20회 이상, QQQ·레버리지 벤치마크 초과, 낙폭 제한 통과 전 실거래 잠금</span></div>
+  `;
+}
+
 function renderEditor() {
   targetEditor.innerHTML = "";
   for (const target of state.targets) {
     const rowEl = document.createElement("div");
-    rowEl.className = "editor-row";
+    rowEl.className = `editor-row ${target.enabled === false ? "is-disabled" : ""}`;
     rowEl.innerHTML = `
+      <div class="editor-row-head">
+        <div>
+          <strong>${escapeHtml(target.symbol)}</strong>
+          <span>${escapeHtml(target.name ?? target.symbol)}</span>
+        </div>
+        <div class="editor-actions">
+          <span class="auto-save-state" data-role="save-status">자동 저장</span>
+          <button title="정밀추천 적용" data-action="recommend-deep">정밀추천</button>
+          <button title="삭제" data-action="delete">삭제</button>
+        </div>
+      </div>
       ${editorInput("종목", target.symbol, "symbol", true)}
       ${editorInput("비중 %", target.allocationPct, "allocationPct")}
       ${editorInput("빠른선", target.fastSmaDays ?? 20, "fastSmaDays")}
@@ -1197,35 +1300,18 @@ function renderEditor() {
       ${editorInput("과열 매도선", target.takeProfitRsi, "takeProfitRsi")}
       ${editorInput("변동성 제한", target.maxAtrPct, "maxAtrPct")}
       ${editorInput("ADX필터(0=끔)", target.minAdx ?? 0, "minAdx")}
-      <button title="저장" data-action="save">저장</button>
-      <button title="추천값 적용" data-action="recommend">추천값</button>
-      <button title="정밀추천 적용" data-action="recommend-deep">정밀추천</button>
-      <button title="내 저장값 불러오기" data-action="restore">내 저장값</button>
-      <button title="삭제" data-action="delete">삭제</button>
       <p class="recommendation-note" data-role="recommendation-note"></p>
     `;
     renderTargetRecommendationNote(rowEl.querySelector('[data-role="recommendation-note"]'), target);
-    rowEl.querySelector('[data-action="save"]').addEventListener("click", async () => {
-      const payload = {};
-      rowEl.querySelectorAll("input[data-key]").forEach((input) => {
-        if (!input.disabled) payload[input.dataset.key] = Number(input.value);
-      });
-      await patch(`/api/targets/${target.symbol}`, payload);
-      await refresh();
-    });
-    rowEl.querySelector('[data-action="recommend"]').addEventListener("click", async () => {
-      const button = rowEl.querySelector('[data-action="recommend"]');
-      const note = rowEl.querySelector('[data-role="recommendation-note"]');
-      await applyTargetRecommendation({ target, rowEl, button, note, mode: "fast" });
+    rowEl.querySelectorAll("input[data-key]").forEach((input) => {
+      if (input.disabled) return;
+      input.addEventListener("input", () => scheduleTargetAutoSave(target, rowEl));
+      input.addEventListener("change", () => scheduleTargetAutoSave(target, rowEl, 0));
     });
     rowEl.querySelector('[data-action="recommend-deep"]').addEventListener("click", async () => {
       const button = rowEl.querySelector('[data-action="recommend-deep"]');
       const note = rowEl.querySelector('[data-role="recommendation-note"]');
       await applyTargetRecommendation({ target, rowEl, button, note, mode: "deep" });
-    });
-    rowEl.querySelector('[data-action="restore"]').addEventListener("click", () => {
-      applyEditorValues(rowEl, target);
-      rowEl.querySelector('[data-role="recommendation-note"]').textContent = "저장되어 있던 내 설정값을 다시 불러왔습니다.";
     });
     rowEl.querySelector('[data-action="delete"]').addEventListener("click", async () => {
       if (!confirm(`${target.symbol} 삭제`)) return;
@@ -1236,21 +1322,69 @@ function renderEditor() {
   }
 }
 
+function readEditorPayload(rowEl) {
+  const payload = {};
+  for (const input of rowEl.querySelectorAll("input[data-key]")) {
+    if (input.disabled) continue;
+    const number = Number(input.value);
+    if (!Number.isFinite(number)) return null;
+    payload[input.dataset.key] = number;
+  }
+  return payload;
+}
+
+function setEditorStatus(rowEl, text, kind = "neutral") {
+  const status = rowEl.querySelector('[data-role="save-status"]');
+  if (!status) return;
+  status.textContent = text;
+  status.className = `auto-save-state ${kind}`;
+}
+
+function scheduleTargetAutoSave(target, rowEl, delay = 800) {
+  const key = target.symbol;
+  const existing = targetAutoSaveTimers.get(key);
+  if (existing) clearTimeout(existing);
+  setEditorStatus(rowEl, "저장 대기", "pending");
+  const timer = setTimeout(async () => {
+    const payload = readEditorPayload(rowEl);
+    if (!payload) {
+      setEditorStatus(rowEl, "숫자 확인", "danger");
+      return;
+    }
+    try {
+      setEditorStatus(rowEl, "저장 중", "pending");
+      state = preserveRuntimeState(await patch(`/api/targets/${target.symbol}`, payload));
+      const savedTarget = state.targets.find((item) => item.symbol === target.symbol);
+      if (savedTarget) Object.assign(target, savedTarget);
+      renderTargets();
+      renderWeightRecommendationNote(state.lastWeightRecommendation);
+      setEditorStatus(rowEl, "저장됨", "ok");
+    } catch (error) {
+      setEditorStatus(rowEl, "저장 실패", "danger");
+      showProgress(`${target.symbol} 저장 실패`, humanError(error.message), "danger");
+    } finally {
+      targetAutoSaveTimers.delete(key);
+    }
+  }, delay);
+  targetAutoSaveTimers.set(key, timer);
+}
+
 async function applyTargetRecommendation({ target, rowEl, button, note, mode }) {
   const precise = mode === "deep";
       try {
-        setButtonBusy(button, true, precise ? "정밀 계산 중" : "계산 중");
-        note.innerHTML = `<span class="inline-progress"><span class="spinner"></span>${target.symbol} ${precise ? "정밀추천" : "추천값"} 계산 중 · 외부 일봉과 백테스트 조합을 확인하고 있습니다.</span>`;
+        setButtonBusy(button, true, "정밀 계산 중");
+        setEditorStatus(rowEl, "정밀 계산", "pending");
+        note.innerHTML = `<span class="inline-progress"><span class="spinner"></span>${target.symbol} 정밀추천 계산 중 · 외부 일봉과 백테스트 조합을 확인하고 있습니다.</span>`;
         const monitorNote = state?.settings?.monitoringEnabled
           ? "자동 모니터링이 켜져 있어도 추천 계산은 Toss API를 호출하지 않습니다."
           : "추천 계산은 Toss API를 호출하지 않습니다.";
-        showProgress(`${target.symbol} ${precise ? "정밀추천" : "추천값"} 계산 중`, `${precise ? "정밀 후보군을 넓게 검사합니다. 시간이 더 걸릴 수 있습니다." : "외부 가격 데이터와 1시간 캐시만 사용합니다."} ${monitorNote}`);
-        const recommendation = await get(`/api/targets/${target.symbol}/recommendation${precise ? "?mode=deep" : ""}`);
+        showProgress(`${target.symbol} 정밀추천 계산 중`, `정밀 후보군을 넓게 검사합니다. 시간이 더 걸릴 수 있습니다. ${monitorNote}`);
+        const recommendation = await get(`/api/targets/${target.symbol}/recommendation?mode=deep`);
         const beforeTarget = { ...target };
         const engineName = recommendation.engineVersion ?? currentStrategyName();
         applyEditorValues(rowEl, recommendation.recommended);
         const cacheText = recommendation.cache?.hit ? `캐시 사용 · 약 ${recommendation.cache.ttlMinutes}분 남음` : "새 외부 데이터로 계산";
-        showProgress(`${target.symbol} ${precise ? "정밀추천" : "추천값"} 저장 중`, `${cacheText}. 계산된 추천값을 종목 설정에 저장하고 있습니다.`);
+        showProgress(`${target.symbol} 정밀추천 저장 중`, `${cacheText}. 계산된 추천값을 종목 설정에 저장하고 있습니다.`);
         state = preserveRuntimeState(await patch(`/api/targets/${target.symbol}`, recommendation.recommended));
         const savedTarget = state.targets.find((item) => item.symbol === target.symbol);
         if (savedTarget) {
@@ -1263,10 +1397,12 @@ async function applyTargetRecommendation({ target, rowEl, button, note, mode }) 
           lastRecommendation: summarizeTargetRecommendationForUi(beforeTarget, recommendation, engineName)
         });
         renderTargets();
-        showProgress(`${target.symbol} ${precise ? "정밀추천" : "추천값"} 저장 완료`, "추천값 계산과 저장이 모두 끝났습니다.", "success");
+        setEditorStatus(rowEl, "저장됨", "ok");
+        showProgress(`${target.symbol} 정밀추천 저장 완료`, "정밀추천 계산과 저장이 모두 끝났습니다.", "success");
       } catch (error) {
-        note.innerHTML = `<span class="warning-text">${precise ? "정밀추천" : "추천값"} 계산 실패: ${escapeHtml(humanError(error.message))}</span>`;
-        showProgress(`${target.symbol} ${precise ? "정밀추천" : "추천값"} 계산 실패`, humanError(error.message), "danger");
+        setEditorStatus(rowEl, "실패", "danger");
+        note.innerHTML = `<span class="warning-text">정밀추천 계산 실패: ${escapeHtml(humanError(error.message))}</span>`;
+        showProgress(`${target.symbol} 정밀추천 계산 실패`, humanError(error.message), "danger");
       } finally {
         setButtonBusy(button, false);
       }
@@ -1284,7 +1420,7 @@ function renderTargetRecommendationNote(note, target) {
       ${renderRecommendationDiff(recommendation.before ?? target, recommendation.recommended)}
       <br><strong>추천 이유</strong>
       ${escapeHtml((recommendation.reasons ?? []).join(" "))}
-      <br><strong>저장 상태</strong> ${saved ? `${formatTime(recommendation.calculatedAt)} 추천값을 저장했습니다.` : "추천값 계산은 완료됐지만 현재 저장값과 다릅니다. 추천값 버튼을 다시 누르면 저장합니다."}
+      <br><strong>저장 상태</strong> ${saved ? `${formatTime(recommendation.calculatedAt)} 정밀추천을 저장했습니다.` : "정밀추천 계산은 완료됐지만 현재 저장값과 다릅니다. 정밀추천을 다시 누르면 저장합니다."}
     `;
     return;
   }
@@ -1297,7 +1433,7 @@ function renderTargetRecommendationNote(note, target) {
       ${review.warning ? `<br><span class="warning-text">${escapeHtml(review.warning)}</span>` : ""}
       <br><strong>검증 구간</strong> ${escapeHtml(strategyReviewPeriodText(review))}
       ${renderGuardImpactLine(review)}
-      <br><strong>안내</strong> 이 결과는 이전 방식으로 저장되어 변경 비교/추천 이유 상세가 없습니다. 추천값 버튼을 다시 누르면 상세 설명도 저장됩니다.
+      <br><strong>안내</strong> 이 결과는 이전 방식으로 저장되어 변경 비교/추천 이유 상세가 없습니다. 정밀추천을 다시 누르면 상세 설명도 저장됩니다.
     `;
     return;
   }
@@ -1305,7 +1441,7 @@ function renderTargetRecommendationNote(note, target) {
   if (rawReview?.score !== undefined || recommendation?.recommended) {
     note.innerHTML = `
       <strong>재계산 필요</strong> 전략 엔진이 ${escapeHtml(currentStrategyName())}로 바뀌었습니다.
-      <br><strong>안내</strong> 이전 추천값 점수는 숨겼습니다. 추천값 버튼을 다시 누르면 새 기준으로 점수와 변경 비교를 저장합니다.
+      <br><strong>안내</strong> 이전 추천값 점수는 숨겼습니다. 정밀추천을 누르면 새 기준으로 점수와 변경 비교를 저장합니다.
     `;
   }
 }
@@ -1337,7 +1473,7 @@ function renderWeightRecommendationNote(recommendation) {
   const zeroNote = Object.values(recommendation.weights).some((weight) => Number(weight) === 0)
     ? "<br><span class=\"warning-text\">0%는 종목 삭제가 아니라 새 매수 배정을 하지 않는다는 뜻입니다.</span>"
     : "";
-  note.innerHTML = `<strong>최근 전체비중 추천</strong> ${escapeHtml(weights + score)}${zeroNote}<br>${escapeHtml((recommendation.reasons ?? []).join(" "))}`;
+  note.innerHTML = `<strong>최근 전체비중 추천</strong> ${escapeHtml(weights + score)}${zeroNote}`;
 }
 
 function targetMatchesRecommendation(target, recommended) {
@@ -1428,6 +1564,11 @@ function isCurrentEngineResult(result) {
 
 function currentStrategyName() {
   return state?.strategy?.name ?? "현재 전략";
+}
+
+function parseLeverageText(value) {
+  const match = String(value ?? "1x").match(/(\d+(?:\.\d+)?)x/i);
+  return match ? Number(match[1]) : 1;
 }
 
 function preserveRuntimeState(nextState) {

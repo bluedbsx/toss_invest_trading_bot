@@ -38,7 +38,7 @@ export const strategySummary = {
     "당일 봇 손실 한도는 작은 시드의 일상 흔들림을 감안한 최소 달러 한도를 함께 적용",
     "당일 시가 대비 급락 구간에서는 신규 매수를 차단해 낙하 칼날 진입을 피함",
     "변동성이 기준보다 크지만 상승 조건이 강하면 신규매수를 완전 차단하지 않고 예산을 50%로 축소",
-    "종목별 최대 비중과 전체 레버리지 노출 한도 적용",
+    "종목별 최대 비중과 전체 위험노출 한도 적용",
     "최근 데이터 기반 단순 백테스트를 화면에 표시",
     "당일 손실 한도와 안전설정 추천값을 화면에 표시"
   ]
@@ -254,7 +254,7 @@ export function buildOrderPlan({
       };
     }
     if (cappedBudget.amount <= 0) {
-      return { side: "BUY", mode: "SKIP", reason: cappedBudget.reason || "비중/레버리지 한도 도달" };
+      return { side: "BUY", mode: "SKIP", reason: cappedBudget.reason || "비중/위험노출 한도 도달" };
     }
     if (settings.allowFractional && isRegularMarket) {
       return {
@@ -505,7 +505,7 @@ export function backtestTarget({ target, candles, settings = {} }) {
     },
     guardCoverage: {
       included: ["당일 급락 신규매수 차단", "당일 급락 방어매도", `추정 수수료·슬리피지(왕복 약 ${round(BACKTEST_COST_PER_SIDE * 2 * 100, 2)}%)`],
-      excluded: ["뉴스 감성", "실적·거시 이벤트", "포트폴리오 당일 손실 한도", "종목별 비중·전체 레버리지 노출 한도", "체결 지연·부분체결"]
+      excluded: ["뉴스 감성", "실적·거시 이벤트", "포트폴리오 당일 손실 한도", "종목별 비중·전체 위험노출 한도", "체결 지연·부분체결"]
     },
     summary:
       `${guarded.summary} · 안전장치 영향 ${guardScoreChange >= 0 ? "+" : ""}${guardScoreChange}점, 수익률 ` +
@@ -1005,7 +1005,7 @@ function capBuyBudget({ budget, target, position, settings, exposure, capitalBas
   const amount = Math.min(Number(budget), positionRoom, leveragedRoom);
   const reasons = [];
   if (positionRoom < Number(budget)) reasons.push("종목별 최대 비중 한도");
-  if (leveragedRoom < Number(budget)) reasons.push("전체 레버리지 노출 한도");
+  if (leveragedRoom < Number(budget)) reasons.push("전체 위험노출 한도");
   return {
     amount: Math.max(0, amount),
     reason: reasons.join(", ")
