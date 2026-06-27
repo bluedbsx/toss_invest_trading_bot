@@ -1022,7 +1022,7 @@ function renderNews() {
   const syncEl = $("#newsLastSync");
   if (syncEl) {
     const at = state.health?.lastNewsRefreshAt;
-    syncEl.textContent = at ? `자동 갱신 ${formatTime(at)} · 30분 주기` : "연준 / 거시 / 종목";
+    syncEl.textContent = at ? `자동 갱신 ${formatTime(at)} · 30분 주기` : "30분 자동 갱신";
   }
   $("#newsList").innerHTML = state.news.length
     ? state.news
@@ -1033,7 +1033,10 @@ function renderNews() {
                 <a href="${item.url}" target="_blank" rel="noreferrer">${escapeHtml(item.translatedTitle || item.title)}</a>
                 <span class="badge ${sentimentClass(item.sentiment)}">${escapeHtml(item.signalLabel || "중립")}</span>
               </div>
-              <div class="news-meta">${item.source} · ${item.category} · ${formatTime(item.publishedAt)}</div>
+              <div class="news-tags">${(item.tags ?? [])
+                .map((tag) => `<span class="news-tag">${escapeHtml(tag)}</span>`)
+                .join("")}</div>
+              <div class="news-meta">${item.source} · ${formatTime(item.publishedAt)}</div>
               <p class="row-meta">${escapeHtml(item.koreanSummary || item.summary || "")}</p>
               <p class="original-title">${escapeHtml(item.title ?? "")}</p>
             </article>

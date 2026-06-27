@@ -75,6 +75,8 @@ function decodeXml(value) {
 // 이 포트폴리오(반도체·메모리)의 진짜 테마 악재/호재를 더 잘 잡는다. 단순 개수 세기 → 강도 가중으로 고도화.
 const POSITIVE_TERMS = [
   ["rate cut", "금리 인하 기대", 2], ["rate cuts", "금리 인하 기대", 2], ["dovish", "완화적 연준", 1.5],
+  ["cooling inflation", "인플레이션 둔화", 2], ["inflation cools", "인플레이션 둔화", 2], ["inflation eases", "인플레이션 완화", 2],
+  ["disinflation", "디스인플레이션", 1.5], ["inflation falls", "인플레이션 하락", 2],
   ["soft landing", "경기 연착륙", 1], ["ai demand", "AI 수요", 2], ["hbm", "HBM 강세", 2],
   ["data center", "데이터센터 수요", 1.5], ["strong demand", "수요 강세", 1.5], ["memory shortage", "메모리 공급부족", 2.5],
   ["undersupply", "공급 부족", 2], ["price increase", "메모리 가격 인상", 2.5], ["price hike", "가격 인상", 2],
@@ -83,6 +85,8 @@ const POSITIVE_TERMS = [
 ];
 const NEGATIVE_TERMS = [
   ["rate hike", "금리 인상 우려", 2], ["higher for longer", "고금리 장기화", 1.5], ["hawkish", "매파적 연준", 1.5],
+  ["rising inflation", "인플레이션 상승", 2], ["hot inflation", "인플레이션 과열", 2], ["sticky inflation", "끈적한 인플레이션", 2],
+  ["inflation surge", "인플레이션 급등", 2], ["high inflation", "고인플레이션", 1.5], ["inflation", "인플레이션 부담", 1],
   ["recession", "침체 우려", 2.5], ["slowdown", "둔화 우려", 1.5], ["memory glut", "메모리 공급과잉", 2.5],
   ["oversupply", "공급 과잉", 2.5], ["inventory correction", "재고 조정", 2], ["price decline", "메모리 가격 하락", 2.5],
   ["price drop", "가격 하락", 2], ["demand weakness", "수요 약세", 2], ["weak demand", "수요 약세", 2],
@@ -97,6 +101,30 @@ const NEGATIVE_TERMS = [
 ];
 // 부정어가 키워드 바로 앞에 오면 그 신호는 무시한다(예: "no recession", "rate cut unlikely"는 오탐).
 const NEGATION = /\b(no|not|without|avoid|unlikely|despite|less|lower|eas\w*)\s+\S{0,14}$/;
+
+// 뉴스 내용 기반 태그: 주제(연준/금리/인플레이션/반도체/메모리…) + 종목 티커. 화면에 칩으로 표시해
+// "연준 / 거시 / 종목" 같은 정적 분류 대신 각 뉴스가 실제 무엇/어느 종목에 관한 건지 보여준다.
+const TOPIC_TAGS = [
+  [/\bfed\b|fomc|federal reserve|연준|powell|greenspan|warsh/, "연준"],
+  [/rate (cut|hike|decision)|interest rate|monetary|금리/, "금리"],
+  [/inflation|\bcpi\b|\bpce\b|인플레/, "인플레이션"],
+  [/recession|\bgdp\b|jobs|unemployment|경기|침체/, "거시"],
+  [/semiconductor|\bchips?\b|반도체/, "반도체"],
+  [/\bai\b|artificial intelligence/, "AI"],
+  [/\bmemory\b|\bdram\b|\bnand\b|\bhbm\b|메모리/, "메모리"],
+  [/tariff|export (restriction|curb|control)|trade war|관세/, "무역"],
+  [/leverage|leveraged etf|\b[23]x\b/, "레버리지"]
+];
+const TICKER_TAGS = [
+  [/\bmicron\b|\bmuu?\b/, "MU"], [/\bsandisk\b|\bsndk\b|\bsnxx\b/, "SNDK"], [/\bnvidia\b|\bnvda\b/, "NVDA"],
+  [/\bsoxl\b/, "SOXL"], [/\bsoxx\b/, "SOXX"], [/\bsmh\b/, "SMH"], [/\bintel\b|\bintc\b/, "INTC"],
+  [/\bamd\b/, "AMD"], [/\btsmc\b|\btsm\b/, "TSM"], [/\bbroadcom\b|\bavgo\b/, "AVGO"], [/\bqqq\b/, "QQQ"]
+];
+function buildTags(text) {
+  const topics = TOPIC_TAGS.filter(([re]) => re.test(text)).map(([, label]) => label);
+  const tickers = TICKER_TAGS.filter(([re]) => re.test(text)).map(([, label]) => label);
+  return [...new Set([...topics, ...tickers])].slice(0, 5);
+}
 
 function enrichNews(item) {
   const text = `${item.title} ${item.summary}`.toLowerCase();
@@ -113,6 +141,7 @@ function enrichNews(item) {
     ...item,
     translatedTitle: koreanizeTitle(item.title),
     koreanSummary: buildKoreanSummary({ topic, signalLabel, reasons, item }),
+    tags: buildTags(text),
     sentiment,
     signalLabel,
     signalScore: score,

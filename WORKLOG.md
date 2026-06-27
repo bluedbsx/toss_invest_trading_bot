@@ -320,3 +320,11 @@
 - 요청1(뉴스/개선리포트 자동 주기 + 마지막 실행 시각): 뉴스는 이미 30분 타이머(NEWS_REFRESH_MINUTES) — `refreshNews`에 `health.lastNewsRefreshAt` 기록 추가. 개선리포트는 **30분 자동 타이머 신설**(`refreshLearningReportIfEnabled`, autoLearningReports 켜짐 시, 외부호출 없는 분석이라 가벼움) + `learning.lastAutoReportAt` 기록. UI: 뉴스 패널·개선데이터 패널 헤더에 "자동 갱신 HH:MM · 30분 주기" 표시.
 - 요청3(헤딩 정렬): §L이 패널 콘텐츠 들여쓰기를 16px로 봤으나 패널은 padding16+border1=**17px**라 1단계가 1px 왼쪽(x52 vs 53). `.section-heading` padding 16→**17px**로 픽셀 일치.
 - 요청2(버전업 판단 — 코드변경 없음, 분석): 데이터품질 **100은 "수량" 지표**(샘플 2575·주문 68·사이클 6)지, 검증된 성과가 아님. 실제 **왕복 사이클 6건뿐 + 승률 33% + 실현 −$11**(여전히 손실). buyCount 61 vs sellCount 7은 **페이퍼 churn 인공물**(dryRun인데 syncExecutedBotOrders/rebuildLiveBotPortfolio가 실거래 기준으로 포지션을 매틱 덮어써 페이퍼 포지션이 지워지고 매틱 재매수 — §V "회계 혼재"가 발현). → **검증된 근거가 없어 v1.0 재학습 부적절.** 엔진은 이미 이번 세션에 다수 개선(v0.9 drop-block, 위험조정 점수, ADX 추천, 뉴스, 회계수정)됨 = 사실상의 버전업. 진짜 v1.0은 **깨끗한 페이퍼/실거래 사이클이 게이트를 통과**해야 가능. 권고: 별도 DATA_DIR 페이퍼 인스턴스로 churn 없는 검증 데이터 축적(미적용, 사용자 선택).
+
+### DD. 뉴스 콘텐츠 태그 + 인플레이션 렉시콘 복구 + 정적 문구 제거 (`src/news.js`, `public/*`)
+- 요청: 정적 "연준 / 거시 / 종목" 문구 제거하고 뉴스별로 내용 파악해 태그(악재/호재처럼) + 종목 티커 태그. "자주 보지 않는 진단…" 문구 제거. 그리고 연준 금리/인플레가 매매에 반영되는지 확인.
+- **버그 발견·수정**: §Z 렉시콘 재작성 때 **"inflation"이 누락**돼 인플레 뉴스가 감성에 안 잡히고 있었음 → 복구 + 강화. rising/hot/sticky/high inflation·surge(악재), cooling/eases/cools/disinflation/falls(호재), 일반 inflation(약한 악재 1). 검증: "rate hike + hot inflation"→악재(−5), "inflation cools + rate cut"→호재(+3), "hawkish sticky inflation"→악재(−4.5).
+- 뉴스 태그(content-based): `TOPIC_TAGS`(연준/금리/인플레이션/거시/반도체/AI/메모리/무역/레버리지, 한글·영문 모두) + `TICKER_TAGS`(MU/SNDK/NVDA/SOXL/SOXX/SMH/INTC/AMD/TSM/AVGO/QQQ). `buildTags`로 뉴스당 최대 5개. enrichNews에 `tags` 추가. 검증: "SOXL 23% Collapse"→{반도체,레버리지,SOXL,SOXX,SMH}, "금리 오를까…연준 점도표"→{연준,금리}.
+- UI: news-item에 태그 칩(.news-tag) 표시, 정적 category 메타 제거. "연준/거시/종목" → 자동갱신 시각. rate-panel "자주 보지 않는 진단…" 문구 삭제.
+- **매매 반영 확인**: newsRisk.budgetMultiplier가 strategy.js의 min()→adjustedBudget 경로로 매수예산을 줄임(악재 클러스터 시 50%). + 예정 CPI/FOMC는 eventRisk가 신규매수 차단. 즉 금리/인플레 악재는 매매에 반영됨(이번 inflation 복구 후 비로소 인플레도 포함).
+- 검증: 문법 OK 2파일. 라이브 반영 재시작 후.

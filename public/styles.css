@@ -794,6 +794,23 @@ label small {
   line-height: 1.45;
 }
 
+.news-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 4px 0 2px;
+}
+
+.news-tag {
+  font-size: 11px;
+  line-height: 1;
+  padding: 3px 7px;
+  border-radius: 999px;
+  border: 1px solid var(--line-soft);
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.03);
+}
+
 .budget-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
