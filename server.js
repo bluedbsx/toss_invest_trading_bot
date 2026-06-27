@@ -479,6 +479,8 @@ async function handleApi(request, response, url) {
       const target = draft.targets.find((item) => item.symbol === symbol);
       if (!target) throw new Error("target not found");
       Object.assign(target, pickTarget(body));
+      // 자동투자 대상을 끄면 배정 비중을 0으로 맞춘다(꺼진 종목이 시드 비중을 차지하지 않도록).
+      if (target.enabled === false) target.allocationPct = 0;
       if (recommendationMatchesTarget(target, target.lastRecommendation)) {
         target.lastStrategyReview = {
           ...(target.lastRecommendation.backtest ?? {}),

@@ -481,3 +481,19 @@
 - 가정/주의(다른 에이전트가 검토해야 할 점):
   - 현재 검증 카드의 수익률은 복구된 현재 봇 장부 기준이고, 승률/손익비 표본은 이번 paper 세션 이후 거래만 본다. UI에 이 기준을 명시함.
   - 고위험 엔진 카드는 진행상태 표시용이며, 실제 레버리지 전용 엔진 분리/별도 paper 장부 구현은 다음 기능 단위로 남김.
+
+### 2026-06-27 (밤) — Claude (Opus 4.8)
+- 문제/목적:
+  - Codex 검토 결과 발견한 모순: `f86375a`가 36분 전 자기 커밋 `ac382b1`의 페이퍼 장부 초기화(clean-slate) 로직을 되돌려, 페이퍼 검증이 과거 레버리지 시대 −$14 손실과 MUU/SOXL 잔여 포지션으로 오염됨. 검증 카드 수익률(botBudget 기준)과 승률/손익비(세션 스코프)가 서로 다른 기간을 측정.
+  - 사용자 요청: ① 장부 전부 초기화 후 처음부터 + 페이퍼/실거래 장부 체계적 관리 ② 떨어지는 칼날 방어 점검(데이터 분석) ③ 자동매매 OFF 시 비중 자동 0 ④ 전체 UI/UX 개선.
+- 진단(근거):
+  - 실거래 closed cycle 6건 분석: 최악 −26.4%(SNXX 2x), −21.7%(MUU 2x)는 명목 손절 ~11~14%가 갭/슬리피지로 뚫려 실현 손실이 2배. MUU −10.6%는 진입일 이미 −1.55%인 2x를 모멘텀(+72%/5d) 추격 → 11분 만에 급락 패닉청산. 즉 레버리지에서는 손절이 "트리거"일 뿐 체결 보장이 안 되고, 당일급락 차단은 진입 후 붕괴를 못 막음. 1x 전환이 구조적 해법(손절 신뢰도↑)이며, 현 6개 cycle은 모두 구엔진(v0.6~v0.8)이라 현 설정 방어력 데이터가 0 → 깨끗한 페이퍼 누적이 필요.
+- 수정 내용:
+  - `src/trader.js`: `ensureDryRunPaperSession`/`markPaperSessionInactive`에 봇 장부 초기화(`wipeBotBook`) 복원 — `ac382b1`의 일관된 clean-slate 모델로 회귀(`f86375a` 회귀 수정). 장부 한 구간 종료 시 요약을 `ledgerHistory`(append-only, 최대 20)에 남기는 `archiveLedgerEpoch` 추가 → "데이터 사라짐" 우려를 장부 오염 없이 해결. `runOnce`에 `state.ledgerMode`(paper/live) 기록.
+  - `src/store.js`: defaultState에 `ledgerMode`/`ledgerHistory` 추가 + mergeDefaults 정규화.
+  - `server.js`: 종목 PATCH에서 `enabled===false`면 `allocationPct=0` 자동 적용(요청 ③).
+  - `scripts/reset-ledger.js`: 장부 초기화 스크립트 신규. 서버 정지 상태에서 state.json 직접 기록(saveState 축소 보호 가드 우회), 직전 상태 백업, `botStartedAt`을 현재로 이동(실거래 켜도 과거 토스 주문 재복구 방지), decisionSamples 사이드카 비우되 NDJSON 아카이브는 보존.
+- 검증: `node --check` 전부 PASS. mock 런 스모크 테스트 — 스테일 MUU 포지션+−$11.38이 페이퍼 세션 시작 시 빈 장부로 초기화, ledgerHistory에 요약 1건 보존, tradeHistory(감사 추적)는 유지 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 초기화는 사용자가 서버 정지 후 `node scripts/reset-ledger.js` 실행(데이터는 gitignore, 커밋 안 함). 실거래 토글은 검증 후 사용자 판단으로 켠다.
+  - 매수 과열 추격 차단(진입 전 과확장 가드)은 전략 행동 변경이라 별도 승인 후 적용 예정(이번엔 미적용).

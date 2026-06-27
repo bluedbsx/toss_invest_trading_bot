@@ -80,6 +80,7 @@ export class Trader {
       await syncExecutedBotOrders(state, this.tossClient, { holdings, updatePortfolio: liveTradingAllowed });
     }
     if (!liveTradingAllowed) ensureDryRunPaperSession(state);
+    state.ledgerMode = liveTradingAllowed ? "live" : "paper";
 
     const managedTargets = state.targets.filter(
       (target) => target.enabled || Number(state.positions?.[target.symbol]?.quantity ?? 0) > 0
@@ -469,22 +470,58 @@ function localDayKey(date) {
   }).format(date);
 }
 
+const LEDGER_HISTORY_CAP = 20;
+
+// 봇 장부(보유/성과/예산)만 비운다. tradeHistory(dryRun 태그로 페이퍼/실거래 구분)와
+// closedCycles(체결에서 재계산되는 파생)는 건드리지 않는다.
+function wipeBotBook(state) {
+  state.positions = {};
+  state.performance = { realizedPnlUsd: 0, totalBuyAmountUsd: 0, totalSellAmountUsd: 0 };
+  state.botBudget = null;
+}
+
+// 장부 한 구간(에폭)이 끝날 때 요약을 ledgerHistory에 남긴다. "데이터가 사라진 것처럼 보이는" 문제를
+// 장부를 오염시키지 않고 해결하기 위한 체계적 기록(append-only, 최대 LEDGER_HISTORY_CAP개).
+function archiveLedgerEpoch(state, mode, reason) {
+  const hadActivity =
+    Number(state.performance?.totalBuyAmountUsd ?? 0) > 0 || Object.keys(state.positions ?? {}).length > 0;
+  if (!hadActivity) return;
+  const epoch = {
+    mode,
+    reason,
+    startedAt: state.paperSession?.startedAt ?? state.settings?.botStartedAt ?? null,
+    endedAt: new Date().toISOString(),
+    equityUsd: round(Number(state.botBudget?.equityUsd ?? 0), 2),
+    realizedPnlUsd: round(Number(state.performance?.realizedPnlUsd ?? 0), 2),
+    tradeCount: (state.tradeHistory ?? []).filter((trade) => (mode === "paper" ? trade.dryRun : !trade.dryRun)).length,
+    cycleCount: (state.learning?.closedCycles ?? []).length
+  };
+  state.ledgerHistory = [epoch, ...(state.ledgerHistory ?? [])].slice(0, LEDGER_HISTORY_CAP);
+}
+
 function ensureDryRunPaperSession(state) {
   const signature = paperTargetSignature(state);
   if (state.paperSession?.active && state.paperSession.targetSignature === signature) return;
+  // 활성 종목/파라미터가 바뀌면 페이퍼 장부를 새 후보 전략 기준으로 깨끗이 다시 시작한다.
+  archiveLedgerEpoch(state, "paper", state.paperSession?.active ? "후보 전략 변경으로 페이퍼 장부 재시작" : "페이퍼 검증 시작");
   state.paperSession = {
     active: true,
     startedAt: new Date().toISOString(),
     targetSignature: signature,
     reason: "dry-run 페이퍼 장부를 현재 활성 종목 기준으로 새로 시작"
   };
-  // dry-run 검증 범위는 validation/learning에서 paperSession.startedAt 이후 거래로 제한한다.
-  // 기존 봇 장부를 지우면 포트폴리오/성과 카드가 데이터 유실처럼 보이므로, 장부 표시는 보존한다.
+  // 페이퍼(검증) 장부는 현재 후보 전략만의 깨끗한 종이 장부여야 한다. 과거 장부가 섞이면 수익률/검증 게이트가
+  // 오염되므로 봇 보유/성과/예산을 초기화한다. 과거 실거래 장부는 tradeHistory(dryRun=false)에 남아 있고,
+  // 실거래를 켜면 syncExecutedBotOrders가 체결 이력으로 라이브 장부를 다시 재구성한다.
+  wipeBotBook(state);
   pushEvent(state, "BOT", "PAPER_SESSION", "dry-run 페이퍼 장부를 현재 활성 종목 기준으로 새로 시작했습니다.");
 }
 
 function markPaperSessionInactive(state) {
   if (!state.paperSession?.active) return;
+  // 실거래로 전환: 페이퍼 종이 장부를 비우고, 이후 syncExecutedBotOrders가 실제 체결로 라이브 장부를 재구성한다.
+  archiveLedgerEpoch(state, "paper", "실거래 장부로 전환");
+  wipeBotBook(state);
   state.paperSession = {
     ...state.paperSession,
     active: false,

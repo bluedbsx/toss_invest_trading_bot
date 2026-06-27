@@ -101,6 +101,9 @@ const defaultState = {
     totalSellAmountUsd: 0
   },
   paperSession: null,
+  // 현재 장부 모드(paper=검증 종이장부 / live=실거래)와 지난 장부 구간 요약(append-only).
+  ledgerMode: "paper",
+  ledgerHistory: [],
   botBudget: null,
   externalTrackedHoldings: {},
   tradeHistory: [],
@@ -275,6 +278,8 @@ function mergeDefaults(state) {
     positions: state.positions ?? {},
     performance: { ...defaultState.performance, ...(state.performance ?? {}) },
     paperSession: state.paperSession ?? null,
+    ledgerMode: state.ledgerMode ?? defaultState.ledgerMode,
+    ledgerHistory: Array.isArray(state.ledgerHistory) ? state.ledgerHistory : [],
     botBudget: state.botBudget ?? null,
     externalTrackedHoldings: state.externalTrackedHoldings ?? {},
     tradeHistory: state.tradeHistory ?? [],
