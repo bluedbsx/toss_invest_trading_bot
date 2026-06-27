@@ -308,3 +308,10 @@
 - 구현: ① `minAdx`를 **종목별 설정**(target.minAdx)으로 — strategy가 target.minAdx 우선, 없으면 전역 폴백. ② `recommendMinAdx`: 선택된 파라미터 위에서 minAdx 0/18/22/26을 백테스트해, **끔 대비 +4점 이상일 때만 "켜기" 추천**(필터는 거래를 줄이므로 강한 추세엔 끄기 기본). `optimizeTargetSettings`/`...Deep` 결과의 recommended.minAdx + reason에 포함. ③ pickTarget/pickStrategyFields/편집기 입력/추천 diff에 minAdx 연결.
 - 검증: MUU·SOXL → **끄기**(67/62점, 켬 개선 없음), SOXX → **켜기 26**(64→69), TQQQ → **켜기 26**(30→50). 의도대로 강한추세=끄기·횡보=켜기. 문법 OK 3파일.
 - 가정/주의: recommendMinAdx가 optimize당 robustBacktest 4회 추가(추천 호출만, 라이브 틱 무관). 종목별 minAdx 미설정 시 0(끔)으로 동작. 라이브 반영은 재시작 후(현재 MUU/SOXL은 추천도 끄기라 변화 없음).
+
+### BB. 뉴스 감성 — 폭락/투매 용어 보강 + 가중 트리거 (`src/news.js`, `src/eventRisk.js`)
+- 맥락(사용자 운영 질문): 반도체/메모리 하방 압박이 뉴스에 안 걸린 건지, 걸렸는데 차단 수준이 아닌 건지.
+- 라이브 진단: 실뉴스에 **"SOXL's 23% Single-Day Collapse", "Tech Rout — Leveraged ETFs Can Destroy Wealth"** 헤드라인이 실재. 그런데 (a) 렉시콘에 collapse/rout이 없어 중립 처리(놓침), (b) 이 헤드라인들은 **36시간 밖**(이미 지난 폭락)이라 getNewsRisk(최근 36h)가 안 봄, (c) 최근 36h 뉴스는 메모리 호재(Micron Q3 호실적·AI 메모리 크런치)라 종목 판정 "우호적"이 합당, (d) 뉴스는 소프트 신호. **폭락은 추세추종이 이미 처리**(SOXL SELL 30일선 이탈, MUU 변동성 예산 -50%).
+- 수정: ① news.js 부정 렉시콘에 collapse/rout/meltdown/crater/tumble/slump/bear market/wipeout/destroy wealth 추가(실사례 누락 보강). ② eventRisk.js getNewsRisk를 **가중 합 기반**으로 — `weightedScore <= -3`이면 단일이라도 강한 악재에 매수예산 50% 축소(기존 개수 기준 보완).
+- 검증: 보강 후 폭락 헤드라인 4건 악재 분류. 가중 트리거: 강한 악재 1건 → 0.5, 중립 → 1.0. 문법 OK.
+- 가정/주의: 라이브 반영 재시작 후. 36h 윈도우는 유지(스윙 전략엔 적정, 오래된 폭락이 계속 매수를 막지 않게). 진짜 실시간 방어는 추세추종.

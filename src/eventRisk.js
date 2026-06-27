@@ -111,12 +111,14 @@ export function getNewsRisk(symbol, news = [], now = new Date()) {
   const negative = relevant.filter((item) => item.sentiment === "negative");
   const positive = relevant.filter((item) => item.sentiment === "positive");
   const score = positive.length - negative.length;
+  // 가중 합(강도 반영): 단일이라도 강한 악재(예: "폭락/투매" -4)면 호재가 일부 있어도 반응한다.
+  const weightedScore = relevant.reduce((sum, item) => sum + Number(item.signalScore ?? 0), 0);
 
-  if (negative.length >= 2 || score <= -2) {
+  if (negative.length >= 2 || score <= -2 || weightedScore <= -3) {
     return {
       budgetMultiplier: 0.5,
       label: "악재 뉴스 감지",
-      reason: negative[0]?.signalReasons?.join(", ") || "최근 부정 뉴스가 많음"
+      reason: negative[0]?.signalReasons?.join(", ") || "최근 부정 뉴스가 강함"
     };
   }
 

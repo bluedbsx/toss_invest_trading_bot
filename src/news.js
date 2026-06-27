@@ -89,7 +89,11 @@ const NEGATIVE_TERMS = [
   ["capex cut", "투자 축소", 2], ["guidance cut", "가이던스 하향", 2.5], ["cuts outlook", "전망 하향", 2.5],
   ["cuts guidance", "가이던스 하향", 2.5], ["downturn", "업황 둔화", 2], ["export restriction", "수출 규제", 2],
   ["export curb", "수출 규제", 2], ["tariff", "관세 부담", 1.5], ["misses", "실적 부진", 2],
-  ["selloff", "매도세", 1.5], ["plunge", "급락", 2], ["crash", "폭락", 2.5], ["glut", "공급과잉", 2]
+  ["selloff", "매도세", 1.5], ["plunge", "급락", 2], ["crash", "폭락", 2.5], ["glut", "공급과잉", 2],
+  // 급락/약세 표현 보강(실사례: "SOXL's 23% Single-Day Collapse", "Tech Rout"가 누락됐었음).
+  ["collapse", "폭락", 2.5], ["rout", "투매", 2], ["meltdown", "붕괴", 2.5], ["crater", "폭락", 2],
+  ["tumble", "급락", 1.5], ["slump", "급락", 1.5], ["bear market", "약세장", 2], ["sell-off", "매도세", 1.5],
+  ["sinks", "급락", 1.5], ["wipeout", "손실 경고", 2], ["destroy wealth", "큰 손실 경고", 2]
 ];
 // 부정어가 키워드 바로 앞에 오면 그 신호는 무시한다(예: "no recession", "rate cut unlikely"는 오탐).
 const NEGATION = /\b(no|not|without|avoid|unlikely|despite|less|lower|eas\w*)\s+\S{0,14}$/;
