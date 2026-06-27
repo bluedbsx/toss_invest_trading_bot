@@ -78,12 +78,13 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const trendExit = hasPosition && fastSma && last < fastSma;
   const overboughtExit = hasPosition && currentRsi && takeProfitRsi > 0 && currentRsi >= takeProfitRsi;
   const dailyMovePct = calculateDailyMovePct(normalized, last);
-  // v0.9: 장중 급락 매수차단은 "추세가 깨졌을 때(가격<단기선)"만 적용한다. 추세가 살아있는 건강한 눌림목까지
-  // 매수를 막던 v0.8 동작이 백테스트상 수익을 크게 깎고 낙폭 개선은 거의 없었기 때문(하락추세 진입은 매수조건이 이미 차단).
+  // §HH: 당일(시가 대비) 급락 시 신규매수 차단을 재활성화한다.
+  // §N(일봉 백테스트)은 이 가드가 수익만 깎는다고 봤지만, 일봉 백테스트는 §U가 라이브에서 확인한
+  // 레버리지 장중/갭 급락(꼬리손실)을 못 본다. 목표가 "저손해 + 레버리지(SOXL/MUU)"이므로,
+  // 추세가 살아있어도 당일 큰 급락엔 낙하 칼날 매수를 막는 §U(가드 강화) 쪽을 채택한다.
+  // (이전 v0.9의 'last<fastSma' 조건은 매수조건 trendOk와 상호배타라 사실상 무효였음 — 그 무효를 해소.)
   const dailyDropBlock =
-    Number.isFinite(dailyMovePct) &&
-    dailyMovePct <= -Number(settings.intradayDropBlockPct ?? 4.5) &&
-    Boolean(fastSma && last < fastSma);
+    Number.isFinite(dailyMovePct) && dailyMovePct <= -Number(settings.intradayDropBlockPct ?? 4.5);
   // 패닉 매도(보유분 방어)는 일봉 백테스트가 진짜 장중 급락을 못 보므로 보수적으로 그대로 유지.
   const dailyPanicExit = hasPosition && Number.isFinite(dailyMovePct) && dailyMovePct <= -Number(settings.intradayPanicExitPct ?? 8);
   const trendOk = fastSma && slowSma && last > fastSma && fastSma > slowSma;
@@ -120,7 +121,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     if (trailingHit) reasons.push(`고점 대비 ${trailingStopPct}% 이탈`);
     if (trendExit) reasons.push(`${params.fastSmaDays}일선 이탈`);
     if (overboughtExit) reasons.push(`RSI ${takeProfitRsi} 이상 과열`);
-    if (dailyPanicExit) reasons.push(`일봉 기준 ${Math.abs(Number(settings.intradayPanicExitPct ?? 8))}% 이상 하락`);
+    if (dailyPanicExit) reasons.push(`당일 시가 대비 ${Math.abs(Number(settings.intradayPanicExitPct ?? 8))}% 이상 하락`);
   } else if (partialTakeProfitHit) {
     action = "PARTIAL_SELL";
     reasons.push(`1차 익절 ${partialTakeProfitPct}% 도달`);
@@ -166,7 +167,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     if (!adxOk) reasons.push(`추세 강도(ADX) 약함 — 횡보 구간 매수 보류(기준 ${minAdx})`);
     if (!volatilityTradable) reasons.push("변동성 과다");
     else if (volatilitySoftOk) reasons.push("가격 흔들림 큼, 예산 축소 조건");
-    if (dailyDropBlock) reasons.push(`일봉 기준 ${settings.intradayDropBlockPct}% 이상 하락 구간`);
+    if (dailyDropBlock) reasons.push(`당일 시가 대비 ${settings.intradayDropBlockPct}% 이상 하락 구간 — 신규매수 보류`);
     if (!allocationOk) reasons.push("배정 시드/현금 버퍼 부족");
   }
 
@@ -538,11 +539,11 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
     const momentumBase = closes.at(-(params.momentumDays + 1));
     const momentumPct = momentumBase ? ((last - momentumBase) / momentumBase) * 100 : null;
     const dailyMovePct = calculateDailyMovePct(window, last);
+    // §HH: 라이브 evaluateTarget와 동일하게 당일 급락 매수차단을 적용(추세확인 조건 제거 — 재활성).
     const dailyDropBlock =
       includeDailyGuards &&
       Number.isFinite(dailyMovePct) &&
-      dailyMovePct <= -Number(settings.intradayDropBlockPct ?? Number.POSITIVE_INFINITY) &&
-      Boolean(fastSma && last < fastSma);
+      dailyMovePct <= -Number(settings.intradayDropBlockPct ?? Number.POSITIVE_INFINITY);
     const dailyPanicExit =
       includeDailyGuards &&
       quantity > 0 &&

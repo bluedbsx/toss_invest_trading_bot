@@ -454,8 +454,10 @@ function applyProductionRiskGuards({ signal, position, riskGuard }) {
 
 function localDayKey(date) {
   if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+  // 당일 손실 가드의 "하루"는 미국 거래일(ET) 기준으로 잡는다. KST 자정 기준이면 미국 정규장
+  // (KST 22:30~05:00) 한가운데서 카운터가 리셋돼 한 세션의 손실이 두 날로 쪼개져 가드가 약해진다(§HH).
   return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Asia/Seoul",
+    timeZone: "America/New_York",
     year: "numeric",
     month: "2-digit",
     day: "2-digit"
