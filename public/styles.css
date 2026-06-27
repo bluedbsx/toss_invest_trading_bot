@@ -811,6 +811,41 @@ label small {
   background: rgba(255, 255, 255, 0.03);
 }
 
+.calendar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.calendar-item {
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--line-soft);
+}
+
+.calendar-item.upcoming {
+  border-left-color: rgba(49, 130, 246, 0.5);
+}
+
+.cal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.cal-title {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cal-meta {
+  color: var(--muted);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
 .budget-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

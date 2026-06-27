@@ -98,6 +98,7 @@ async function refresh() {
   renderSignals();
   renderTrades();
   renderNews();
+  renderCalendar();
   renderStrategy();
   renderLearning();
   renderAutomation();
@@ -1044,6 +1045,44 @@ function renderNews() {
         )
         .join("")
     : row("뉴스 없음", "-", "RSS 동기화 대기");
+}
+
+function renderCalendar() {
+  const host = $("#calendarList");
+  if (!host) return;
+  const syncEl = $("#calendarLastSync");
+  if (syncEl) {
+    const at = state.health?.lastCalendarRefreshAt;
+    syncEl.textContent = at ? `자동 갱신 ${formatTime(at)} · 60분 주기` : "60분 자동 갱신";
+  }
+  const cal = (state.economicCalendar ?? []).slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+  if (!cal.length) {
+    host.innerHTML = `<p class="recommendation-note">경제 캘린더를 불러오는 중입니다(자동 갱신).</p>`;
+    return;
+  }
+  host.innerHTML = cal
+    .slice(0, 40)
+    .map((event) => {
+      const biasClass = event.bias === "호재" ? "buy" : event.bias === "악재" ? "sell" : "neutral";
+      const stars = event.importance >= 1 ? "★★" : event.importance >= 0 ? "★" : "";
+      return `
+        <div class="calendar-item ${event.released ? "released" : "upcoming"}">
+          <div class="cal-row">
+            <span class="cal-title">${event.highImpact ? "🔴 " : ""}${escapeHtml(event.title)}${
+        event.period ? ` <small>(${escapeHtml(event.period)})</small>` : ""
+      }</span>
+            <span class="badge ${biasClass}">${escapeHtml(event.bias)}</span>
+          </div>
+          <div class="cal-meta">${escapeHtml(formatCalDate(event.date))} · ${stars} · ${escapeHtml(event.biasReason || "")}</div>
+        </div>`;
+    })
+    .join("");
+}
+
+function formatCalDate(iso) {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "-";
+  return date.toLocaleString(undefined, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
 function renderStrategy() {

@@ -19,6 +19,7 @@ import { TossClient } from "./src/tossClient.js";
 import { Trader } from "./src/trader.js";
 import { buildLearningReport, recordRecommendationEvent } from "./src/learning.js";
 import { buildValidation, BENCHMARK_SYMBOL } from "./src/validation.js";
+import { fetchEconomicCalendar } from "./src/calendar.js";
 import { enforceDashboardAuth } from "./src/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -35,6 +36,9 @@ const PUBLIC_IP_CACHE_MS = 5 * 60_000;
 trader.start();
 refreshNews();
 setInterval(refreshNews, Math.max(5, Number(process.env.NEWS_REFRESH_MINUTES || 30)) * 60_000);
+// 경제(증시) 캘린더 자동 갱신(60분). 손 안 대도 최신 일정·발표 결과(호재/악재)가 유지된다.
+refreshEconomicCalendar();
+setInterval(() => refreshEconomicCalendar().catch(() => {}), 60 * 60_000);
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -60,9 +64,8 @@ const LEARNING_AUTO_INTERVAL_MS = 30 * 60_000;
 refreshLearningReportIfEnabled();
 setInterval(() => refreshLearningReportIfEnabled().catch(() => {}), LEARNING_AUTO_INTERVAL_MS);
 async function refreshLearningReportIfEnabled() {
-  const state = await loadState();
-  if (!state.settings?.autoLearningReports) return;
   await updateState((draft) => {
+    if (!draft.settings?.autoLearningReports) return;
     buildLearningReport(draft);
     draft.learning.lastAutoReportAt = new Date().toISOString();
   });
@@ -587,6 +590,20 @@ function contentType(filePath) {
   if (filePath.endsWith(".js")) return "application/javascript; charset=utf-8";
   if (filePath.endsWith(".svg")) return "image/svg+xml";
   return "text/html; charset=utf-8";
+}
+
+async function refreshEconomicCalendar() {
+  try {
+    const calendar = await fetchEconomicCalendar();
+    await updateState((draft) => {
+      draft.economicCalendar = calendar;
+      draft.health.lastCalendarRefreshAt = new Date().toISOString();
+    });
+  } catch (error) {
+    await updateState((draft) => {
+      draft.health.lastError = `경제 캘린더 조회 실패: ${error.message}`;
+    });
+  }
 }
 
 async function refreshNews() {

@@ -42,7 +42,7 @@ export const strategySummary = {
   ]
 };
 
-export function evaluateTarget({ target, candles, price, position, settings, isRegularMarket, eventRisk, newsRisk, botBudget }) {
+export function evaluateTarget({ target, candles, price, position, settings, isRegularMarket, eventRisk, newsRisk, calendarRisk, botBudget }) {
   const normalized = normalizeCandles(candles);
   const closes = normalized.map((item) => item.close);
   const last = Number(price?.lastPrice ?? price?.last ?? closes.at(-1));
@@ -145,6 +145,12 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     } else if (eventRisk?.budgetMultiplier < 1 && eventRisk?.reason) {
       reasons.push(eventRisk.reason);
     }
+    if (calendarRisk?.blocked) {
+      reasons.push(`지표 발표 임박 신규매수 차단: ${calendarRisk.reason}`);
+      action = "HOLD";
+    } else if (calendarRisk?.budgetMultiplier < 1 && calendarRisk?.reason) {
+      reasons.push(calendarRisk.reason);
+    }
     if (!isRegularMarket) {
       reasons.push(settings.allowFractional ? "소수점 거래 ON이라 정규장만 거래" : "장외 신규매수 금지");
       action = "HOLD";
@@ -188,8 +194,14 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     risk: {
       event: eventRisk ?? null,
       news: newsRisk ?? null,
+      calendar: calendarRisk ?? null,
       budgetMultiplier: round(
-        Math.min(eventRisk?.budgetMultiplier ?? 1, newsRisk?.budgetMultiplier ?? 1, volatilityBudgetMultiplier),
+        Math.min(
+          eventRisk?.budgetMultiplier ?? 1,
+          newsRisk?.budgetMultiplier ?? 1,
+          calendarRisk?.budgetMultiplier ?? 1,
+          volatilityBudgetMultiplier
+        ),
         2
       )
     }

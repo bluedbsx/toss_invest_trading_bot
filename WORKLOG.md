@@ -328,3 +328,15 @@
 - UI: news-item에 태그 칩(.news-tag) 표시, 정적 category 메타 제거. "연준/거시/종목" → 자동갱신 시각. rate-panel "자주 보지 않는 진단…" 문구 삭제.
 - **매매 반영 확인**: newsRisk.budgetMultiplier가 strategy.js의 min()→adjustedBudget 경로로 매수예산을 줄임(악재 클러스터 시 50%). + 예정 CPI/FOMC는 eventRisk가 신규매수 차단. 즉 금리/인플레 악재는 매매에 반영됨(이번 inflation 복구 후 비로소 인플레도 포함).
 - 검증: 문법 OK 2파일. 라이브 반영 재시작 후.
+
+### EE. 경제(증시) 캘린더 — 지표 일정·발표 호재/악재 자동 판단 + 매매 반영 (`src/calendar.js` 외)
+- 요청: Toss 캘린더처럼 증시 지표 일정을 읽어 호재/악재 판단 + 자동 갱신(손 안 대도 관리) + 매매 반영.
+- 소스: **TradingView 공개 경제캘린더**(무키, US, importance + actual/forecast/previous). 무료·무의존성(fetch만).
+- 신규 `src/calendar.js`:
+  - `fetchEconomicCalendar`: US 중·고중요도(importance≥0) 지표 60건 정규화.
+  - **호재/악재 판단**(`judgeBias`): 발표 후 actual vs forecast + 지표 방향(성장·고용 높을수록 호재 / 인플레·실업 높을수록 악재 / 금리 인하 호재). 발표 전은 "예정". 미발표인데 actualRaw=0 오는 버그 → 표시 actual로 발표여부 판정해 수정. 검증: PCE 0.4<0.5→호재, GDP 2.1>1.6→호재, GDP물가 3.6>3.5→악재, NFP 미발표→예정.
+  - **매매 반영**(`getCalendarRisk`, 거시는 전 종목 공통): 고영향 지표 **4시간 내 임박 → 신규매수 차단**, 최근 8h 발표 악재 → 예산 50%, 24h 내 예정 → 70%. evaluateTarget의 budgetMultiplier min()과 block에 연결(eventRisk·newsRisk와 함께).
+- 배선: server.js 60분 자동 타이머 + `health.lastCalendarRefreshAt`. store.js `economicCalendar` 기본값 + saveTraderState 보존. trader.js가 틱마다 calendarRisk 계산해 evaluateTarget에 전달. UI "경제 캘린더" 패널(호재/악재 배지·중요도·발표값, 자동 갱신 시각).
+- **부수 버그 수정(기존 잠재)**: 동시 저장 시 임시파일명(`pid-Date.now()`)이 같은 ms에 충돌해 rename ENOENT로 크래시 → 난수 suffix 추가. 학습 리포트 타이머도 loadState 분리 호출 제거하고 updateState 큐 안에서 처리(시작 동시성 race 완화).
+- 검증: 격리 mock 인스턴스 종단 — 캘린더 60건 자동 수집, 호재/악재 판정, 패널 렌더, 에러 0. getCalendarRisk: 임박→차단, 악재→0.5 확인.
+- 가정/주의: 라이브 반영 재시작 후. 단일종목(MU/SNDK) 실적은 TradingView 거시 캘린더 약하므로 기존 eventRisk 하드코딩 이벤트와 공존. 호재/악재 방향 규칙은 휴리스틱(고용 호조의 매파 양면성 등은 단순화).

@@ -107,6 +107,7 @@ const defaultState = {
   marketSnapshots: {},
   riskGuard: null,
   news: [],
+  economicCalendar: [],
   automation: {
     lastRunAt: null,
     lastActions: [],
@@ -160,7 +161,7 @@ export async function saveState(state, { skipBackup = false } = {}) {
   // 롤링으로 사라지는 샘플까지 전부 영구 보관(append-only). 워터마크(archiveLastId)는 state.json에 함께 저장된다.
   await appendSampleArchive(nextState);
   const slimState = { ...nextState, learning: { ...nextState.learning, decisionSamples: [] } };
-  const tempFile = `${DB_FILE}.tmp-${process.pid}-${Date.now()}`;
+  const tempFile = `${DB_FILE}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await writeFile(tempFile, JSON.stringify(slimState, null, 2));
   await rename(tempFile, DB_FILE);
 }
@@ -194,7 +195,7 @@ async function writeSamples(samples) {
   } catch {
     // 사이드카 없음 — 새로 생성.
   }
-  const tempFile = `${SAMPLES_FILE}.tmp-${process.pid}-${Date.now()}`;
+  const tempFile = `${SAMPLES_FILE}.tmp-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   await writeFile(tempFile, JSON.stringify(next));
   await rename(tempFile, SAMPLES_FILE);
 }
@@ -248,6 +249,7 @@ export function saveTraderState(traderState) {
       },
       targets: current.targets,
       news: current.news,
+      economicCalendar: current.economicCalendar,
       automation: current.automation,
       learning: {
         ...current.learning,

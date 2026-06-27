@@ -1,6 +1,7 @@
 import { backtestTarget, buildOrderPlan, evaluateTarget, parseLeverage } from "./strategy.js";
 import { normalizeCandles } from "./indicators.js";
 import { getEventRisk, getNewsRisk, listEventCalendar } from "./eventRisk.js";
+import { getCalendarRisk } from "./calendar.js";
 import { attachTradeLearningContext, recordDecisionSample } from "./learning.js";
 import { recordEquitySnapshot } from "./validation.js";
 
@@ -92,6 +93,8 @@ export class Trader {
     recordEquitySnapshot(state);
     const riskGuard = calculateDailyRiskGuard(state, managedTargets, prices);
     state.riskGuard = riskGuard;
+    // 거시 지표 캘린더 리스크(전 종목 공통): 고영향 지표 임박/최근 악재면 신규매수 차단·축소.
+    const calendarRisk = getCalendarRisk(state.economicCalendar);
 
     for (const target of managedTargets) {
       const candleResponse = await getCandlesWithFallback(this.tossClient, target.symbol, "1d", [260, 200, 120, 80]);
@@ -112,6 +115,7 @@ export class Trader {
         isRegularMarket,
         eventRisk,
         newsRisk,
+        calendarRisk,
         botBudget
       });
       const backtest = backtestTarget({ target, candles, settings: state.settings });
