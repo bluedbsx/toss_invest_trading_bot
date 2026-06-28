@@ -512,3 +512,12 @@
   - `src/news.js`: 하드코딩 `NEWS_SYMBOLS`/`GOOGLE_NEWS_QUERY`/`TICKER_TAGS` 제거. `fetchNews(targets)`가 활성 종목으로 야후 종목 피드(`s=`), 구글뉴스 검색어, 태깅을 동적 구성. `TICKER_PROFILES`(회사명 keywords + 본문 alias 정규식) + 미등록 티커는 심볼 토큰(`symbolTokenRe`)로 폴백. `CONTEXT_TICKERS`(NVDA/AVGO/INTC/AMD)는 보유 안 해도 맥락 태그. `BASE_SYMBOLS=[QQQ]` 항상 포함.
   - `server.js`: `refreshNews`가 현재 targets를 로드해 `fetchNews(targets)` 호출. 종목 추가(POST /api/targets) 직후 `refreshNews()` 1회 트리거(응답 비차단)로 즉시 반영.
 - 검증: `node --check` PASS. mock fetch 단위테스트 — 야후 심볼 `QQQ,MU,AAPL,PLTR`(비활성 SOXL 제외), 구글 검색어에 Apple/PLTR/Micron 포함·SOXL 제외, 새 티커(PLTR) 뉴스가 태그 `["AI","PLTR"]`로 자동 분류됨 확인. 적용엔 서버 재시작 필요.
+
+### 2026-06-28 — Claude (Opus 4.8) : 토스 디자인 시스템 적용
+- 목적: 사용자 제공 TDS(토스 디자인 시스템) 문서를 `design.md`로 보관하고, 대시보드를 TDS 시각 언어로 재테마. 라이트(화이트 캔버스)가 기본, 헤더 토글로 다크 근사 전환.
+- 수정 내용:
+  - `design.md` 신규: TDS 토큰(컬러 4계층/타입 ramp/spacing/radius/elevation/motion) + Do/Don't + 본 프로젝트 적용 메모(시각 언어만 차용, 금융 도메인 개념 이식 금지).
+  - `public/styles.css`: `:root`를 TDS 라이트 토큰으로 재정의(grey-50 캔버스, white 카드, grey-900 텍스트, grey-700 보조, 1px grey-200 헤어라인, blue #3182F6 단일 강조), `:root[data-theme="dark"]`에 다크 근사 토큰. 컴포넌트의 하드코딩 다크 hex(#0d131a/#0b1118/#111923/버튼색/강조 텍스트 #6ee7b7·#9fc6ff·#ff9bae·#ffd58f 등)를 전부 CSS 변수로 치환 → 토글이 실제 동작. 토스트는 두 테마 모두 grey-900 다크 표면(TDS)이라 라벨 고정 밝게. 금융 수치 `tabular-nums`.
+  - `public/index.html`: `<head>`에 첫 페인트 전 테마 적용 스크립트(깜빡임 방지, 라이트 기본). 헤더에 테마 토글 버튼(`#themeToggle`).
+  - `public/app.js`: 토글 핸들러(localStorage `tds-theme` 저장) + `syncThemeToggle` 라벨 동기화.
+- 검증: `node --check public/app.js` PASS. 컴포넌트 규칙에 남은 소문자 다크 hex 0개(전부 변수화), 다크 토큰 정의 보존(대문자/rgb로 replace_all 충돌 회피), 정적 자산 서빙 200. 적용은 브라우저 하드 리프레시(서버 재시작 불요 — 정적 파일).

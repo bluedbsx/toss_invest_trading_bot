@@ -1,20 +1,91 @@
+/* Toss Design System (TDS) 토큰 — 라이트가 기본(문서 충실), [data-theme="dark"]는 다크 근사.
+   참고: design.md. 화이트 캔버스 + 토스 블루 단일 강조 + 1px grey-200 헤어라인. */
 :root {
+  color-scheme: light;
+  /* surfaces */
+  --bg: #f2f4f6;          /* grey-100 app canvas */
+  --panel: #ffffff;        /* card surface */
+  --panel-2: #f9fafb;      /* grey-50 */
+  --surface: #f9fafb;      /* inner field surface (grey-50) */
+  --surface-2: #f4f6f8;    /* nested inner card */
+  --chip-bg: #f2f4f6;      /* neutral chip (grey-100) */
+  --chart-bg: #ffffff;
+  /* text */
+  --text: #191f28;         /* grey-900 primary */
+  --muted: #4e5968;        /* grey-700 secondary */
+  --faint: #8b95a1;        /* grey-500 */
+  /* lines */
+  --line: #e5e8eb;         /* grey-200 default border */
+  --line-soft: #eef1f4;    /* grey-150 */
+  --line-strong: #d1d6db;  /* grey-300 */
+  /* brand + semantic */
+  --blue: #3182f6;
+  --blue-pressed: #1b64da;
+  --blue-weak: #e8f3ff;
+  --cyan: #1b9aaa;
+  --green: #12a26a;
+  --red: #f04452;
+  --amber: #f7920a;
+  /* accent text (light = strong hue, readable on washes) */
+  --blue-text: #2b6fd6;
+  --green-text: #0e9b63;
+  --red-text: #e02d3c;
+  --amber-text: #b8700c;
+  /* accent washed backgrounds */
+  --blue-wash: #e8f3ff;
+  --green-wash: #e7f7ef;
+  --red-wash: #fdecee;
+  --amber-wash: #fdf1e2;
+  /* neutral button */
+  --btn-bg: #f2f4f6;
+  --btn-bg-hover: #e5e8eb;
+  --btn-border: #e5e8eb;
+  --btn-border-hover: #d1d6db;
+  /* state + elevation */
+  --press-overlay: rgba(0, 0, 0, 0.06);
+  --shadow: 0 1px 2px rgba(21, 26, 48, 0.05), 0 1px 1px rgba(21, 26, 48, 0.04);
+  --shadow-lg: 0 12px 32px rgba(21, 26, 48, 0.10), 0 2px 6px rgba(21, 26, 48, 0.06);
+  --topbar-bg: rgba(255, 255, 255, 0.82);
+}
+
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #0b1118;
+  --bg: #0B1118;
   --panel: #121922;
   --panel-2: #172231;
   --surface: #0f1720;
-  --line: #263445;
-  --line-soft: #1d2a38;
+  --surface-2: #0D131A;
+  --chip-bg: rgb(17, 25, 35);
+  --chart-bg: #0B1118;
   --text: #f4f7fb;
   --muted: #9aa8b8;
+  --faint: #6b7684;
+  --line: #263445;
+  --line-soft: #1d2a38;
+  --line-strong: #2f4256;
   --blue: #3182f6;
   --blue-pressed: #1b64da;
+  --blue-weak: rgba(49, 130, 246, 0.14);
   --cyan: #2bc2d9;
   --green: #12b76a;
   --red: #f04452;
   --amber: #f79009;
+  --blue-text: #9FC6FF;
+  --green-text: #6EE7B7;
+  --red-text: #FF9BAE;
+  --amber-text: #FFD58F;
+  --blue-wash: rgba(49, 130, 246, 0.14);
+  --green-wash: rgba(25, 195, 125, 0.13);
+  --red-wash: rgba(255, 92, 122, 0.14);
+  --amber-wash: rgba(255, 196, 87, 0.14);
+  --btn-bg: #182334;
+  --btn-bg-hover: #213047;
+  --btn-border: #263445;
+  --btn-border-hover: #44617e;
+  --press-overlay: rgba(0, 0, 0, 0.26);
   --shadow: 0 14px 36px rgba(0, 0, 0, 0.24);
+  --shadow-lg: 0 16px 40px rgba(0, 0, 0, 0.32);
+  --topbar-bg: rgba(11, 17, 24, 0.9);
 }
 
 * {
@@ -38,9 +109,9 @@ input {
 
 button {
   min-height: 38px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--btn-border);
   border-radius: 999px;
-  background: #182334;
+  background: var(--btn-bg);
   color: var(--text);
   padding: 0 14px;
   cursor: pointer;
@@ -50,8 +121,8 @@ button {
 }
 
 button:hover {
-  border-color: #44617e;
-  background: #213047;
+  border-color: var(--btn-border-hover);
+  background: var(--btn-bg-hover);
 }
 
 button:active {
@@ -96,6 +167,22 @@ input:focus {
   outline: 3px solid rgba(49, 130, 246, 0.18);
 }
 
+/* 실시간 금융 수치는 tabular figure로 정렬한다 (TDS) */
+.last-price,
+.metric-grid b,
+.budget-strip b,
+.budget-strip small,
+.learning-card strong,
+.strategy-details b,
+.row-top span,
+.row-meta,
+.cal-meta,
+.header-ip strong,
+.ledger-epoch small {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
 .topbar {
   position: sticky;
   top: 0;
@@ -106,7 +193,7 @@ input:focus {
   gap: 16px;
   padding: 18px clamp(16px, 4vw, 36px);
   border-bottom: 1px solid var(--line-soft);
-  background: rgba(11, 17, 24, 0.9);
+  background: var(--topbar-bg);
   backdrop-filter: blur(18px);
 }
 
@@ -381,7 +468,7 @@ label small {
   padding: 8px 10px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .toggle-block > span {
@@ -405,7 +492,7 @@ label small {
   padding: 0 12px;
   border: 1px solid var(--line);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .segmented input {
@@ -440,7 +527,7 @@ label small {
   padding: 14px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .choice-card input {
@@ -465,15 +552,15 @@ label small {
 }
 
 .recommend-on {
-  color: #6ee7b7;
+  color: var(--green-text);
 }
 
 .recommend-off {
-  color: #ffb4c0;
+  color: var(--red-text);
 }
 
 .recommend-caution {
-  color: #ffd58f;
+  color: var(--amber-text);
 }
 
 .danger-choice span {
@@ -507,7 +594,7 @@ label small {
 .disabled-targets {
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  background: rgba(18, 25, 34, 0.72);
+  background: var(--surface-2);
   padding: 10px;
 }
 
@@ -543,7 +630,7 @@ label small {
   padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #111923;
+  background: var(--chip-bg);
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
@@ -619,7 +706,7 @@ label small {
   padding: 8px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
   color: var(--muted);
   font-size: 12px;
 }
@@ -646,7 +733,7 @@ label small {
   padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  background: #0b1118;
+  background: var(--chart-bg);
 }
 
 .chart-head,
@@ -703,11 +790,11 @@ label small {
 }
 
 .legend-buy {
-  color: #9fc6ff !important;
+  color: var(--blue-text) !important;
 }
 
 .legend-profit {
-  color: #6ee7b7 !important;
+  color: var(--green-text) !important;
 }
 
 .legend-partial-profit {
@@ -715,7 +802,7 @@ label small {
 }
 
 .legend-stop {
-  color: #ff9bae !important;
+  color: var(--red-text) !important;
 }
 
 .empty-chart {
@@ -738,7 +825,7 @@ label small {
   padding: 8px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
   color: var(--muted);
   font-size: 11px;
   line-height: 1.35;
@@ -746,7 +833,7 @@ label small {
 
 .risk-line span.danger {
   border-color: rgba(255, 92, 122, 0.35);
-  color: #ff9bae;
+  color: var(--red-text);
 }
 
 .risk-line span.calm {
@@ -760,7 +847,7 @@ label small {
   padding: 12px;
   border: 1px solid var(--line-soft);
   border-radius: 8px;
-  background: #0b1118;
+  background: var(--chart-bg);
 }
 
 .compact-strategy {
@@ -788,7 +875,7 @@ label small {
   padding: 0 8px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #111923;
+  background: var(--chip-bg);
   color: var(--muted);
   font-size: 11px;
   font-weight: 700;
@@ -826,7 +913,7 @@ label small {
   padding: 9px 10px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .strategy-details em {
@@ -894,7 +981,7 @@ label small {
 }
 
 .guard-chip.on {
-  color: #6ee7b7;
+  color: var(--green-text);
   border-color: rgba(110, 231, 183, 0.35);
   background: rgba(110, 231, 183, 0.1);
 }
@@ -969,7 +1056,7 @@ label small {
   padding: 8px 10px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .ledger-epoch span {
@@ -995,7 +1082,7 @@ label small {
   padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .row-item {
@@ -1036,7 +1123,7 @@ label small {
   border-radius: 999px;
   border: 1px solid var(--line-soft);
   color: var(--muted);
-  background: rgba(255, 255, 255, 0.03);
+  background: var(--surface);
 }
 
 .calendar-list {
@@ -1127,17 +1214,17 @@ label small {
 
 .budget-hint.ok {
   border-color: rgba(25, 195, 125, 0.24);
-  color: #8ee7bd;
+  color: var(--green-text);
 }
 
 .budget-hint.warn {
   border-color: rgba(247, 144, 9, 0.32);
-  color: #ffd58f;
+  color: var(--amber-text);
 }
 
 .budget-hint.danger {
   border-color: rgba(240, 68, 82, 0.35);
-  color: #ffb4c0;
+  color: var(--red-text);
 }
 
 .budget-add-control {
@@ -1149,7 +1236,7 @@ label small {
   padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .budget-add-control button {
@@ -1174,7 +1261,7 @@ label small {
 }
 
 .original-title {
-  color: #607283;
+  color: var(--faint);
   font-size: 11px;
   line-height: 1.45;
 }
@@ -1199,7 +1286,7 @@ label small {
   border: 1px solid rgba(49, 130, 246, 0.4);
   border-radius: 999px;
   background: rgba(49, 130, 246, 0.14);
-  color: #9fc6ff;
+  color: var(--blue-text);
   font-size: 12px;
   font-weight: 700;
 }
@@ -1207,24 +1294,24 @@ label small {
 .badge.buy {
   border-color: rgba(25, 195, 125, 0.4);
   background: rgba(25, 195, 125, 0.13);
-  color: #6ee7b7;
+  color: var(--green-text);
 }
 
 .badge.sell {
   border-color: rgba(255, 92, 122, 0.45);
   background: rgba(255, 92, 122, 0.14);
-  color: #ff9bae;
+  color: var(--red-text);
 }
 
 .badge.partial_sell {
   border-color: rgba(255, 196, 87, 0.46);
   background: rgba(255, 196, 87, 0.14);
-  color: #ffd58f;
+  color: var(--amber-text);
 }
 
 .badge.neutral {
   border-color: var(--line);
-  background: #111923;
+  background: var(--chip-bg);
   color: var(--muted);
 }
 
@@ -1245,7 +1332,7 @@ label small {
   margin: 0;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .switch span::after {
@@ -1311,7 +1398,7 @@ label small {
   padding: 0 10px;
   border: 1px solid var(--line);
   border-radius: 999px;
-  background: #111923;
+  background: var(--chip-bg);
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
@@ -1330,7 +1417,7 @@ label small {
   padding: 12px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
   color: var(--muted);
   font-size: 12px;
   line-height: 1.5;
@@ -1360,7 +1447,7 @@ label small {
   padding: 3px 8px;
   border: 1px solid var(--line-soft);
   border-radius: 999px;
-  background: #111923;
+  background: var(--chip-bg);
   color: var(--muted);
 }
 
@@ -1378,7 +1465,7 @@ label small {
   padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .rate-item strong,
@@ -1410,7 +1497,7 @@ label small {
 .rule-box {
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
   padding: 12px;
 }
 
@@ -1450,7 +1537,7 @@ label small {
   padding: 10px;
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
   color: var(--muted);
   font-size: 12px;
   line-height: 1.45;
@@ -1463,18 +1550,18 @@ label small {
   height: 24px;
   border-radius: 999px;
   background: rgba(49, 130, 246, 0.14);
-  color: #9fc6ff;
+  color: var(--blue-text);
 }
 
 .risk-step.done b {
   background: rgba(25, 195, 125, 0.16);
-  color: #6ee7b7;
+  color: var(--green-text);
 }
 
 .learning-card {
   border: 1px solid var(--line-soft);
   border-radius: 6px;
-  background: #0d131a;
+  background: var(--surface-2);
   padding: 12px;
 }
 
@@ -1519,7 +1606,7 @@ label small {
   padding: 16px;
   border: 1px solid var(--line-soft);
   border-radius: 10px;
-  background: #0d131a;
+  background: var(--surface-2);
 }
 
 .editor-row.is-disabled {
@@ -1603,17 +1690,17 @@ label small {
 
 .auto-save-state.ok {
   border-color: rgba(25, 195, 125, 0.34);
-  color: #6ee7b7;
+  color: var(--green-text);
 }
 
 .auto-save-state.pending {
   border-color: rgba(49, 130, 246, 0.36);
-  color: #9fc6ff;
+  color: var(--blue-text);
 }
 
 .auto-save-state.danger {
   border-color: rgba(240, 68, 82, 0.4);
-  color: #ff9bae;
+  color: var(--red-text);
 }
 
 .recommendation-note {
@@ -1636,18 +1723,18 @@ label small {
   padding: 3px 8px;
   border: 1px solid var(--line-soft);
   border-radius: 999px;
-  background: #0d131a;
+  background: var(--surface-2);
   color: var(--muted);
 }
 
 .diff-chip.changed {
   border-color: rgba(49, 130, 246, 0.38);
   background: rgba(49, 130, 246, 0.12);
-  color: #9fc6ff;
+  color: var(--blue-text);
 }
 
 .warning-text {
-  color: #ffd58f;
+  color: var(--amber-text);
   font-weight: 700;
 }
 
@@ -1690,15 +1777,21 @@ label small {
   display: none;
 }
 
+/* 토스트는 두 테마 모두 grey-900 다크 표면(TDS 규칙)이라 라벨은 항상 밝게 고정한다. */
+.progress-toast {
+  background: rgba(13, 19, 26, 0.96);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
 .progress-toast strong {
   display: block;
-  color: var(--text);
+  color: #ffffff;
   font-size: 13px;
 }
 
 .progress-toast p {
   margin-top: 3px;
-  color: var(--muted);
+  color: rgba(255, 255, 255, 0.72);
   font-size: 12px;
   line-height: 1.4;
 }

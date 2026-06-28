@@ -4,6 +4,16 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Toss 자동투자 관리</title>
+    <script>
+      // 첫 페인트 전에 저장된 테마를 적용해 깜빡임을 막는다(라이트 기본).
+      (function () {
+        try {
+          document.documentElement.dataset.theme = localStorage.getItem("tds-theme") || "light";
+        } catch (e) {
+          document.documentElement.dataset.theme = "light";
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
@@ -22,6 +32,7 @@
         </div>
         <span id="mockBadge" class="badge neutral">DRY</span>
         <span id="statusText" class="status-text">loading</span>
+        <button id="themeToggle" class="icon-button wide-icon" title="테마 전환" aria-label="테마 전환">다크</button>
         <button id="runOnce" class="icon-button" title="지금 한 번 실행" aria-label="지금 한 번 실행">↻</button>
         <button id="testConnection" class="icon-button wide-icon" title="토스 연결 확인" aria-label="토스 연결 확인">API</button>
         <div id="headerChecklist" class="header-checklist"></div>

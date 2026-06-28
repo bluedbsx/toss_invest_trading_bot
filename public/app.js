@@ -26,6 +26,17 @@ $("#runAutomationNow").addEventListener("click", runAutomationNow);
 $("#recommendSafety").addEventListener("click", recommendSafetySettings);
 $("#copyPublicIp").addEventListener("click", copyPublicIp);
 if ($("#copyMobileUrl")) $("#copyMobileUrl").addEventListener("click", copyMobileUrl);
+if ($("#themeToggle")) {
+  syncThemeToggle();
+  $("#themeToggle").addEventListener("click", () => {
+    const next = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try {
+      localStorage.setItem("tds-theme", next);
+    } catch (e) {}
+    syncThemeToggle();
+  });
+}
 $("#refreshPublicIp").addEventListener("click", refreshPublicIp);
 $("#testConnection").addEventListener("click", async () => {
   const result = await runTossAction("testConnection", "/api/test-connection", $("#testConnection"), { refreshAfter: false });
@@ -1611,6 +1622,14 @@ function isCurrentEngineResult(result) {
 
 function currentStrategyName() {
   return state?.strategy?.name ?? "현재 전략";
+}
+
+function syncThemeToggle() {
+  const button = $("#themeToggle");
+  if (!button) return;
+  const isDark = document.documentElement.dataset.theme === "dark";
+  button.textContent = isDark ? "라이트" : "다크";
+  button.title = isDark ? "라이트 모드로 전환" : "다크 모드로 전환";
 }
 
 function parseLeverageText(value) {
