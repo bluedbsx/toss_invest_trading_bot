@@ -584,3 +584,32 @@
 - 가정/주의(다른 에이전트가 검토해야 할 점):
   - 현재 MU의 0% 비중은 운영 데이터에서 임의로 복구하지 않았음. 실제 매수 배정에 넣으려면 전체비중 추천 적용 또는 직접 비중 수정이 필요함.
   - `pausedAllocationPct`는 이후 OFF→ON 토글부터 효과가 있다. 과거에 이미 0%가 된 종목은 이전 비중 정보가 없으면 ON 복구 시 10% 폴백을 쓴다.
+
+### 2026-06-28 — Codex
+- 문제/목적:
+  - 하드코딩 또는 느슨하게만 연결된 기능을 재점검. 특히 "종목 추가 → 회사명/뉴스/태그/이벤트/전략 기본값" 흐름이 실제로 유기적으로 이어지는지 확인.
+- 진단(근거):
+  - `src/news.js`는 태그 생성은 `tickers.js` 공유 matcher를 쓰지만, `detectTopic`은 MU/TSM/WDC/GOOGL/SNDK if-chain으로 남아 있어 새 종목 뉴스 요약 주제가 "종목 뉴스"로 뭉개질 수 있었음.
+  - `POST /api/targets`는 심볼만 저장해 미등록 티커의 회사명 기반 뉴스 검색/별칭 매칭이 약했음. `tickers.js`는 name에서 별칭을 추정하지만, name 자체가 심볼이면 효과가 제한됨.
+  - 새 종목 추가 기본값에서 `allocationPct: Number(body.allocationPct || 10)`처럼 falsy 기본값을 써서 사용자가 0% 관찰용 종목을 명시해도 10%로 바뀔 수 있었음.
+  - 뉴스 기본 심볼/맥락 티커/거시 검색어는 코드 상수로만 조정 가능했음.
+- 수정 내용:
+  - `src/marketData.js`에 `getExternalSymbolMeta(symbol)` 추가. Yahoo Finance chart meta에서 `longName/shortName/instrumentType/exchangeName`을 24시간 캐시로 가져옴. 기존 일봉 조회도 같은 Yahoo chart helper를 쓰도록 정리하고 12초 timeout 적용.
+  - `POST /api/targets`가 티커 추가 전 외부 메타를 조회해 `Apple Inc. (AAPL)` 같은 표시명을 자동 저장하고, 메타 출처를 notes에 남김. 메타 실패 시 기존처럼 심볼만 저장해 기능은 막지 않음.
+  - `src/tickers.js`에 `displayNameFor`, `inferLeverage`, `contextTickers` 추가. MUU/SNXX/SOXL 프로필과 배율 힌트를 보강해 레버리지 후보도 같은 프로필 경로를 타게 함.
+  - `src/news.js`의 topic 분류를 하드코딩 if-chain에서 태그/추적 심볼/프로필 기반으로 전환. 종목 태그를 일반 주제 태그보다 먼저 보존해 새 종목 관련 기사가 "종목 뉴스"로 뭉개지지 않게 함. `NEWS_BASE_SYMBOLS`, `NEWS_CONTEXT_TICKERS`, `NEWS_MACRO_QUERY_TERMS` 환경변수로 기본 뉴스 범위를 조정 가능하게 함.
+  - 새 종목 숫자 기본값은 `numberWithDefault`로 바꿔 0을 명시한 경우 보존.
+  - README에 종목 추가 자동 연결과 뉴스 관련 env 설정을 문서화.
+- 건드린 파일/함수:
+  - `src/marketData.js`: `getExternalSymbolMeta`, `fetchYahooChart`
+  - `src/tickers.js`: `contextTickers`, `displayNameFor`, `inferLeverage`, MUU/SNXX/SOXL profiles
+  - `src/news.js`: env-driven base/context terms, tag-based `detectTopic`
+  - `server.js`: `POST /api/targets`, target display/meta helpers, numeric defaults
+  - `README.md`
+- 검증 방법과 결과:
+  - `node --check server.js`, `for f in src/*.js public/app.js scripts/*.js; do node --check "$f"; done`, `git diff --check` PASS.
+  - 모듈 검증: `getExternalSymbolMeta("PLTR")`가 `Palantir Technologies Inc.`를 반환, `queryKeywords`/`displayNameFor`가 회사명 기반으로 동작, `inferLeverage("TQQQ", "ProShares UltraPro QQQ") → 3x`, `inferLeverage("SSO", "ProShares Ultra S&P500") → 2x` 확인.
+  - 격리 mock 서버(`DATA_DIR=/tmp/...`, `PORT=3998`, Toss 키 공란)에서 `POST /api/targets {symbol:"AAPL", allocationPct:0}` 결과: `name="Apple Inc. (AAPL)"`, `allocationPct=0`, `leverage="1x"`, `notes="Yahoo Finance · EQUITY · NMS"` 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - Yahoo 메타 조회가 실패하면 종목 추가는 막지 않고 기존처럼 심볼 기반으로 진행한다. 이 경우 뉴스 검색은 심볼 중심으로만 동작한다.
+  - 섹터 분류는 여전히 `TICKER_PROFILES`에 없는 새 티커의 경우 자동으로 알 수 없으므로, 깊은 업종별 뉴스 관련도까지 원하면 추후 Yahoo quoteSummary/별도 프로필 소스 연결이 필요하다.

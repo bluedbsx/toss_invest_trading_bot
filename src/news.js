@@ -1,9 +1,9 @@
-import { CONTEXT_TICKERS, aliasMatcher, queryKeywords } from "./tickers.js";
+import { aliasMatcher, contextTickers, displayNameFor, queryKeywords } from "./tickers.js";
 
 // 항상 추적하는 기본 심볼(벤치마크/거시 헤지). 활성 자동매매 종목은 fetchNews에서 합쳐진다.
-const BASE_SYMBOLS = ["QQQ"];
+const BASE_SYMBOLS = envList("NEWS_BASE_SYMBOLS", ["QQQ"], { uppercase: true });
 // 거시(연준/인플레이션/반도체) 기본 검색어 — 종목별 키워드가 여기에 더해진다.
-const MACRO_QUERY_TERMS = ["Federal Reserve", "FOMC", "inflation", "semiconductor", "AI"];
+const MACRO_QUERY_TERMS = envList("NEWS_MACRO_QUERY_TERMS", ["Federal Reserve", "FOMC", "inflation", "semiconductor", "AI"]);
 
 function enabledSymbols(targets) {
   return (targets ?? [])
@@ -159,10 +159,10 @@ const TOPIC_TAGS = [
 function buildTags(text, trackedSymbols = [], nameMap = {}) {
   const topics = TOPIC_TAGS.filter(([re]) => re.test(text)).map(([, label]) => label);
   const tickers = new Set();
-  for (const symbol of new Set([...trackedSymbols, ...CONTEXT_TICKERS])) {
+  for (const symbol of new Set([...trackedSymbols, ...contextTickers()])) {
     if (aliasMatcher(symbol, nameMap[symbol]).test(text)) tickers.add(symbol);
   }
-  return [...new Set([...topics, ...tickers])].slice(0, 6);
+  return [...new Set([...tickers, ...topics])].slice(0, 6);
 }
 
 function enrichNews(item, trackedSymbols = [], nameMap = {}) {
@@ -173,14 +173,15 @@ function enrichNews(item, trackedSymbols = [], nameMap = {}) {
   // 가중 임계값(±1.5)으로 미약한 신호를 중립 처리해 잡음을 줄인다.
   const sentiment = score >= 1.5 ? "positive" : score <= -1.5 ? "negative" : "neutral";
   const signalLabel = sentiment === "positive" ? "호재 가능성" : sentiment === "negative" ? "악재 가능성" : "중립";
-  const topic = detectTopic(text, item.category);
   const reasons = [...negative.labels, ...positive.labels].slice(0, 3);
+  const tags = buildTags(text, trackedSymbols, nameMap);
+  const topic = detectTopic({ text, fallback: item.category, tags, trackedSymbols, nameMap });
 
   return {
     ...item,
     translatedTitle: koreanizeTitle(item.title),
     koreanSummary: buildKoreanSummary({ topic, signalLabel, reasons, item }),
-    tags: buildTags(text, trackedSymbols, nameMap),
+    tags,
     sentiment,
     signalLabel,
     signalScore: score,
@@ -201,14 +202,16 @@ function weightedHits(text, terms) {
   return { labels, weight };
 }
 
-function detectTopic(text, fallback) {
-  if (text.includes("fed") || text.includes("fomc") || text.includes("rate")) return "연준/금리";
-  if (text.includes("semiconductor") || text.includes("chip") || /\bai\b/.test(text)) return "반도체/AI";
-  if (text.includes("micron") || text.includes("mu ")) return "Micron/MUU";
-  if (text.includes("tsmc") || text.includes("tsm ")) return "TSMC/TSM";
-  if (text.includes("western digital") || text.includes("wdc")) return "Western Digital/WDC";
-  if (text.includes("alphabet") || text.includes("google")) return "Alphabet/GOOGL";
-  if (text.includes("sandisk") || text.includes("sndk")) return "SanDisk/SNXX";
+function detectTopic({ text, fallback, tags = [], trackedSymbols = [], nameMap = {} }) {
+  if (tags.includes("연준") || tags.includes("금리") || text.includes("fomc")) return "연준/금리";
+  if (tags.includes("인플레이션")) return "인플레이션";
+  const matchedSymbols = trackedSymbols.filter((symbol) => tags.includes(symbol)).slice(0, 2);
+  if (matchedSymbols.length) {
+    return matchedSymbols.map((symbol) => `${displayNameFor(symbol, nameMap[symbol])}/${symbol}`).join(" · ");
+  }
+  if (tags.includes("반도체") || tags.includes("AI") || tags.includes("메모리")) {
+    return tags.filter((tag) => ["반도체", "AI", "메모리"].includes(tag)).join("/");
+  }
   return fallback === "Tickers" ? "종목 뉴스" : "거시 뉴스";
 }
 
@@ -228,4 +231,14 @@ function koreanizeTitle(title) {
     .replace(/\bsemiconductor(s)?\b/gi, "반도체")
     .replace(/\bchip(s)?\b/gi, "칩")
     .replace(/\bearnings\b/gi, "실적");
+}
+
+function envList(name, fallback, { uppercase = false } = {}) {
+  const raw = typeof process !== "undefined" ? process.env?.[name] : "";
+  const items = String(raw ?? "")
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean)
+    .map((item) => (uppercase ? item.toUpperCase() : item));
+  return items.length ? items : fallback;
 }

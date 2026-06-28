@@ -4,10 +4,12 @@
 
 export const TICKER_PROFILES = {
   MU: { keywords: ["Micron"], aliases: ["micron", "muu"], sector: "memory" },
+  MUU: { keywords: ["Micron"], aliases: ["micron", "mu", "muu"], sector: "memory", leverage: "2x" },
   TSM: { keywords: ["TSMC", "Taiwan Semiconductor"], aliases: ["tsmc", "taiwan semiconductor"], sector: "semi" },
   WDC: { keywords: ["Western Digital"], aliases: ["western digital"], sector: "memory" },
   GOOGL: { keywords: ["Alphabet", "Google"], aliases: ["alphabet", "google", "goog"], sector: "ai" },
   SNDK: { keywords: ["SanDisk"], aliases: ["sandisk", "sndk", "snxx"], sector: "memory" },
+  SNXX: { keywords: ["SanDisk"], aliases: ["sandisk", "sndk", "snxx"], sector: "memory", leverage: "2x" },
   NVDA: { keywords: ["Nvidia"], aliases: ["nvidia", "nvda"], sector: "semi" },
   AVGO: { keywords: ["Broadcom"], aliases: ["broadcom", "avgo"], sector: "semi" },
   INTC: { keywords: ["Intel"], aliases: ["intel", "intc"], sector: "semi" },
@@ -20,7 +22,7 @@ export const TICKER_PROFILES = {
   QQQ: { keywords: ["Nasdaq 100"], aliases: ["qqq", "nasdaq 100"], sector: "index" },
   SOXX: { keywords: ["semiconductor ETF"], aliases: ["soxx"], sector: "semi" },
   SMH: { keywords: [], aliases: ["smh"], sector: "semi" },
-  SOXL: { keywords: [], aliases: ["soxl"], sector: "semi" }
+  SOXL: { keywords: [], aliases: ["soxl"], sector: "semi", leverage: "3x" }
 };
 
 // 섹터 동향 키워드(섹터 뉴스가 그 섹터 종목에 영향). 종목 프로필의 sector로 연결한다.
@@ -37,6 +39,10 @@ export const CONTEXT_TICKERS = ["NVDA", "AVGO", "INTC", "AMD"];
 
 export function profileFor(symbol) {
   return TICKER_PROFILES[String(symbol ?? "").toUpperCase()] ?? null;
+}
+
+export function contextTickers() {
+  return envList("NEWS_CONTEXT_TICKERS", CONTEXT_TICKERS);
 }
 
 function escapeRegExp(value) {
@@ -80,6 +86,21 @@ export function queryKeywords(symbol, name) {
   return fromName ? [fromName] : [String(symbol ?? "").toUpperCase()];
 }
 
+export function displayNameFor(symbol, name) {
+  const profile = profileFor(symbol);
+  if (profile?.keywords?.length) return profile.keywords[0];
+  return englishCompanyName(name) ?? String(symbol ?? "").toUpperCase();
+}
+
+export function inferLeverage(symbol, name) {
+  const profile = profileFor(symbol);
+  if (profile?.leverage) return profile.leverage;
+  const text = `${symbol ?? ""} ${name ?? ""}`.toLowerCase();
+  if (/\b3\s*x\b|3x|triple|ultrapro|bull\s*3|bear\s*3/.test(text)) return "3x";
+  if (/\b2\s*x\b|2x|double|ultra(?!pro)|bull\s*2|bear\s*2/.test(text)) return "2x";
+  return "1x";
+}
+
 // 종목 name에서 영문 회사명만 뽑는다(한글/괄호/배수표기 제거). 예: "iShares 반도체 1x (SOXX)" → "iShares".
 function englishCompanyName(name) {
   if (!name) return null;
@@ -98,4 +119,13 @@ export function relevanceMatcher(symbol, name) {
   const profile = profileFor(symbol);
   const sector = profile?.sector ? SECTOR_KEYWORDS[profile.sector] : null;
   return (text) => alias.test(text) || (sector ? sector.test(text) : false);
+}
+
+function envList(name, fallback) {
+  const raw = typeof process !== "undefined" ? process.env?.[name] : "";
+  const items = String(raw ?? "")
+    .split(",")
+    .map((item) => item.trim().toUpperCase())
+    .filter(Boolean);
+  return items.length ? items : fallback;
 }

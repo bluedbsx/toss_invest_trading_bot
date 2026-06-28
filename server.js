@@ -14,7 +14,7 @@ import {
   robustBacktestTarget,
   strategySummary
 } from "./src/strategy.js";
-import { getExternalDailyCandles } from "./src/marketData.js";
+import { getExternalDailyCandles, getExternalSymbolMeta } from "./src/marketData.js";
 import { actionCostsForTargets } from "./src/rateLimiter.js";
 import { TossClient } from "./src/tossClient.js";
 import { Trader } from "./src/trader.js";
@@ -24,6 +24,7 @@ import { fetchEconomicCalendar, summarizeMacroTone } from "./src/calendar.js";
 import { fetchEarningsEvents } from "./src/earnings.js";
 import { listEventCalendar } from "./src/eventRisk.js";
 import { enforceDashboardAuth } from "./src/auth.js";
+import { inferLeverage } from "./src/tickers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
@@ -417,31 +418,34 @@ async function handleApi(request, response, url) {
 
   if (request.method === "POST" && url.pathname === "/api/targets") {
     const body = await readBody(request);
+    const symbol = String(body.symbol ?? "").trim().toUpperCase();
+    if (!symbol) throw new Error("symbol is required");
+    const symbolMeta = await getExternalSymbolMeta(symbol).catch(() => null);
     const state = await updateState((draft) => {
-      const symbol = String(body.symbol ?? "").trim().toUpperCase();
-      if (!symbol) throw new Error("symbol is required");
       if (draft.targets.some((target) => target.symbol === symbol)) throw new Error("target already exists");
+      const targetName = body.name || buildTargetDisplayName(symbol, symbolMeta);
+      const targetLeverage = body.leverage || inferLeverage(symbol, targetName);
       draft.targets.push({
         symbol,
-        name: body.name || symbol,
+        name: targetName,
         enabled: body.enabled ?? true,
         riskProfile: body.riskProfile || "custom",
-        allocationPct: Number(body.allocationPct || 10),
-        leverage: body.leverage || "custom",
-        fastSmaDays: Number(body.fastSmaDays || 20),
-        slowSmaDays: Number(body.slowSmaDays || 50),
-        momentumDays: Number(body.momentumDays || 5),
-        minBuyRsi: Number(body.minBuyRsi || 45),
-        maxBuyRsi: Number(body.maxBuyRsi || 72),
-        stopLossPct: Number(body.stopLossPct || 8),
-        partialTakeProfitPct: Number(body.partialTakeProfitPct || 10),
-        partialTakeProfitSellPct: Number(body.partialTakeProfitSellPct || 40),
-        takeProfitPct: Number(body.takeProfitPct || 18),
-        trailingStopPct: Number(body.trailingStopPct || 10),
-        takeProfitRsi: Number(body.takeProfitRsi || 78),
-        maxAtrPct: Number(body.maxAtrPct || 12),
-        minAdx: Number(body.minAdx || 0),
-        notes: body.notes || ""
+        allocationPct: numberWithDefault(body.allocationPct, 10),
+        leverage: targetLeverage,
+        fastSmaDays: numberWithDefault(body.fastSmaDays, 20),
+        slowSmaDays: numberWithDefault(body.slowSmaDays, 50),
+        momentumDays: numberWithDefault(body.momentumDays, 5),
+        minBuyRsi: numberWithDefault(body.minBuyRsi, 45),
+        maxBuyRsi: numberWithDefault(body.maxBuyRsi, 72),
+        stopLossPct: numberWithDefault(body.stopLossPct, 8),
+        partialTakeProfitPct: numberWithDefault(body.partialTakeProfitPct, 10),
+        partialTakeProfitSellPct: numberWithDefault(body.partialTakeProfitSellPct, 40),
+        takeProfitPct: numberWithDefault(body.takeProfitPct, 18),
+        trailingStopPct: numberWithDefault(body.trailingStopPct, 10),
+        takeProfitRsi: numberWithDefault(body.takeProfitRsi, 78),
+        maxAtrPct: numberWithDefault(body.maxAtrPct, 12),
+        minAdx: numberWithDefault(body.minAdx, 0),
+        notes: body.notes || buildTargetMetaNote(symbolMeta)
       });
     });
     // 새 종목의 뉴스·실적 일정을 즉시 반영(다음 폴링에서 표시). 응답은 기다리지 않는다.
@@ -910,6 +914,22 @@ function summarizeTargetRecommendation(currentTarget, recommendation) {
     calculatedAt: new Date().toISOString(),
     cache: recommendation.cache ?? null
   };
+}
+
+function buildTargetDisplayName(symbol, meta) {
+  const name = meta?.longName || meta?.shortName;
+  return name ? `${name} (${symbol})` : symbol;
+}
+
+function buildTargetMetaNote(meta) {
+  if (!meta?.source) return "";
+  return [meta.source, meta.instrumentType, meta.exchangeName].filter(Boolean).join(" · ");
+}
+
+function numberWithDefault(value, fallback) {
+  if (value === null || value === undefined || value === "") return fallback;
+  const number = Number(value);
+  return Number.isFinite(number) ? number : fallback;
 }
 
 function recommendationMatchesTarget(target, recommendation) {
