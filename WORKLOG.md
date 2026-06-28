@@ -656,3 +656,23 @@
 - 검증: `node --check` PASS, 격리 부팅 정상, Fix#1 보존 라인 확인, Fix#2 단위테스트 5% 확인.
 - 가정/주의: 두 수정 모두 저위험(필드 보존/디스플레이 스코프)·기존 패턴 일치. 라이브 반영은 재시작 후. 추가 관찰: macroTone은 server.js(디스플레이)와 getCalendarRisk(예산) 두 곳에서 같은 함수로 각각 계산(중복이나 동일 입력이라 불일치 아님 — 비용 무시 가능, 미수정).
 - **발견·수정 버그 3(후속) — 벤치마크 현금흐름이 페이퍼 세션 기간과 불일치(`src/validation.js` buildCapitalFlows)**: 봇 수익률(botReturnPct)·MDD·승률은 페이퍼 세션 스코프인데, 벤치마크 현금흐름은 `botStartedAt`+옛 budget-add 기준이라 **봇과 벤치마크가 다른 기간을 비교**(초과수익이 무의미해질 수 있음). 페이퍼 세션 시작과 botStartedAt이 갈리면(상품 변경 시 paperSession.startedAt만 갱신) 봇은 짧은 페이퍼 기간, 벤치마크는 긴 기간이 됨. 수정: 페이퍼 세션 활성 시 현금흐름을 **`paperSession.startedAt`에 현재 시드 단일 투입**으로(옛 botStartedAt·budget-add 제외) → 봇·벤치마크 같은 기간 비교. 라이브 모드는 기존 botStartedAt+budget-add 로직 유지. 단위검증: 페이퍼 06-27 시작·시드 100 → 벤치 QQQ를 06-27 종가 기준으로 계산(06-21 아님), 봇 10% vs 벤치 5% = 초과 +5%p 동일기간.
+
+### 2026-06-28 — Codex
+- 문제/목적:
+  - 사용자가 다른 LLM과 토론할 수 있도록, 반도체 추세 이탈 시 봇에 추가할 레짐 로테이션 후보(XLE/GLD/LMT 등)의 추천·근거·반례를 문서화.
+- 진단(근거):
+  - 현재 봇은 MU/WDC/TSM 중심이라 반도체/메모리 추세가 꺾이면 대부분 쉬는 구조.
+  - 현재 봇 로직 기준 재검증 결과, XLE/GLD 추가 방향은 타당하지만 "2022년에 56% 날 롱" 같은 표현은 재현되지 않음. 2022년 단일 후보 롱 노출은 XLE 13.4%, GLD 7.0%, LMT 8.0%.
+  - `redistributeUnusedAllocation` 관점에서는 2022년에 반도체 신호가 꺼진 날이 많고, XLE/GLD가 전체 거래일의 34.3%에서 대체 예산을 가져갈 수 있어 전략적 의미가 있음.
+- 수정 내용:
+  - `docs/regime-rotation-candidates.md` 신규 작성.
+  - 문서에 최종 추천(`MU 28 / WDC 20 / TSM 16 / XLE 20 / GLD 16`), LMT paper 관찰안, XOM/RTX 보류, SH/PSQ 고위험 paper 분리 판단을 정리.
+  - 2022 bear, 2024 AI bull, 2025-26, 10y-ish 구간의 봇 전략 수익/롱 노출/재분배 효과/상관 근거와 다른 LLM 토론 질문 포함.
+- 건드린 파일/함수:
+  - `docs/regime-rotation-candidates.md`
+- 검증 방법과 결과:
+  - 공식 링크 응답 확인: XLE(State Street) 200, GLD(SPDR) 200, PSQ(ProShares) 200, Lockheed annual reports 200, Exxon investor site 200, RTX company info 200.
+  - 문서 내용 수동 검토 완료.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 문서의 백테스트 수치는 일봉 기반이며 실전 체결/환율/수수료/장중 갭을 완전히 반영하지 않는다.
+  - XLE/GLD/LMT/RTX/XOM 후보는 현 신규 후보 기본 파라미터 기준이므로, 종목별 정밀추천을 적용하면 결과가 달라질 수 있다.
