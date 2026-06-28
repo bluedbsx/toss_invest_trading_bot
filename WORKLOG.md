@@ -551,3 +551,36 @@
   - `public/index.html`·`app.js`·`styles.css`: 종목 이벤트 패널을 수동 입력 폼 → 자동 수집 읽기전용 목록 + "지금 수집" 버튼 + 마지막 수집 시각 표시로 교체. `renderEvents`/`collectEarningsNow`.
 - 검증: 격리 mock 서버(:3097)에서 POST /api/events/refresh가 기본 종목(MU/TSM/WDC)의 실적 TSM(7/16)·WDC(7/29) 자동 수집·eventCalendar 반영, lastEarningsRefreshAt 기록 확인. 옛 수동 POST /api/events는 404. `node --check` 전부 PASS. 잔여 수동 참조 0(주석 정정). 적용엔 서버 재시작 필요.
 - 가정/주의: Nasdaq 엔드포인트가 지역/차단으로 실패하면 earningsEvents 빈 채로 안전 동작(이벤트 차단 없음). 실적 시각은 마감 후 가정(estimated).
+
+### 2026-06-28 — Codex
+- 문제/목적:
+  - Claude의 UI/동적 뉴스·이벤트/장부 변경을 교차검증하고, Toss 증권 화면을 참고해 로컬 대시보드의 첫 화면 가독성과 현재 상태 인지를 개선.
+  - `enabled=true`인데 `allocationPct=0`인 MU가 켜진 종목 카드에 남아 있어 사용자가 자동매매 ON으로 오해할 수 있는 모순을 정리.
+- 진단(근거):
+  - `/api/state`에서 MU는 `enabled=true`, `allocationPct=0`인데 기존 전략 평가는 매수 조건 통과 사유를 먼저 보여줄 수 있었고, 실제 주문 단계에서야 예산 0으로 스킵되는 구조였음.
+  - Claude가 OFF 시 비중 0 자동 적용을 추가했지만, OFF 직전 비중을 보존하지 않아 다시 켤 때 0%가 그대로 남을 수 있었음.
+  - 종목 설정 카드의 버튼은 정리됐지만, 백테스트 점수/변경 비교/추천 이유가 항상 펼쳐져 데스크톱에서도 텍스트 밀도가 높았음.
+  - 서버 시작 시 뉴스/캘린더/실적/학습 자동 갱신 호출은 내부에서 대부분 에러를 잡지만, 저장 실패 같은 2차 오류는 미처리 Promise로 남을 수 있었음.
+- 수정 내용:
+  - 상단에 `현재 운영 요약` 패널 추가: 주문 잠금, 장부 모드, 실제 배정 종목, 검증 상태, 다음 확인 액션을 한 줄 대시보드로 표시.
+  - 켜져 있지만 비중 0%인 종목은 요약 경고와 종목 카드에서 `관찰 전용`으로 표시하고, 전략 평가도 `배정 비중 0% — 새 매수 제외` 사유의 HOLD로 내려가게 수정.
+  - 종목 OFF 시 이전 비중을 `pausedAllocationPct`로 보존하고, 다시 켤 때 사용자가 직접 0%를 저장한 경우가 아니면 직전 비중(없으면 10%)을 복구.
+  - 종목 설정의 긴 추천 상세는 기본 접힘(`변경/이유 보기`, `검증 상세 보기`)으로 바꿔 화면 밀도를 낮춤.
+  - 서버 시작 시 자동 갱신 호출에 `.catch(() => {})`를 붙여 초기 비동기 실패가 프로세스에 새 오류를 만들지 않게 함.
+  - `package.json` 설명을 레버리지 ETF 전용 표현에서 adaptive US stock/ETF 전략으로 정정.
+- 건드린 파일/함수:
+  - `server.js`: startup refresh calls, `PATCH /api/targets/:symbol`
+  - `src/strategy.js`: `evaluateTarget`
+  - `public/index.html`: overview panel
+  - `public/app.js`: `renderOperationSummary`, `appendTargetCard`, `renderTargetRecommendationNote`
+  - `public/styles.css`: overview/no-allocation/recommendation-details styles
+  - `package.json`
+- 검증 방법과 결과:
+  - `node --check server.js`, `for f in src/*.js public/app.js scripts/*.js; do node --check "$f"; done`, `git diff --check` PASS.
+  - 단위성 스크립트: `allocationPct=0`인 활성 종목이 `HOLD`와 `배정 비중 0% — 새 매수 제외`를 반환함 확인.
+  - 서버 단일 인스턴스 재시작 후 `/api/state`: Toss API connected, paper ledger alive, botBudget `$100`, validation basis `paper`, learning report present, MU signal HOLD/0% 사유 확인.
+  - `POST /api/events/refresh` 200 — TSM/WDC 실적 일정 자동 수집 유지. `POST /api/learning/report` 200 — 현재 paper 세션 스코프 리포트 생성 확인.
+  - Chrome QA: localhost 새 코드 로드, 콘솔 error/warn 없음, 가로 overflow 없음, 비활성 종목 접힘 유지, 요청한도 카드 없음, editor 버튼은 `정밀추천`/`삭제`만 존재, 추천 상세 기본 접힘.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 현재 MU의 0% 비중은 운영 데이터에서 임의로 복구하지 않았음. 실제 매수 배정에 넣으려면 전체비중 추천 적용 또는 직접 비중 수정이 필요함.
+  - `pausedAllocationPct`는 이후 OFF→ON 토글부터 효과가 있다. 과거에 이미 0%가 된 종목은 이전 비중 정보가 없으면 ON 복구 시 10% 폴백을 쓴다.

@@ -104,6 +104,7 @@ $("#recommendWeights").addEventListener("click", async () => {
 async function refresh() {
   state = await get("/api/state");
   renderBeginnerHero();
+  renderOperationSummary();
   renderSettings();
   renderTargets();
   renderLedger();
@@ -341,6 +342,84 @@ function renderBeginnerHero() {
     .join("");
   renderPublicIp();
   renderMobileUrl();
+}
+
+function renderOperationSummary() {
+  const host = $("#operationSummary");
+  if (!host) return;
+  const updatedAt = $("#overviewUpdatedAt");
+  if (updatedAt) updatedAt.textContent = `갱신 ${formatTime(state.settings?.lastRunAt ?? state.health?.lastApiSyncAt)}`;
+
+  const settings = state.settings ?? {};
+  const runtime = state.runtime ?? {};
+  const health = state.health ?? {};
+  const riskGuard = state.riskGuard ?? {};
+  const dry = runtime.mockMode || settings.dryRun || !settings.liveTradingEnabled;
+  const ledgerMode = state.ledgerMode ?? (settings.dryRun === false ? "live" : "paper");
+  const activeTargets = (state.targets ?? []).filter((target) => target.enabled !== false);
+  const fundedTargets = activeTargets.filter((target) => Number(target.allocationPct ?? 0) > 0);
+  const zeroAllocationTargets = activeTargets.filter((target) => !(Number(target.allocationPct ?? 0) > 0));
+  const validation = state.validation ?? {};
+  const gate = validation.gate ?? {};
+  const bot = calculateBotPortfolio();
+  const apiProblem = !runtime.mockMode && (!health.tossConnected || Boolean(health.lastError));
+
+  const next = apiProblem
+    ? ["연결 확인", humanError(health.lastError), "sell"]
+    : zeroAllocationTargets.length
+      ? ["비중 확인", `${zeroAllocationTargets.map((target) => target.symbol).join(", ")} 0%`, "sell"]
+      : riskGuard.blocked
+        ? ["매수 중단", "당일 손실 한도 도달", "sell"]
+        : dry
+          ? ["paper 축적", "실주문 잠금 상태로 검증", "neutral"]
+          : ["실거래 운영", "실계좌 주문 허용 중", "sell"];
+
+  const cards = [
+    [
+      "주문 상태",
+      dry ? "실주문 잠김" : "실주문 허용",
+      dry ? "환경변수 또는 UI 토글이 주문을 막습니다." : "실계좌 주문이 가능한 상태입니다.",
+      dry ? "neutral" : "sell"
+    ],
+    [
+      "장부",
+      ledgerMode === "live" ? "실거래" : "페이퍼",
+      `${money(bot.budget.equityUsd)} · 시작 ${money(bot.budget.startingSeedUsd)}`,
+      ledgerMode === "live" ? "sell" : "neutral"
+    ],
+    [
+      "운용 종목",
+      `${fundedTargets.length}/${activeTargets.length}개 배정`,
+      fundedTargets.map((target) => `${target.symbol} ${target.allocationPct}%`).join(" · ") || "새 매수 배정 없음",
+      zeroAllocationTargets.length ? "sell" : activeTargets.length ? "buy" : "neutral"
+    ],
+    [
+      "검증",
+      validation.metrics?.basis === "paper" ? "paper 기준" : "실거래 기준",
+      gate.ready ? "시드 증액 게이트 통과" : gate.verdict ?? "검증 데이터 대기",
+      gate.ready ? "buy" : "neutral"
+    ],
+    ["다음 액션", next[0], next[1], next[2]]
+  ];
+
+  const warning = zeroAllocationTargets.length
+    ? `<div class="overview-alert">켜져 있지만 비중이 0%인 종목은 새 매수에서 제외됩니다: ${escapeHtml(
+        zeroAllocationTargets.map((target) => target.symbol).join(", ")
+      )}</div>`
+    : "";
+
+  host.innerHTML =
+    cards
+      .map(
+        ([label, value, note, kind]) => `
+        <div class="overview-card">
+          <span>${escapeHtml(label)}</span>
+          <strong class="badge ${kind}">${escapeHtml(String(value))}</strong>
+          <small>${escapeHtml(String(note ?? ""))}</small>
+        </div>
+      `
+      )
+      .join("") + warning;
 }
 
 function renderPublicIp() {
@@ -695,9 +774,11 @@ function appendTargetCard(target, container, chartJobs) {
   const metrics = signal.metrics ?? {};
   const position = snapshot.position ?? {};
   const backtest = snapshot.backtest ?? {};
+  const allocationPct = Number(target.allocationPct ?? 0);
   const card = template.content.cloneNode(true);
   const article = card.querySelector(".ticker-card");
   if (target.enabled === false) article.classList.add("is-disabled");
+  if (target.enabled !== false && !(allocationPct > 0)) article.classList.add("no-allocation");
   card.querySelector(".symbol").textContent = target.symbol;
   card.querySelector(".name").textContent = target.name;
   card.querySelector(".target-toggle").checked = Boolean(target.enabled);
@@ -715,9 +796,12 @@ function appendTargetCard(target, container, chartJobs) {
   card.querySelector(".backtest").textContent = backtest.available
     ? `${pct(backtest.winRatePct)} · ${pct(backtest.totalReturnPct)}`
     : "대기";
-  card.querySelector(".allocation").textContent = state.settings.redistributeUnusedAllocation
-    ? `몰아주기 · 기본 ${target.allocationPct}%`
-    : `${target.allocationPct}%`;
+  card.querySelector(".allocation").textContent =
+    target.enabled !== false && !(allocationPct > 0)
+      ? "0% · 관찰 전용"
+      : state.settings.redistributeUnusedAllocation
+        ? `몰아주기 · 기본 ${target.allocationPct}%`
+        : `${target.allocationPct}%`;
   card.querySelector(".position-label").textContent = position.active
     ? `보유 ${value(position.quantity)}주 · 평균 ${money(position.averagePrice)}`
     : "보유 없음";
@@ -739,7 +823,11 @@ function appendTargetCard(target, container, chartJobs) {
   newsEl.className = `news-risk ${newsRisk?.budgetMultiplier < 1 ? "danger" : "calm"}`;
   renderTargetStrategy(card, target, snapshot);
   card.querySelector(".mini-chart").innerHTML = renderMiniChartCanvas();
-  card.querySelector(".reason").textContent = plainReasons(signal.reasons ?? []).slice(0, 3).join(" · ");
+  const displayReasons =
+    target.enabled !== false && !(allocationPct > 0)
+      ? ["배정 비중 0% — 새 매수 제외", ...(signal.reasons ?? [])]
+      : signal.reasons ?? [];
+  card.querySelector(".reason").textContent = plainReasons(displayReasons).slice(0, 3).join(" · ");
   const chartRoot = card.querySelector(".mini-chart");
   container.append(card);
   chartJobs.push({ canvas: chartRoot.querySelector("canvas"), chart: snapshot.chart, active: position.active });
@@ -1407,7 +1495,7 @@ function renderEditor() {
           </div>
         </div>
       </div>
-      <p class="recommendation-note" data-role="recommendation-note"></p>
+      <div class="recommendation-note" data-role="recommendation-note"></div>
     `;
     renderTargetRecommendationNote(rowEl.querySelector('[data-role="recommendation-note"]'), target);
     rowEl.querySelectorAll("input[data-key]").forEach((input) => {
@@ -1520,14 +1608,27 @@ function renderTargetRecommendationNote(note, target) {
   const recommendation = target.lastRecommendation;
   if (recommendation?.recommended && isCurrentEngineResult(recommendation)) {
     const saved = targetMatchesRecommendation(target, recommendation.recommended);
+    const scoreText =
+      recommendation.score !== undefined
+        ? `백테스트 ${recommendation.score}/100 · ${recommendation.grade ?? ""}`
+        : "백테스트 점수 대기";
+    const statusText = saved
+      ? `${formatTime(recommendation.calculatedAt)} 저장됨`
+      : "현재 저장값과 다름";
     note.innerHTML = `
-      ${recommendation.score !== undefined ? `<strong>백테스트 점수</strong> ${escapeHtml(String(recommendation.score))}/100 · ${escapeHtml(recommendation.grade ?? "")}<br>` : ""}
-      ${recommendation.warning ? `<span class="warning-text">${escapeHtml(recommendation.warning)}</span><br>` : ""}
-      <strong>변경 비교</strong>
-      ${renderRecommendationDiff(recommendation.before ?? target, recommendation.recommended)}
-      <br><strong>추천 이유</strong>
-      ${escapeHtml((recommendation.reasons ?? []).join(" "))}
-      <br><strong>저장 상태</strong> ${saved ? `${formatTime(recommendation.calculatedAt)} 정밀추천을 저장했습니다.` : "정밀추천 계산은 완료됐지만 현재 저장값과 다릅니다. 정밀추천을 다시 누르면 저장합니다."}
+      <div class="recommendation-compact">
+        <span><strong>${escapeHtml(scoreText)}</strong>${recommendation.warning ? ` · <b class="warning-text">${escapeHtml(recommendation.warning)}</b>` : ""}</span>
+        <span class="muted">${escapeHtml(statusText)}</span>
+        <details class="recommendation-details">
+          <summary>변경/이유 보기</summary>
+          <div>
+            <strong>변경 비교</strong>
+            ${renderRecommendationDiff(recommendation.before ?? target, recommendation.recommended)}
+            <br><strong>추천 이유</strong>
+            ${escapeHtml((recommendation.reasons ?? []).join(" "))}
+          </div>
+        </details>
+      </div>
     `;
     return;
   }
@@ -1536,11 +1637,17 @@ function renderTargetRecommendationNote(note, target) {
   const review = isCurrentEngineResult(rawReview) ? rawReview : null;
   if (review?.score !== undefined && review?.score !== null) {
     note.innerHTML = `
-      <strong>최근 추천 검토</strong> 백테스트 점수 ${escapeHtml(String(review.score))}/100 · ${escapeHtml(review.grade ?? scoreGrade(review.score))}
-      ${review.warning ? `<br><span class="warning-text">${escapeHtml(review.warning)}</span>` : ""}
-      <br><strong>검증 구간</strong> ${escapeHtml(strategyReviewPeriodText(review))}
-      ${renderGuardImpactLine(review)}
-      <br><strong>안내</strong> 이 결과는 이전 방식으로 저장되어 변경 비교/추천 이유 상세가 없습니다. 정밀추천을 다시 누르면 상세 설명도 저장됩니다.
+      <div class="recommendation-compact">
+        <span><strong>최근 검토 ${escapeHtml(String(review.score))}/100 · ${escapeHtml(review.grade ?? scoreGrade(review.score))}</strong>${review.warning ? ` · <b class="warning-text">${escapeHtml(review.warning)}</b>` : ""}</span>
+        <details class="recommendation-details">
+          <summary>검증 상세 보기</summary>
+          <div>
+            <strong>검증 구간</strong> ${escapeHtml(strategyReviewPeriodText(review))}
+            ${renderGuardImpactLine(review)}
+            <br><strong>안내</strong> 이전 방식 저장값입니다. 정밀추천을 다시 누르면 변경 비교와 이유를 새 기준으로 저장합니다.
+          </div>
+        </details>
+      </div>
     `;
     return;
   }

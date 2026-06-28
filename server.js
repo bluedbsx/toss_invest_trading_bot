@@ -37,13 +37,13 @@ let publicIpCache = null;
 const PUBLIC_IP_CACHE_MS = 5 * 60_000;
 
 trader.start();
-refreshNews();
+refreshNews().catch(() => {});
 setInterval(refreshNews, Math.max(5, Number(process.env.NEWS_REFRESH_MINUTES || 30)) * 60_000);
 // 경제(증시) 캘린더 자동 갱신(60분). 손 안 대도 최신 일정·발표 결과(호재/악재)가 유지된다.
-refreshEconomicCalendar();
+refreshEconomicCalendar().catch(() => {});
 setInterval(() => refreshEconomicCalendar().catch(() => {}), 60 * 60_000);
 // 종목 실적 발표일 자동 수집(Nasdaq). 사용자 입력 없이 활성 종목의 실적 전후 신규매수를 차단한다.
-refreshEarningsEvents();
+refreshEarningsEvents().catch(() => {});
 setInterval(() => refreshEarningsEvents().catch(() => {}), 12 * 60 * 60_000);
 
 const server = http.createServer(async (request, response) => {
@@ -67,7 +67,7 @@ setInterval(() => runAutomationIfDue().catch(() => {}), 60_000);
 // 개선 리포트 자동 갱신: autoLearningReports가 켜져 있으면 주기적으로(30분) 스스로 돌린다.
 // 저장된 데이터만 분석하는 가벼운 작업이라 외부 호출이 없다. 마지막 자동 실행 시각도 남긴다.
 const LEARNING_AUTO_INTERVAL_MS = 30 * 60_000;
-refreshLearningReportIfEnabled();
+refreshLearningReportIfEnabled().catch(() => {});
 setInterval(() => refreshLearningReportIfEnabled().catch(() => {}), LEARNING_AUTO_INTERVAL_MS);
 async function refreshLearningReportIfEnabled() {
   await updateState((draft) => {
@@ -486,9 +486,19 @@ async function handleApi(request, response, url) {
     const state = await updateState((draft) => {
       const target = draft.targets.find((item) => item.symbol === symbol);
       if (!target) throw new Error("target not found");
-      Object.assign(target, pickTarget(body));
+      const updates = pickTarget(body);
+      const hadAllocation = Number(target.allocationPct ?? 0);
+      const togglingOff = Object.prototype.hasOwnProperty.call(updates, "enabled") && updates.enabled === false;
+      const togglingOn = Object.prototype.hasOwnProperty.call(updates, "enabled") && updates.enabled !== false;
+      if (togglingOff && hadAllocation > 0) target.pausedAllocationPct = hadAllocation;
+      Object.assign(target, updates);
       // 자동투자 대상을 끄면 배정 비중을 0으로 맞춘다(꺼진 종목이 시드 비중을 차지하지 않도록).
       if (target.enabled === false) target.allocationPct = 0;
+      // 다시 켤 때는 OFF 직전 비중을 복구한다. 사용자가 편집창에서 직접 0%를 저장한 경우는 존중한다.
+      if (togglingOn && !Object.prototype.hasOwnProperty.call(updates, "allocationPct") && Number(target.allocationPct ?? 0) <= 0) {
+        const paused = Number(target.pausedAllocationPct ?? 0);
+        target.allocationPct = paused > 0 ? paused : 10;
+      }
       if (recommendationMatchesTarget(target, target.lastRecommendation)) {
         target.lastStrategyReview = {
           ...(target.lastRecommendation.backtest ?? {}),

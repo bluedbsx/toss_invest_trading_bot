@@ -115,6 +115,8 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
   const volatilityBudgetMultiplier = volatilitySoftOk ? 0.5 : 1;
   const budget = resolveTradingBudget({ settings, botBudget });
   const allocationOk = budget.buyingPowerUsd > 0;
+  const targetAllocationPct = Number(target.allocationPct ?? 0);
+  const targetAllocationOk = targetAllocationPct > 0;
 
   let action = "HOLD";
   const reasons = [];
@@ -139,6 +141,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     settings.monitoringEnabled &&
     canOpenBuy &&
     allocationOk &&
+    targetAllocationOk &&
     trendOk &&
     rsiOk &&
     momentumOk &&
@@ -177,6 +180,7 @@ export function evaluateTarget({ target, candles, price, position, settings, isR
     if (!volatilityTradable) reasons.push("변동성 과다");
     else if (volatilitySoftOk) reasons.push("가격 흔들림 큼, 예산 축소 조건");
     if (dailyDropBlock) reasons.push(`당일 시가 대비 ${settings.intradayDropBlockPct}% 이상 하락 구간 — 신규매수 보류`);
+    if (target.enabled && !hasPosition && !targetAllocationOk) reasons.push("배정 비중 0% — 새 매수 제외");
     if (!allocationOk) reasons.push("배정 시드/현금 버퍼 부족");
   }
 

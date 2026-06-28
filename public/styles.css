@@ -1007,8 +1007,65 @@ label small {
   margin-top: 2px;
 }
 
+.overview-panel {
+  padding-bottom: 16px;
+}
+
+.overview-panel .panel-head {
+  margin-bottom: 12px;
+}
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.overview-card {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  min-height: 96px;
+  padding: 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 6px;
+  background: var(--surface-2);
+}
+
+.overview-card > span,
+.overview-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.overview-card strong {
+  justify-self: start;
+  max-width: 100%;
+}
+
+.overview-card small {
+  overflow-wrap: anywhere;
+}
+
+.overview-alert {
+  grid-column: 1 / -1;
+  padding: 9px 11px;
+  border: 1px solid rgba(240, 68, 82, 0.28);
+  border-radius: 6px;
+  background: var(--red-wash);
+  color: var(--red-text);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .targets-panel .ticker-card {
   background: var(--surface);
+}
+
+.ticker-card.no-allocation {
+  border-color: rgba(240, 68, 82, 0.24);
 }
 
 .ledger-status {
@@ -1769,6 +1826,43 @@ label small {
   color: var(--text);
 }
 
+.recommendation-compact {
+  display: grid;
+  gap: 8px;
+}
+
+.recommendation-compact > span {
+  display: block;
+}
+
+.recommendation-details {
+  border-top: 1px solid var(--line-soft);
+  padding-top: 8px;
+}
+
+.recommendation-details summary {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--chip-bg);
+  color: var(--muted);
+  cursor: pointer;
+  list-style: none;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.recommendation-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.recommendation-details > div {
+  margin-top: 8px;
+}
+
 .diff-chip {
   display: inline-flex;
   align-items: center;
@@ -1937,6 +2031,7 @@ label small {
   .market-grid,
   .workspace,
   .rule-grid,
+  .overview-grid,
   .learning-grid,
   .high-risk-plan {
     grid-template-columns: 1fr;
