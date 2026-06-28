@@ -14,8 +14,14 @@ export const BENCHMARK_SYMBOL = process.env.BENCHMARK_SYMBOL || "QQQ"; // 기본
 // 근거: 시드를 여러 번 더하면 그 각각이 현금흐름이라, 벤치마크도 "그 시점에 그만큼 매수"로 비교해야 공정하다.
 export function buildCapitalFlows(state) {
   const settings = state?.settings ?? {};
-  const startedAt = settings.botStartedAt ?? DEFAULT_BOT_STARTED_AT;
   const currentSeed = Math.max(0, Number(state?.botBudget?.startingSeedUsd ?? settings.allocationUsd ?? 0));
+  // 페이퍼 세션 중에는 장부가 세션 시작 시점에 비워지고 시드가 새로 잡히므로, 벤치마크도 "페이퍼 세션 시작에
+  // 현재 시드를 한 번 투입"한 것으로 본다 → 봇 수익률(페이퍼 세션 기준)과 같은 기간으로 초과수익을 비교한다.
+  // (옛 에폭의 botStartedAt·budget-add 이벤트는 현 페이퍼 세션과 무관하므로 제외.)
+  if (state?.paperSession?.active && state?.paperSession?.startedAt) {
+    return [{ at: state.paperSession.startedAt, amountUsd: round(currentSeed, 2), kind: "initial" }];
+  }
+  const startedAt = settings.botStartedAt ?? DEFAULT_BOT_STARTED_AT;
   const events = (state?.learning?.recommendationEvents ?? []).filter((event) => event.type === "budget-add");
   const topUps = events
     .map((event) => ({
