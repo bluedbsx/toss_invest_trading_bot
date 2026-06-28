@@ -494,6 +494,8 @@ async function handleApi(request, response, url) {
         target.lastStrategyReview = null;
       }
     });
+    // 종목을 켜고 끄면 뉴스 추적 대상(심볼 유니버스)이 바뀌므로 즉시 새로고침한다.
+    if ("enabled" in body) refreshNews().catch(() => {});
     sendJson(response, 200, state);
     return;
   }
@@ -505,6 +507,7 @@ async function handleApi(request, response, url) {
       delete draft.positions[symbol];
       delete draft.marketSnapshots[symbol];
     });
+    refreshNews().catch(() => {});
     sendJson(response, 200, state);
     return;
   }
