@@ -280,6 +280,9 @@ export function saveTraderState(traderState) {
       targets: current.targets,
       news: current.news,
       economicCalendar: current.economicCalendar,
+      // earningsEvents도 서버 타이머(earnings.js 12h·종목변경 시)가 소유하는 필드라, 트레이더 틱이
+      // 자기 스냅샷으로 되돌리지 않도록 디스크 최신값을 보존한다(news/economicCalendar와 동일 — lost update 방지).
+      earningsEvents: current.earningsEvents,
       automation: current.automation,
       learning: {
         ...current.learning,

@@ -647,3 +647,11 @@
   - 서버 재시작 후 `/favicon.ico` 204, Headless Chrome 콘솔/네트워크 오류 없음 확인.
 - 가정/주의(다른 에이전트가 검토해야 할 점):
   - 자동저장 검증은 운영 값과 같은 `cashBufferUsd=20`으로 복원 저장하는 방식으로 진행했으며, 설정 의미는 바꾸지 않았음.
+
+### 2026-06-28 — Claude (Opus 4.8) : 전면 교차감사 + 발견 버그 2건 수정
+- 목적: 사용자 요청 — 원격 레포와 로컬 코드/문서를 전수 검토하고, 수정된 것들이 의도대로 올바른지 판단하고 모순·실수를 모두 찾아냄.
+- 감사 범위/결과(이상 없음 확인): calendar.js(twoSided→"혼조" 0.3배·biasLabel·macroTone §FF/§GG 일관), strategy.js evaluateTarget(drop-block 재활성 §HH·calendarRisk·비중0→HOLD·레거시 metrics 제거 §II 정상), eventRisk.js(하드코딩 제거→state-driven·relevanceMatcher 공유), trader.js runOnce(페이퍼: `syncExecutedBotOrders({updatePortfolio:liveTradingAllowed})`로 실장부가 페이퍼 장부를 안 덮음 — 과거 churn 해결·페이퍼세션 clean-slate+ledgerHistory 일관), earnings.js(이벤트 형태 eventRisk와 완전 호환·postBlockHours 있음), server.js PATCH targets(pausedAllocationPct 보존/복원·enabled→0 정상), validation.js(BENCHMARK QQQ·tradeMetricScope 페이퍼 스코프), news.js(`\bai\b` 단어경계라 raises 오탐 없음), UI 엔진버전 비교(isCurrentEngineResult가 alias 인식), customEvents→earningsEvents 리네임 완결(코드 잔존 0). 격리 mock 부팅: 3엔드포인트 200·엔진 "Adaptive Momentum Guard v0.9"·벤치 QQQ·ledgerMode paper·paperSession active·earningsEvents 자동수집·macroTone "호재 우위"·에러 0.
+- **발견·수정 버그 1 — `saveTraderState`가 `earningsEvents`를 보존하지 않음(`src/store.js`)**: news/economicCalendar는 `current`(디스크 최신)에서 보존하는데 earningsEvents는 누락 → 서버 타이머(earnings.js 12h·종목 변경 시)가 갱신한 실적 이벤트를 트레이더 틱이 자기 stale 스냅샷으로 되돌릴 수 있었음(lost update — 이 함수가 막으려던 부류 그대로, 실적 차단이 최대 12h 누락 가능). 수정: `earningsEvents: current.earningsEvents` 추가(news/economicCalendar와 동일 패턴).
+- **발견·수정 버그 2 — 검증 MDD가 페이퍼 세션 스코프가 아님(`src/validation.js` buildValidation)**: 승률·손익비는 paperSession 스코프인데 MDD는 전체 `equityCurve`로 계산. `wipeBotBook`(페이퍼 재시작)이 equityCurve를 안 비워서, 상품 변경(레버리지→1x) 후에도 옛 에폭의 큰 낙폭이 MDD에 남아 현 전략 위험을 과대표시. 수정: 페이퍼 세션 활성 시 `paperSession.startedAt` 이후 자산곡선만 MDD 계산(승률·손익비와 기간 일치). 단위검증: 옛 −40%+현 −5% 혼합 곡선 → 스코프 후 5%만 반영. (디스플레이 전용 — 매매 로직 무영향.)
+- 검증: `node --check` PASS, 격리 부팅 정상, Fix#1 보존 라인 확인, Fix#2 단위테스트 5% 확인.
+- 가정/주의: 두 수정 모두 저위험(필드 보존/디스플레이 스코프)·기존 패턴 일치. 라이브 반영은 재시작 후. 추가 관찰: macroTone은 server.js(디스플레이)와 getCalendarRisk(예산) 두 곳에서 같은 함수로 각각 계산(중복이나 동일 입력이라 불일치 아님). 벤치마크 현금흐름은 botStartedAt 기준(페이퍼 세션 시작 기준 아님) — reset-ledger.js가 botStartedAt을 현재로 옮기므로 실무상 정렬되나, 페이퍼 세션 시작과 미세 불일치 여지는 남김(낮은 우선순위, 미수정).

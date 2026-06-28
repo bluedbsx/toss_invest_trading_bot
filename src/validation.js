@@ -220,7 +220,16 @@ export function buildValidation({ state, candles, currentPrice }) {
   const flows = buildCapitalFlows(state);
   const benchmark = computeBenchmark({ flows, candles, currentPrice });
   const metrics = computeBotTradeMetrics(state);
-  const equityCurve = state?.equityCurve ?? [];
+  // MDD를 승률·손익비와 같은 기간으로 스코프한다. 페이퍼 세션 중에는 그 세션 시작 이후 자산곡선만 본다
+  // (장부는 재시작 때 비워지지만 equityCurve는 최상위라 유지되므로, 옛 에폭의 낙폭이 섞이지 않게 필터).
+  const fullCurve = state?.equityCurve ?? [];
+  const epochStart =
+    state?.paperSession?.active && state?.paperSession?.startedAt
+      ? new Date(state.paperSession.startedAt).getTime()
+      : 0;
+  const equityCurve = epochStart
+    ? fullCurve.filter((point) => new Date(point?.at ?? point?.day ?? 0).getTime() >= epochStart)
+    : fullCurve;
   const maxDrawdownPct = computeMaxDrawdown(equityCurve);
   const gate = computeScalingGate({ metrics, botReturnPct, benchmark, maxDrawdownPct });
   return {
