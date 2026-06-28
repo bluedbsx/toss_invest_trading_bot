@@ -180,6 +180,7 @@ function enrichNews(item, trackedSymbols = [], nameMap = {}) {
   return {
     ...item,
     translatedTitle: koreanizeTitle(item.title),
+    topic,
     koreanSummary: buildKoreanSummary({ topic, signalLabel, reasons, item }),
     tags,
     sentiment,
