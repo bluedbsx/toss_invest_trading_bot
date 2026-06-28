@@ -38,6 +38,7 @@ if ($("#themeToggle")) {
   });
 }
 $("#refreshPublicIp").addEventListener("click", refreshPublicIp);
+if ($("#addEvent")) $("#addEvent").addEventListener("click", addCustomEvent);
 $("#testConnection").addEventListener("click", async () => {
   const result = await runTossAction("testConnection", "/api/test-connection", $("#testConnection"), { refreshAfter: false });
   if (result) {
@@ -112,6 +113,7 @@ async function refresh() {
   renderTrades();
   renderNews();
   renderCalendar();
+  renderCustomEvents();
   renderStrategy();
   renderLearning();
   renderHighRiskEngine();
@@ -1190,6 +1192,59 @@ function formatCalDate(iso) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return "-";
   return date.toLocaleString(undefined, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
+}
+
+function renderCustomEvents() {
+  const host = $("#eventList");
+  if (!host) return;
+  const count = $("#eventCount");
+  const events = (state.customEvents ?? []).slice().sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+  if (count) count.textContent = `${events.length}개`;
+  if (!events.length) {
+    host.innerHTML = `<p class="review-empty">등록된 종목 이벤트가 없습니다. 실적 발표일 등을 추가하면 그 전후로 신규매수를 차단합니다.</p>`;
+    return;
+  }
+  host.innerHTML = events
+    .map(
+      (event) => `
+      <div class="event-row">
+        <div>
+          <strong>${escapeHtml((event.symbols ?? []).join(", "))}</strong>
+          <span>${escapeHtml(event.title ?? "")}</span>
+          <small>${escapeHtml(formatCalDate(event.startsAt))} · 전 ${event.preBlockHours ?? 0}h / 후 ${event.postBlockHours ?? 0}h · ${
+        event.severity === "medium" ? "중간" : "높음"
+      }</small>
+        </div>
+        <button data-event-id="${escapeHtml(event.id)}" data-action="delete-event">삭제</button>
+      </div>`
+    )
+    .join("");
+  host.querySelectorAll('[data-action="delete-event"]').forEach((button) => {
+    button.addEventListener("click", async () => {
+      await del(`/api/events/${encodeURIComponent(button.dataset.eventId)}`);
+      await refresh();
+    });
+  });
+}
+
+async function addCustomEvent() {
+  const symbol = $("#eventSymbol").value.trim();
+  const title = $("#eventTitle").value.trim();
+  const startsAt = $("#eventStartsAt").value;
+  if (!symbol || !startsAt) {
+    showProgress("이벤트 추가 실패", "종목과 일시를 입력하세요.", "danger");
+    return;
+  }
+  try {
+    await post("/api/events", { symbol, title, startsAt: new Date(startsAt).toISOString() });
+    $("#eventSymbol").value = "";
+    $("#eventTitle").value = "";
+    $("#eventStartsAt").value = "";
+    await refresh();
+    showProgress("이벤트 추가 완료", `${symbol.toUpperCase()} 이벤트를 추가했어요.`, "success");
+  } catch (error) {
+    showProgress("이벤트 추가 실패", humanError(error.message), "danger");
+  }
 }
 
 function renderStrategy() {

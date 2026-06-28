@@ -509,6 +509,39 @@ async function handleApi(request, response, url) {
     return;
   }
 
+  if (request.method === "POST" && url.pathname === "/api/events") {
+    const body = await readBody(request);
+    const symbol = String(body.symbol ?? "").trim().toUpperCase();
+    const startsAt = body.startsAt ? new Date(body.startsAt) : null;
+    if (!symbol) throw new Error("종목 심볼이 필요합니다");
+    if (!startsAt || Number.isNaN(startsAt.getTime())) throw new Error("이벤트 일시가 올바르지 않습니다");
+    const state = await updateState((draft) => {
+      draft.customEvents = Array.isArray(draft.customEvents) ? draft.customEvents : [];
+      draft.customEvents.push({
+        id: `${Date.now()}-${symbol}`,
+        title: String(body.title ?? `${symbol} 이벤트`).slice(0, 80) || `${symbol} 이벤트`,
+        type: body.type === "macro" ? "macro" : "earnings",
+        symbols: [symbol],
+        startsAt: startsAt.toISOString(),
+        preBlockHours: Number.isFinite(Number(body.preBlockHours)) ? Number(body.preBlockHours) : 24,
+        postBlockHours: Number.isFinite(Number(body.postBlockHours)) ? Number(body.postBlockHours) : 12,
+        severity: body.severity === "medium" ? "medium" : "high"
+      });
+    });
+    sendJson(response, 200, state);
+    return;
+  }
+
+  const eventMatch = url.pathname.match(/^\/api\/events\/(.+)$/);
+  if (eventMatch && request.method === "DELETE") {
+    const id = decodeURIComponent(eventMatch[1]);
+    const state = await updateState((draft) => {
+      draft.customEvents = (draft.customEvents ?? []).filter((event) => event.id !== id);
+    });
+    sendJson(response, 200, state);
+    return;
+  }
+
   if (request.method === "POST" && url.pathname === "/api/run-once") {
     await trader.tick({ force: true });
     sendJson(response, 200, await loadState());
@@ -987,6 +1020,7 @@ function pickSettings(body) {
     "redistributeUnusedAllocation",
     "allowAdditionalBuys",
     "additionalBuyCooldownMinutes",
+    "smallSeedNoiseFloorUsd",
     "autoSafetyRecommendations",
     "autoWeightRecommendations",
     "autoTargetRecommendations",

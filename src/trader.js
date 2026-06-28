@@ -398,7 +398,11 @@ function calculateDailyRiskGuard(state, targets, prices) {
   const allocationUsd = Math.max(0, Number(state.settings?.allocationUsd ?? 0));
   const maxDailyLossPct = Math.max(0, Number(state.settings?.maxDailyLossPct ?? 0));
   const percentLossUsd = allocationUsd * (maxDailyLossPct / 100);
-  const smallSeedNoiseFloorUsd = allocationUsd > 0 ? Math.min(5, allocationUsd * 0.1) : 0;
+  // 소액 시드 일상 흔들림 허용 바닥값(달러). 시드가 작을 때 %한도가 너무 빨리 걸리는 걸 막는다. 설정으로 조절 가능.
+  const noiseFloorCapUsd = Number.isFinite(Number(state.settings?.smallSeedNoiseFloorUsd))
+    ? Number(state.settings.smallSeedNoiseFloorUsd)
+    : 5;
+  const smallSeedNoiseFloorUsd = allocationUsd > 0 ? Math.min(noiseFloorCapUsd, allocationUsd * 0.1) : 0;
   const maxLossUsd = Math.max(percentLossUsd, smallSeedNoiseFloorUsd);
   const positions = state.positions ?? {};
   const targetMap = new Map(targets.map((target) => [target.symbol, target]));

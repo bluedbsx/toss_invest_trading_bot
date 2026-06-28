@@ -332,6 +332,23 @@
         </summary>
         <div id="calendarList" class="calendar-list"></div>
       </details>
+
+      <details class="panel events-panel collapsible-panel">
+        <summary class="panel-head">
+          <div>
+            <h2>종목 이벤트</h2>
+            <p class="section-note">실적 발표 등 종목별 일정을 추가하면 그 전후로 신규매수를 자동 차단합니다.</p>
+          </div>
+          <span id="eventCount" class="muted">0개</span>
+        </summary>
+        <div class="event-form">
+          <input id="eventSymbol" placeholder="종목 (예: MU)" />
+          <input id="eventTitle" placeholder="제목 (예: Micron 실적)" />
+          <input id="eventStartsAt" type="datetime-local" />
+          <button id="addEvent" type="button">이벤트 추가</button>
+        </div>
+        <div id="eventList" class="event-list"></div>
+      </details>
     </main>
 
     <template id="targetCardTemplate">

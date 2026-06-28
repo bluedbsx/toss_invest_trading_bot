@@ -1174,6 +1174,59 @@ label small {
   margin-top: 4px;
 }
 
+.event-form {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.event-list {
+  display: grid;
+  gap: 8px;
+}
+
+.event-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line-soft);
+  border-radius: 8px;
+  background: var(--surface-2);
+}
+
+.event-row strong {
+  font-size: 14px;
+}
+
+.event-row span {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.event-row small {
+  display: block;
+  margin-top: 3px;
+  color: var(--faint);
+  font-size: 12px;
+}
+
+.event-row button {
+  min-height: 32px;
+  padding: 0 12px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 760px) {
+  .event-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .budget-strip {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

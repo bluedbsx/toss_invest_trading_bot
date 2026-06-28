@@ -531,3 +531,12 @@
   - `src/store.js`: defaultState 기본 종목 SOXX/SMH→MU/TSM/WDC, allocationUsd 1000→100, `customEvents:[]` 추가. `DEFAULT_BOT_STARTED_AT` 상수 export(3곳 중복 리터럴 통합, #6).
   - `src/validation.js`·`src/trader.js`: `DEFAULT_BOT_STARTED_AT` 사용. trader가 `state.customEvents`·`target.name`을 eventRisk/newsRisk에 전달.
 - 검증: `node --check` 전부 PASS, import 체인(validation↔store, trader↔store) 정상. 단위테스트 — 미등록 티커 PLTR이 회사명("Palantir")으로 뉴스 관련성·태깅·예산영향 인정, 오탐 없음(Apple 뉴스엔 PLTR 매칭 안 됨). 섹터 뉴스(semiconductor→TSM, DRAM→MU) 관련성 인정. state-driven 이벤트 과거 자동 숨김·실적 전후 차단 동작 확인. 적용엔 서버 재시작 필요.
+
+### 2026-06-28 (2) — Claude (Opus 4.8) : 종목 이벤트 UI + 캘린더/설정 동적화
+- 수정 내용:
+  - `server.js`: `POST /api/events`(종목 이벤트 추가, 심볼·일시 검증, 기본 전24h/후12h)·`DELETE /api/events/:id` 추가. pickSettings 허용목록에 `smallSeedNoiseFloorUsd` 추가.
+  - `public/index.html`·`app.js`·`styles.css`: "종목 이벤트" 패널(폼+목록+삭제, `renderCustomEvents`/`addCustomEvent`). state.customEvents를 사용자가 직접 추가/삭제 → 실적 전후 신규매수 자동 차단(eventRisk와 연결). datetime-local→ISO 변환.
+  - `src/calendar.js`(#5): 대상 국가 `CALENDAR_COUNTRIES` 환경변수화(기본 US), 레버리지 시절 주석 정정.
+  - `src/trader.js`+`src/store.js`(#7): 소액 시드 노이즈 바닥값 `smallSeedNoiseFloorUsd`를 설정값으로(기본 5, 상수 폴백). $100 시드에서 당일손실 한도 민감도 조절 가능.
+- 검증: 격리 mock 서버(:3099)에서 이벤트 생성/조회/삭제/검증 동작 확인(심볼 대문자화·ISO 변환·기본값·삭제·에러 메시지), settings.smallSeedNoiseFloorUsd 노출 확인. `node --check` 전부 PASS. 적용엔 서버 재시작 필요(이벤트 UI는 정적이라 새로고침이면 표시되나 API는 재시작 후 동작).
+- 남긴 것(낮은 가치/내부값): BACKTEST_COST_PER_SIDE(백테스트 표시용 가정)·캡/주기 상수(이미 env 또는 무해)는 상수 유지.

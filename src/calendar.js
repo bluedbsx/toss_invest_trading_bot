@@ -7,9 +7,11 @@
 // 양면성을 반영해 가중을 낮추고 주석을 단다. 매수 축소도 biasScore 강도에 비례한다.
 
 const TV_URL = "https://economic-calendar.tradingview.com/events";
+// 대상 국가(쉼표 구분). 기본 US. 필요하면 CALENDAR_COUNTRIES 환경변수로 변경(예: "US,KR").
+const CALENDAR_COUNTRIES = process.env.CALENDAR_COUNTRIES || "US";
 
 // 지표 카테고리: 정규식 매칭 + 방향(높을수록 호재인가) + 포트폴리오 가중치.
-// 이 봇은 레버리지 반도체(금리 민감)라 인플레·금리 경로의 가중을 크게, 고용은 양면성으로 작게 둔다.
+// 이 봇은 금리에 민감한 기술/반도체 중심이라 인플레·금리 경로의 가중을 크게, 고용은 양면성으로 작게 둔다.
 const CATEGORIES = [
   { name: "rate", re: /interest rate decision|fed interest rate|fed funds/i, special: "rate", weight: 1.6 },
   { name: "inflation", re: /inflation|\bcpi\b|\bpce\b|\bppi\b|price index/i, higherIsGood: false, weight: 1.4 },
@@ -24,7 +26,7 @@ const HIGH_IMPACT = /\bcpi\b|inflation rate|\bpce\b|\bppi\b|interest rate decisi
 export async function fetchEconomicCalendar({ daysBack = 4, daysAhead = 14 } = {}) {
   const from = new Date(Date.now() - daysBack * 86_400_000).toISOString();
   const to = new Date(Date.now() + daysAhead * 86_400_000).toISOString();
-  const url = `${TV_URL}?from=${from}&to=${to}&countries=US`;
+  const url = `${TV_URL}?from=${from}&to=${to}&countries=${encodeURIComponent(CALENDAR_COUNTRIES)}`;
   const response = await fetch(url, {
     headers: { "User-Agent": "Mozilla/5.0", Accept: "application/json", Origin: "https://www.tradingview.com" },
     signal: AbortSignal.timeout(15_000)

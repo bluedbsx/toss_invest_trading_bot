@@ -40,6 +40,7 @@ const defaultState = {
     redistributeUnusedAllocation: true,
     allowAdditionalBuys: false,
     additionalBuyCooldownMinutes: 240,
+    smallSeedNoiseFloorUsd: 5,
     autoSafetyRecommendations: true,
     autoWeightRecommendations: true,
     autoTargetRecommendations: false,
