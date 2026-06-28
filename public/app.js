@@ -38,7 +38,7 @@ if ($("#themeToggle")) {
   });
 }
 $("#refreshPublicIp").addEventListener("click", refreshPublicIp);
-if ($("#addEvent")) $("#addEvent").addEventListener("click", addCustomEvent);
+if ($("#refreshEvents")) $("#refreshEvents").addEventListener("click", collectEarningsNow);
 $("#testConnection").addEventListener("click", async () => {
   const result = await runTossAction("testConnection", "/api/test-connection", $("#testConnection"), { refreshAfter: false });
   if (result) {
@@ -113,7 +113,7 @@ async function refresh() {
   renderTrades();
   renderNews();
   renderCalendar();
-  renderCustomEvents();
+  renderEvents();
   renderStrategy();
   renderLearning();
   renderHighRiskEngine();
@@ -1194,14 +1194,20 @@ function formatCalDate(iso) {
   return date.toLocaleString(undefined, { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" });
 }
 
-function renderCustomEvents() {
+function renderEvents() {
   const host = $("#eventList");
   if (!host) return;
   const count = $("#eventCount");
-  const events = (state.customEvents ?? []).slice().sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
+  const note = $("#eventSyncNote");
+  // 자동 수집된 종목 이벤트(state.eventCalendar = 실적 등, 과거 자동 만료). 사용자 입력이 아니다.
+  const events = (state.eventCalendar ?? []).slice().sort((a, b) => new Date(a.startsAt) - new Date(b.startsAt));
   if (count) count.textContent = `${events.length}개`;
+  if (note) {
+    const at = state.health?.lastEarningsRefreshAt;
+    note.textContent = at ? `자동 수집 ${formatTime(at)} · 12시간 주기` : "자동 수집 · 12시간 주기";
+  }
   if (!events.length) {
-    host.innerHTML = `<p class="review-empty">등록된 종목 이벤트가 없습니다. 실적 발표일 등을 추가하면 그 전후로 신규매수를 차단합니다.</p>`;
+    host.innerHTML = `<p class="review-empty">예정된 실적 발표가 없거나 아직 수집 전입니다. 활성 종목의 실적일이 잡히면 자동으로 표시됩니다.</p>`;
     return;
   }
   host.innerHTML = events
@@ -1210,40 +1216,28 @@ function renderCustomEvents() {
       <div class="event-row">
         <div>
           <strong>${escapeHtml((event.symbols ?? []).join(", "))}</strong>
-          <span>${escapeHtml(event.title ?? "")}</span>
-          <small>${escapeHtml(formatCalDate(event.startsAt))} · 전 ${event.preBlockHours ?? 0}h / 후 ${event.postBlockHours ?? 0}h · ${
-        event.severity === "medium" ? "중간" : "높음"
+          <span>${escapeHtml(event.title ?? "")}${event.estimated ? " <small>(예상 시각)</small>" : ""}</span>
+          <small>${escapeHtml(formatCalDate(event.startsAt))} · 전 ${event.preBlockHours ?? 0}h / 후 ${event.postBlockHours ?? 0}h${
+        event.source ? ` · ${escapeHtml(event.source)}` : ""
       }</small>
         </div>
-        <button data-event-id="${escapeHtml(event.id)}" data-action="delete-event">삭제</button>
+        <span class="badge ${event.severity === "high" ? "sell" : "neutral"}">${event.severity === "high" ? "고변동" : "주의"}</span>
       </div>`
     )
     .join("");
-  host.querySelectorAll('[data-action="delete-event"]').forEach((button) => {
-    button.addEventListener("click", async () => {
-      await del(`/api/events/${encodeURIComponent(button.dataset.eventId)}`);
-      await refresh();
-    });
-  });
 }
 
-async function addCustomEvent() {
-  const symbol = $("#eventSymbol").value.trim();
-  const title = $("#eventTitle").value.trim();
-  const startsAt = $("#eventStartsAt").value;
-  if (!symbol || !startsAt) {
-    showProgress("이벤트 추가 실패", "종목과 일시를 입력하세요.", "danger");
-    return;
-  }
+async function collectEarningsNow() {
+  const button = $("#refreshEvents");
   try {
-    await post("/api/events", { symbol, title, startsAt: new Date(startsAt).toISOString() });
-    $("#eventSymbol").value = "";
-    $("#eventTitle").value = "";
-    $("#eventStartsAt").value = "";
-    await refresh();
-    showProgress("이벤트 추가 완료", `${symbol.toUpperCase()} 이벤트를 추가했어요.`, "success");
+    setButtonBusy(button, true, "수집 중");
+    state = await post("/api/events/refresh", {});
+    renderEvents();
+    showProgress("실적 일정 수집 완료", `예정 이벤트 ${(state.eventCalendar ?? []).length}건을 확인했어요.`, "success");
   } catch (error) {
-    showProgress("이벤트 추가 실패", humanError(error.message), "danger");
+    showProgress("실적 일정 수집 실패", humanError(error.message), "danger");
+  } finally {
+    setButtonBusy(button, false);
   }
 }
 

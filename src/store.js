@@ -137,7 +137,7 @@ const defaultState = {
   riskGuard: null,
   news: [],
   economicCalendar: [],
-  customEvents: [],
+  earningsEvents: [], // 자동 수집(Nasdaq) — 사용자 입력 아님
   automation: {
     lastRunAt: null,
     lastActions: [],
@@ -313,7 +313,7 @@ function mergeDefaults(state) {
     marketSnapshots: state.marketSnapshots ?? {},
     riskGuard: state.riskGuard ?? null,
     news: state.news ?? [],
-    customEvents: Array.isArray(state.customEvents) ? state.customEvents : [],
+    earningsEvents: Array.isArray(state.earningsEvents) ? state.earningsEvents : [],
     automation: { ...defaultState.automation, ...(state.automation ?? {}) },
     learning: {
       ...defaultState.learning,

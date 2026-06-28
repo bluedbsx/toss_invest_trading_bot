@@ -21,6 +21,8 @@ import { Trader } from "./src/trader.js";
 import { buildLearningReport, recordRecommendationEvent } from "./src/learning.js";
 import { buildValidation, BENCHMARK_SYMBOL } from "./src/validation.js";
 import { fetchEconomicCalendar, summarizeMacroTone } from "./src/calendar.js";
+import { fetchEarningsEvents } from "./src/earnings.js";
+import { listEventCalendar } from "./src/eventRisk.js";
 import { enforceDashboardAuth } from "./src/auth.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -40,6 +42,9 @@ setInterval(refreshNews, Math.max(5, Number(process.env.NEWS_REFRESH_MINUTES || 
 // 경제(증시) 캘린더 자동 갱신(60분). 손 안 대도 최신 일정·발표 결과(호재/악재)가 유지된다.
 refreshEconomicCalendar();
 setInterval(() => refreshEconomicCalendar().catch(() => {}), 60 * 60_000);
+// 종목 실적 발표일 자동 수집(Nasdaq). 사용자 입력 없이 활성 종목의 실적 전후 신규매수를 차단한다.
+refreshEarningsEvents();
+setInterval(() => refreshEarningsEvents().catch(() => {}), 12 * 60 * 60_000);
 
 const server = http.createServer(async (request, response) => {
   try {
@@ -439,8 +444,9 @@ async function handleApi(request, response, url) {
         notes: body.notes || ""
       });
     });
-    // 새 종목의 뉴스를 시장뉴스에 즉시 반영(다음 폴링에서 표시). 응답은 기다리지 않는다.
+    // 새 종목의 뉴스·실적 일정을 즉시 반영(다음 폴링에서 표시). 응답은 기다리지 않는다.
     refreshNews().catch(() => {});
+    refreshEarningsEvents().catch(() => {});
     sendJson(response, 200, state);
     return;
   }
@@ -494,8 +500,11 @@ async function handleApi(request, response, url) {
         target.lastStrategyReview = null;
       }
     });
-    // 종목을 켜고 끄면 뉴스 추적 대상(심볼 유니버스)이 바뀌므로 즉시 새로고침한다.
-    if ("enabled" in body) refreshNews().catch(() => {});
+    // 종목을 켜고 끄면 추적 대상(뉴스 심볼·실적 일정)이 바뀌므로 즉시 새로고침한다.
+    if ("enabled" in body) {
+      refreshNews().catch(() => {});
+      refreshEarningsEvents().catch(() => {});
+    }
     sendJson(response, 200, state);
     return;
   }
@@ -508,40 +517,14 @@ async function handleApi(request, response, url) {
       delete draft.marketSnapshots[symbol];
     });
     refreshNews().catch(() => {});
+    refreshEarningsEvents().catch(() => {});
     sendJson(response, 200, state);
     return;
   }
 
-  if (request.method === "POST" && url.pathname === "/api/events") {
-    const body = await readBody(request);
-    const symbol = String(body.symbol ?? "").trim().toUpperCase();
-    const startsAt = body.startsAt ? new Date(body.startsAt) : null;
-    if (!symbol) throw new Error("종목 심볼이 필요합니다");
-    if (!startsAt || Number.isNaN(startsAt.getTime())) throw new Error("이벤트 일시가 올바르지 않습니다");
-    const state = await updateState((draft) => {
-      draft.customEvents = Array.isArray(draft.customEvents) ? draft.customEvents : [];
-      draft.customEvents.push({
-        id: `${Date.now()}-${symbol}`,
-        title: String(body.title ?? `${symbol} 이벤트`).slice(0, 80) || `${symbol} 이벤트`,
-        type: body.type === "macro" ? "macro" : "earnings",
-        symbols: [symbol],
-        startsAt: startsAt.toISOString(),
-        preBlockHours: Number.isFinite(Number(body.preBlockHours)) ? Number(body.preBlockHours) : 24,
-        postBlockHours: Number.isFinite(Number(body.postBlockHours)) ? Number(body.postBlockHours) : 12,
-        severity: body.severity === "medium" ? "medium" : "high"
-      });
-    });
-    sendJson(response, 200, state);
-    return;
-  }
-
-  const eventMatch = url.pathname.match(/^\/api\/events\/(.+)$/);
-  if (eventMatch && request.method === "DELETE") {
-    const id = decodeURIComponent(eventMatch[1]);
-    const state = await updateState((draft) => {
-      draft.customEvents = (draft.customEvents ?? []).filter((event) => event.id !== id);
-    });
-    sendJson(response, 200, state);
+  if (request.method === "POST" && url.pathname === "/api/events/refresh") {
+    await refreshEarningsEvents();
+    sendJson(response, 200, await loadState());
     return;
   }
 
@@ -660,6 +643,31 @@ async function refreshNews() {
   } catch (error) {
     await updateState((draft) => {
       draft.health.lastError = `뉴스 동기화 실패: ${error.message}`;
+    });
+  }
+}
+
+// 활성 종목의 실적 발표일을 자동 수집해 state.earningsEvents에 저장한다(사용자 입력 없음).
+// 실패해도 빈 배열로 떨어져 잘못된 차단을 만들지 않는다.
+async function refreshEarningsEvents() {
+  try {
+    const current = await loadState();
+    const symbols = [
+      ...new Set(
+        (current.targets ?? [])
+          .filter((target) => target.enabled !== false && target.symbol)
+          .map((target) => String(target.symbol).toUpperCase())
+      )
+    ];
+    const events = await fetchEarningsEvents(symbols);
+    await updateState((draft) => {
+      draft.earningsEvents = events;
+      draft.eventCalendar = listEventCalendar(events);
+      draft.health.lastEarningsRefreshAt = new Date().toISOString();
+    });
+  } catch (error) {
+    await updateState((draft) => {
+      draft.health.lastError = `실적 일정 동기화 실패: ${error.message}`;
     });
   }
 }

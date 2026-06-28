@@ -1,7 +1,7 @@
 import { relevanceMatcher } from "./tickers.js";
 
 // 거시 이벤트(CPI·FOMC 등)는 calendar.js가 실제 경제 캘린더에서 동적으로 가져와 calendarRisk로 반영하므로
-// 여기서는 다루지 않는다(중복·노후 방지). 종목별 실적 등 이벤트는 state.customEvents(사용자 추가)로 주입한다.
+// 여기서는 다루지 않는다(중복·노후 방지). 종목별 실적 등 이벤트는 state.earningsEvents(earnings.js가 자동 수집)로 주입한다.
 // 과거의 하드코딩 이벤트(고정 날짜·옛 티커)는 시간이 지나면 죽은 데이터라 제거했다.
 const BUILTIN_EVENTS = [];
 

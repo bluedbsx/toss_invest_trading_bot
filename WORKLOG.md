@@ -540,3 +540,14 @@
   - `src/trader.js`+`src/store.js`(#7): 소액 시드 노이즈 바닥값 `smallSeedNoiseFloorUsd`를 설정값으로(기본 5, 상수 폴백). $100 시드에서 당일손실 한도 민감도 조절 가능.
 - 검증: 격리 mock 서버(:3099)에서 이벤트 생성/조회/삭제/검증 동작 확인(심볼 대문자화·ISO 변환·기본값·삭제·에러 메시지), settings.smallSeedNoiseFloorUsd 노출 확인. `node --check` 전부 PASS. 적용엔 서버 재시작 필요(이벤트 UI는 정적이라 새로고침이면 표시되나 API는 재시작 후 동작).
 - 남긴 것(낮은 가치/내부값): BACKTEST_COST_PER_SIDE(백테스트 표시용 가정)·캡/주기 상수(이미 env 또는 무해)는 상수 유지.
+
+### 2026-06-28 (3) — Claude (Opus 4.8) : 종목 이벤트 수동입력 → 자동 수집 전환
+- 문제/지적: 실적 등 종목 이벤트를 사용자가 직접 입력하면 오입력 위험. 봇이 자동으로 불러와야 함.
+- 진단: Yahoo quoteSummary/v7 quote는 crumb 요구로 401(차단). Nasdaq `api/analyst/{SYM}/earnings-date`는 키 없이 200·실제 날짜 제공(TSM Jul16/WDC Jul29/AAPL Jul30 확인, 미제공은 빈값).
+- 수정 내용:
+  - `src/earnings.js` 신규: `fetchEarningsEvents(symbols)` — Nasdaq에서 활성 종목 실적일 수집(6h 캐시). 날짜만 제공되므로 20:00 UTC(마감 후) 가정 + 전후 18h 차단창. 실패 시 빈 배열(잘못된 차단 방지).
+  - `server.js`: `refreshEarningsEvents()`(활성 종목 대상, state.earningsEvents+eventCalendar 갱신) 추가, 시작 시 1회 + 12h 주기 + 종목 추가/켜기/끄기/삭제 시 트리거. 수동 `POST/DELETE /api/events` 제거, `POST /api/events/refresh`(지금 수집) 추가.
+  - `src/store.js`: `customEvents` → `earningsEvents`(자동 수집). `src/trader.js`: getEventRisk/listEventCalendar에 `state.earningsEvents` 전달. `eventRisk.js`: 주석 정정.
+  - `public/index.html`·`app.js`·`styles.css`: 종목 이벤트 패널을 수동 입력 폼 → 자동 수집 읽기전용 목록 + "지금 수집" 버튼 + 마지막 수집 시각 표시로 교체. `renderEvents`/`collectEarningsNow`.
+- 검증: 격리 mock 서버(:3097)에서 POST /api/events/refresh가 기본 종목(MU/TSM/WDC)의 실적 TSM(7/16)·WDC(7/29) 자동 수집·eventCalendar 반영, lastEarningsRefreshAt 기록 확인. 옛 수동 POST /api/events는 404. `node --check` 전부 PASS. 잔여 수동 참조 0(주석 정정). 적용엔 서버 재시작 필요.
+- 가정/주의: Nasdaq 엔드포인트가 지역/차단으로 실패하면 earningsEvents 빈 채로 안전 동작(이벤트 차단 없음). 실적 시각은 마감 후 가정(estimated).

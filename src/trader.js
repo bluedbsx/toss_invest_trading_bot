@@ -75,7 +75,7 @@ export class Trader {
     state.settings.dryRun = !liveTradingAllowed;
     state.settings.accountSeq = process.env.TOSS_ACCOUNT_SEQ || state.settings.accountSeq || "";
     state.account = holdings?.result ?? state.account ?? null;
-    state.eventCalendar = listEventCalendar(state.customEvents ?? []);
+    state.eventCalendar = listEventCalendar(state.earningsEvents ?? []);
     if (liveTradingAllowed) markPaperSessionInactive(state);
     if (!this.tossClient.isMockMode()) {
       await syncExecutedBotOrders(state, this.tossClient, { holdings, updatePortfolio: liveTradingAllowed });
@@ -109,7 +109,7 @@ export class Trader {
         canAddMore: canAddMore(state, target.symbol, state.settings)
       };
       persistPeakPrice(state, target.symbol, position);
-      const eventRisk = getEventRisk(target.symbol, new Date(), state.customEvents ?? []);
+      const eventRisk = getEventRisk(target.symbol, new Date(), state.earningsEvents ?? []);
       const newsRisk = getNewsRisk(target.symbol, state.news ?? [], new Date(), target.name);
       let signal = evaluateTarget({
         target,
