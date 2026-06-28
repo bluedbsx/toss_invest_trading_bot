@@ -4,6 +4,7 @@ import { getEventRisk, getNewsRisk, listEventCalendar } from "./eventRisk.js";
 import { getCalendarRisk } from "./calendar.js";
 import { attachTradeLearningContext, recordDecisionSample } from "./learning.js";
 import { recordEquitySnapshot } from "./validation.js";
+import { DEFAULT_BOT_STARTED_AT } from "./store.js";
 
 // 부동소수점 매매로 남는 미세한 수량 찌꺼기(예: 3e-18주)를 보유로 오인하지 않기 위한 기준값.
 // 소수점 수량은 6자리까지만 추적하므로 1e-6주 미만은 사실상 0(전량 매도)으로 본다.
@@ -74,7 +75,7 @@ export class Trader {
     state.settings.dryRun = !liveTradingAllowed;
     state.settings.accountSeq = process.env.TOSS_ACCOUNT_SEQ || state.settings.accountSeq || "";
     state.account = holdings?.result ?? state.account ?? null;
-    state.eventCalendar = listEventCalendar();
+    state.eventCalendar = listEventCalendar(state.customEvents ?? []);
     if (liveTradingAllowed) markPaperSessionInactive(state);
     if (!this.tossClient.isMockMode()) {
       await syncExecutedBotOrders(state, this.tossClient, { holdings, updatePortfolio: liveTradingAllowed });
@@ -108,8 +109,8 @@ export class Trader {
         canAddMore: canAddMore(state, target.symbol, state.settings)
       };
       persistPeakPrice(state, target.symbol, position);
-      const eventRisk = getEventRisk(target.symbol);
-      const newsRisk = getNewsRisk(target.symbol, state.news ?? []);
+      const eventRisk = getEventRisk(target.symbol, new Date(), state.customEvents ?? []);
+      const newsRisk = getNewsRisk(target.symbol, state.news ?? [], new Date(), target.name);
       let signal = evaluateTarget({
         target,
         candles,
@@ -596,7 +597,7 @@ async function recoverBotOrdersFromTossHistory(state, tossClient, holdings) {
   const knownOrderIds = new Set((state.tradeHistory ?? []).map((trade) => String(trade.orderId ?? "")).filter(Boolean));
   const targetSymbols = new Set((state.targets ?? []).map((target) => String(target.symbol).toUpperCase()));
   const actualBySymbol = holdingsMap(holdings);
-  const recoveryStart = new Date(state.settings?.botStartedAt ?? "2026-06-21T00:00:00.000+09:00").getTime();
+  const recoveryStart = new Date(state.settings?.botStartedAt ?? DEFAULT_BOT_STARTED_AT).getTime();
   const recovered = [];
   for (const status of ["CLOSED", "OPEN"]) {
     const response = await tossClient.getOrders(status, 100);

@@ -521,3 +521,13 @@
   - `public/index.html`: `<head>`에 첫 페인트 전 테마 적용 스크립트(깜빡임 방지, 라이트 기본). 헤더에 테마 토글 버튼(`#themeToggle`).
   - `public/app.js`: 토글 핸들러(localStorage `tds-theme` 저장) + `syncThemeToggle` 라벨 동기화.
 - 검증: `node --check public/app.js` PASS. 컴포넌트 규칙에 남은 소문자 다크 hex 0개(전부 변수화), 다크 토큰 정의 보존(대문자/rgb로 replace_all 충돌 회피), 정적 자산 서빙 200. 적용은 브라우저 하드 리프레시(서버 재시작 불요 — 정적 파일).
+
+### 2026-06-28 — Claude (Opus 4.8) : 하드코딩 동적화 + 기능 유기적 연결
+- 목적: 코드 전반의 하드코딩을 종목/상태에 따라 유동적으로 바꾸고, 기능들을 유기적으로 연결(예: 종목 추가→뉴스 반영).
+- 수정 내용:
+  - `src/tickers.js` 신규: 티커 "정체성" 단일 출처(회사명 키워드·본문 별칭·섹터). `news.js`(검색어/태깅)·`eventRisk.js`(뉴스/이벤트 관련성)가 공유. 프로필 없는 티커는 name에서 별칭 추정(`nameAliases`) + 심볼 토큰으로 자동 동작. 섹터 키워드로 동종업계 뉴스도 관련성 인정. → 종목 한 곳만 추가하면 검색·태깅·관련성·예산영향이 한꺼번에 반영.
+  - `src/news.js`: 중복 프로필표 제거하고 tickers.js 사용. 검색어는 회사명(없으면 name 추정/심볼). 태깅·관련성 name 인지(`nameMap`).
+  - `src/eventRisk.js`: 하드코딩 EVENTS(고정 날짜·옛 티커, 일부 이미 과거) 제거 → `state.customEvents`로 주입받는 state-driven. 거시(CPI/FOMC)는 calendar.js가 동적 처리하므로 중복 제거. 과거 이벤트 자동 만료. 종목 관련성 if-체인 → 공유 `relevanceMatcher`로 대체.
+  - `src/store.js`: defaultState 기본 종목 SOXX/SMH→MU/TSM/WDC, allocationUsd 1000→100, `customEvents:[]` 추가. `DEFAULT_BOT_STARTED_AT` 상수 export(3곳 중복 리터럴 통합, #6).
+  - `src/validation.js`·`src/trader.js`: `DEFAULT_BOT_STARTED_AT` 사용. trader가 `state.customEvents`·`target.name`을 eventRisk/newsRisk에 전달.
+- 검증: `node --check` 전부 PASS, import 체인(validation↔store, trader↔store) 정상. 단위테스트 — 미등록 티커 PLTR이 회사명("Palantir")으로 뉴스 관련성·태깅·예산영향 인정, 오탐 없음(Apple 뉴스엔 PLTR 매칭 안 됨). 섹터 뉴스(semiconductor→TSM, DRAM→MU) 관련성 인정. state-driven 이벤트 과거 자동 숨김·실적 전후 차단 동작 확인. 적용엔 서버 재시작 필요.

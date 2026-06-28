@@ -2,6 +2,7 @@
 // 목적: "봇이 단순 보유(buy-and-hold)를 이겼는가"를 정직하게 측정하고, 시드 증액 판단(게이트)을 돕는다.
 // 구성: ① 벤치마크(현금흐름 반영) ② 지표(승률·손익비·MDD·초과수익) ③ 증액 게이트.
 // 매매 로직은 전혀 건드리지 않는다(측정·표시 전용). AGENTS.md §3: 근거/가정을 함께 남긴다.
+import { DEFAULT_BOT_STARTED_AT } from "./store.js";
 
 // 시드 증액 게이트 기준(시스템 자체의 buildNextActions 기준과 일치시켜 교차검증 가능하게 둠).
 export const GATE_MIN_CYCLES = 5; // 왕복(매수-매도) 사이클 최소 표본
@@ -13,7 +14,7 @@ export const BENCHMARK_SYMBOL = process.env.BENCHMARK_SYMBOL || "QQQ"; // 기본
 // 근거: 시드를 여러 번 더하면 그 각각이 현금흐름이라, 벤치마크도 "그 시점에 그만큼 매수"로 비교해야 공정하다.
 export function buildCapitalFlows(state) {
   const settings = state?.settings ?? {};
-  const startedAt = settings.botStartedAt ?? "2026-06-21T00:00:00.000+09:00";
+  const startedAt = settings.botStartedAt ?? DEFAULT_BOT_STARTED_AT;
   const currentSeed = Math.max(0, Number(state?.botBudget?.startingSeedUsd ?? settings.allocationUsd ?? 0));
   const events = (state?.learning?.recommendationEvents ?? []).filter((event) => event.type === "budget-add");
   const topUps = events

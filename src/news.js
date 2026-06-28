@@ -1,32 +1,9 @@
+import { CONTEXT_TICKERS, aliasMatcher, queryKeywords } from "./tickers.js";
+
 // 항상 추적하는 기본 심볼(벤치마크/거시 헤지). 활성 자동매매 종목은 fetchNews에서 합쳐진다.
 const BASE_SYMBOLS = ["QQQ"];
 // 거시(연준/인플레이션/반도체) 기본 검색어 — 종목별 키워드가 여기에 더해진다.
 const MACRO_QUERY_TERMS = ["Federal Reserve", "FOMC", "inflation", "semiconductor", "AI"];
-
-// 티커별 프로필: keywords=구글뉴스 검색어(회사명), alias=본문에서 그 종목을 인식하는 정규식.
-// 모르는 티커(사용자가 새로 추가)는 심볼 자체를 검색어/태그로 쓴다(아래 헬퍼에서 자동 처리).
-const TICKER_PROFILES = {
-  MU: { keywords: ["Micron"], alias: /\bmicron\b|\bmuu?\b/ },
-  TSM: { keywords: ["TSMC", "Taiwan Semiconductor"], alias: /\btsmc\b|\btsm\b/ },
-  WDC: { keywords: ["Western Digital"], alias: /\bwestern digital\b|\bwdc\b/ },
-  GOOGL: { keywords: ["Alphabet", "Google"], alias: /\balphabet\b|\bgoogle?\b|\bgoogl\b/ },
-  SNDK: { keywords: ["SanDisk"], alias: /\bsandisk\b|\bsndk\b|\bsnxx\b/ },
-  NVDA: { keywords: ["Nvidia"], alias: /\bnvidia\b|\bnvda\b/ },
-  AVGO: { keywords: ["Broadcom"], alias: /\bbroadcom\b|\bavgo\b/ },
-  INTC: { keywords: ["Intel"], alias: /\bintel\b|\bintc\b/ },
-  AMD: { keywords: ["AMD"], alias: /\bamd\b/ },
-  AAPL: { keywords: ["Apple"], alias: /\bapple\b|\baapl\b/ },
-  MSFT: { keywords: ["Microsoft"], alias: /\bmicrosoft\b|\bmsft\b/ },
-  AMZN: { keywords: ["Amazon"], alias: /\bamazon\b|\bamzn\b/ },
-  META: { keywords: ["Meta Platforms"], alias: /\bmeta platforms\b|\bfacebook\b/ },
-  TSLA: { keywords: ["Tesla"], alias: /\btesla\b|\btsla\b/ },
-  QQQ: { keywords: ["Nasdaq 100"], alias: /\bqqq\b|nasdaq 100/ },
-  SOXX: { keywords: ["semiconductor ETF"], alias: /\bsoxx\b/ },
-  SMH: { keywords: [], alias: /\bsmh\b/ },
-  SOXL: { keywords: [], alias: /\bsoxl\b/ }
-};
-// 보유하지 않아도 업황 맥락상 항상 태그하는 동종업계 티커.
-const CONTEXT_TICKERS = ["NVDA", "AVGO", "INTC", "AMD"];
 
 function enabledSymbols(targets) {
   return (targets ?? [])
@@ -39,13 +16,12 @@ function trackedSymbolList(targets) {
   return [...new Set([...BASE_SYMBOLS, ...enabledSymbols(targets)])];
 }
 
-// 구글뉴스 검색어: 거시 기본어 + 종목별 회사명(없으면 심볼).
+// 구글뉴스 검색어: 거시 기본어 + 종목별 회사명(공유 프로필; 없으면 name 추정/심볼).
 function buildQueryTerms(targets) {
   const terms = [...MACRO_QUERY_TERMS];
-  for (const symbol of enabledSymbols(targets)) {
-    const profile = TICKER_PROFILES[symbol];
-    if (profile?.keywords?.length) terms.push(...profile.keywords);
-    else terms.push(symbol);
+  for (const target of targets ?? []) {
+    if (!target || target.enabled === false || !target.symbol) continue;
+    terms.push(...queryKeywords(target.symbol, target.name));
   }
   return [...new Set(terms)];
 }
@@ -75,11 +51,16 @@ function buildFeeds(symbols, queryTerms) {
 // 종목을 추가하면 그 티커가 야후 종목 피드와 구글 검색어, 태깅에 자동 반영된다.
 export async function fetchNews(targets = []) {
   const symbols = trackedSymbolList(targets);
+  const nameMap = Object.fromEntries(
+    (targets ?? [])
+      .filter((target) => target && target.symbol)
+      .map((target) => [String(target.symbol).toUpperCase(), target.name])
+  );
   const feeds = buildFeeds(symbols, buildQueryTerms(targets));
   const batches = await Promise.allSettled(feeds.map(fetchFeed));
   return batches
     .flatMap((item) => (item.status === "fulfilled" ? item.value : []))
-    .map((item) => enrichNews(item, symbols))
+    .map((item) => enrichNews(item, symbols, nameMap))
     .sort((a, b) => new Date(b.publishedAt || 0) - new Date(a.publishedAt || 0))
     .slice(0, 24);
 }
@@ -173,25 +154,18 @@ const TOPIC_TAGS = [
   [/tariff|export (restriction|curb|control)|trade war|관세/, "무역"],
   [/leverage|leveraged etf|\b[23]x\b/, "레버리지"]
 ];
-// 심볼을 단어경계로 매칭하는 정규식(프로필에 없는, 새로 추가된 티커용).
-function symbolTokenRe(symbol) {
-  const escaped = String(symbol).toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  return new RegExp(`(^|[^a-z0-9])${escaped}([^a-z0-9]|$)`);
-}
-
 // 추적 중인(추가된) 종목 + 동종업계 맥락 티커를 본문에서 찾아 태그한다.
-// 큐레이션된 alias가 있으면 그걸 쓰고, 없으면 심볼 토큰으로 매칭한다 → 새 티커도 자동 태깅.
-function buildTags(text, trackedSymbols = []) {
+// 공유 aliasMatcher가 별칭/심볼 토큰을 처리하므로 새 티커도 자동 태깅된다.
+function buildTags(text, trackedSymbols = [], nameMap = {}) {
   const topics = TOPIC_TAGS.filter(([re]) => re.test(text)).map(([, label]) => label);
   const tickers = new Set();
   for (const symbol of new Set([...trackedSymbols, ...CONTEXT_TICKERS])) {
-    const re = TICKER_PROFILES[symbol]?.alias ?? symbolTokenRe(symbol);
-    if (re.test(text)) tickers.add(symbol);
+    if (aliasMatcher(symbol, nameMap[symbol]).test(text)) tickers.add(symbol);
   }
   return [...new Set([...topics, ...tickers])].slice(0, 6);
 }
 
-function enrichNews(item, trackedSymbols = []) {
+function enrichNews(item, trackedSymbols = [], nameMap = {}) {
   const text = `${item.title} ${item.summary}`.toLowerCase();
   const positive = weightedHits(text, POSITIVE_TERMS);
   const negative = weightedHits(text, NEGATIVE_TERMS);
@@ -206,7 +180,7 @@ function enrichNews(item, trackedSymbols = []) {
     ...item,
     translatedTitle: koreanizeTitle(item.title),
     koreanSummary: buildKoreanSummary({ topic, signalLabel, reasons, item }),
-    tags: buildTags(text, trackedSymbols),
+    tags: buildTags(text, trackedSymbols, nameMap),
     sentiment,
     signalLabel,
     signalScore: score,

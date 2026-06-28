@@ -17,13 +17,16 @@ const BACKUP_MIN_INTERVAL_MS = 10 * 60_000;
 let lastBackupAt = 0;
 let updateQueue = Promise.resolve();
 
+// 봇 운영 시작 기준 시각 단일 출처(검증 자본흐름·주문복구 기준). 초기화 스크립트가 현재로 갱신한다.
+export const DEFAULT_BOT_STARTED_AT = "2026-06-21T00:00:00.000+09:00";
+
 const defaultState = {
   settings: {
     monitoringEnabled: false,
     liveTradingEnabled: false,
     dryRun: true,
-    allocationUsd: 1000,
-    cashBufferUsd: 50,
+    allocationUsd: 100,
+    cashBufferUsd: 20,
     useVirtualSeed: true,
     allowSeedTopUp: false,
     maxDailyLossPct: 4.5,
@@ -45,53 +48,74 @@ const defaultState = {
     pollIntervalSec: 60,
     lastRunAt: null,
     accountSeq: "",
-    botStartedAt: "2026-06-21T00:00:00.000+09:00",
+    botStartedAt: DEFAULT_BOT_STARTED_AT,
     modeNote: "LIVE_TRADING=false이면 실제 주문 대신 dry-run 로그만 남깁니다."
   },
   targets: [
-    // v0.9 재설계(WORKLOG §V): 2~3x 레버리지 단일종목 ETF는 갭/휩쏘로 손절이 뚫려 실거래 -10% →
-    // 추세가 작동하는 1x 반도체로 전환(SOXX 백테스트 167%/낙폭13.6%). 파라미터는 optimizeTargetSettings 결과.
+    // 1x 반도체/메모리 단일주 코어(WORKLOG §JJ). 레버리지 ETF는 갭/휩쏘로 손절이 뚫려 제외, 추세가
+    // 작동하는 1x로 전환. 파라미터는 optimizeTargetSettings 결과(신규 설치 기본값 — 런타임 state가 우선).
     {
-      symbol: "SOXX",
-      name: "iShares 반도체 1x (SOXX)",
+      symbol: "MU",
+      name: "Micron Technology (MU)",
       enabled: true,
       riskProfile: "growth",
-      allocationPct: 60,
+      allocationPct: 36,
       leverage: "1x",
       stopLossPct: 8,
-      fastSmaDays: 50,
-      slowSmaDays: 120,
-      momentumDays: 10,
-      minBuyRsi: 38,
-      maxBuyRsi: 66,
-      partialTakeProfitPct: 10,
+      fastSmaDays: 80,
+      slowSmaDays: 200,
+      momentumDays: 20,
+      minBuyRsi: 35,
+      maxBuyRsi: 65,
+      partialTakeProfitPct: 9,
       partialTakeProfitSellPct: 40,
       takeProfitPct: 18,
       trailingStopPct: 10,
       takeProfitRsi: 78,
-      maxAtrPct: 12,
-      notes: "반도체 지수 1x. 레버리지 ETF 갭/휩쏘 회피 위해 채택. 50/120선 추세 추종."
+      maxAtrPct: 24,
+      notes: "메모리 대표주. 80/200선 장기 추세 추종."
     },
     {
-      symbol: "SMH",
-      name: "VanEck 반도체 1x (SMH)",
+      symbol: "TSM",
+      name: "TSMC ADR (TSM)",
       enabled: true,
       riskProfile: "growth",
-      allocationPct: 40,
+      allocationPct: 28,
       leverage: "1x",
-      stopLossPct: 8.4,
-      fastSmaDays: 50,
-      slowSmaDays: 120,
+      stopLossPct: 8,
+      fastSmaDays: 20,
+      slowSmaDays: 100,
       momentumDays: 10,
-      minBuyRsi: 38,
-      maxBuyRsi: 66,
-      partialTakeProfitPct: 11.3,
-      partialTakeProfitSellPct: 35,
-      takeProfitPct: 21.4,
-      trailingStopPct: 12.2,
-      takeProfitRsi: 80,
-      maxAtrPct: 13,
-      notes: "반도체 지수 1x(SMH). SOXX와 함께 1x 반도체 코어. SOXX와 상관 높음(분산효과 제한)."
+      minBuyRsi: 42,
+      maxBuyRsi: 70,
+      partialTakeProfitPct: 9,
+      partialTakeProfitSellPct: 40,
+      takeProfitPct: 18,
+      trailingStopPct: 10,
+      takeProfitRsi: 78,
+      maxAtrPct: 24,
+      notes: "파운드리 1위. 20/100선 추세."
+    },
+    {
+      symbol: "WDC",
+      name: "Western Digital (WDC)",
+      enabled: true,
+      riskProfile: "growth",
+      allocationPct: 36,
+      leverage: "1x",
+      stopLossPct: 8,
+      fastSmaDays: 80,
+      slowSmaDays: 200,
+      momentumDays: 20,
+      minBuyRsi: 35,
+      maxBuyRsi: 65,
+      partialTakeProfitPct: 9,
+      partialTakeProfitSellPct: 40,
+      takeProfitPct: 18,
+      trailingStopPct: 10,
+      takeProfitRsi: 78,
+      maxAtrPct: 24,
+      notes: "스토리지/낸드. 80/200선 장기 추세."
     }
   ],
   positions: {},
@@ -112,6 +136,7 @@ const defaultState = {
   riskGuard: null,
   news: [],
   economicCalendar: [],
+  customEvents: [],
   automation: {
     lastRunAt: null,
     lastActions: [],
@@ -287,6 +312,7 @@ function mergeDefaults(state) {
     marketSnapshots: state.marketSnapshots ?? {},
     riskGuard: state.riskGuard ?? null,
     news: state.news ?? [],
+    customEvents: Array.isArray(state.customEvents) ? state.customEvents : [],
     automation: { ...defaultState.automation, ...(state.automation ?? {}) },
     learning: {
       ...defaultState.learning,
