@@ -505,3 +505,10 @@
   - `public/app.js`: `renderLedger()` 추가(장부 모드/시작시각/지난 장부 기록 ledgerHistory 표시, 구 백엔드에선 dryRun으로 폴백). `renderEditor` 그룹형 재구성. `renderPublicIp` 헤더 칩 title 반영 + null 가드.
   - `public/styles.css`: 여백 완화(shell gap 16→22, panel padding 16→18/20, panel-head 14→16, choice/control/market/workspace gap 상향). 헤더 IP 칩/장부 상태/에디터 그룹 스타일 신규. section-heading 좌측 정렬 패널 콘텐츠(19px)와 픽셀 일치. 모바일 미디어쿼리에서 editor-fields 1열·IP칩 풀폭.
 - 검증: `node --check public/app.js` PASS, section/details 태그 균형(8/8·5/5), 필요한 DOM id 전부 존재, 정적 자산 localhost:3000 정상 서빙, 구 백엔드 /api/state로도 UI 비파괴(ledger 폴백). 시각 확인은 사용자 브라우저 새로고침으로 진행.
+
+### 2026-06-27 (밤) 뉴스 — Claude (Opus 4.8)
+- 목적: 종목을 추가하면 그 티커/회사 뉴스를 시장뉴스에 자동 반영(요청).
+- 수정 내용:
+  - `src/news.js`: 하드코딩 `NEWS_SYMBOLS`/`GOOGLE_NEWS_QUERY`/`TICKER_TAGS` 제거. `fetchNews(targets)`가 활성 종목으로 야후 종목 피드(`s=`), 구글뉴스 검색어, 태깅을 동적 구성. `TICKER_PROFILES`(회사명 keywords + 본문 alias 정규식) + 미등록 티커는 심볼 토큰(`symbolTokenRe`)로 폴백. `CONTEXT_TICKERS`(NVDA/AVGO/INTC/AMD)는 보유 안 해도 맥락 태그. `BASE_SYMBOLS=[QQQ]` 항상 포함.
+  - `server.js`: `refreshNews`가 현재 targets를 로드해 `fetchNews(targets)` 호출. 종목 추가(POST /api/targets) 직후 `refreshNews()` 1회 트리거(응답 비차단)로 즉시 반영.
+- 검증: `node --check` PASS. mock fetch 단위테스트 — 야후 심볼 `QQQ,MU,AAPL,PLTR`(비활성 SOXL 제외), 구글 검색어에 Apple/PLTR/Micron 포함·SOXL 제외, 새 티커(PLTR) 뉴스가 태그 `["AI","PLTR"]`로 자동 분류됨 확인. 적용엔 서버 재시작 필요.

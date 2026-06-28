@@ -439,6 +439,8 @@ async function handleApi(request, response, url) {
         notes: body.notes || ""
       });
     });
+    // 새 종목의 뉴스를 시장뉴스에 즉시 반영(다음 폴링에서 표시). 응답은 기다리지 않는다.
+    refreshNews().catch(() => {});
     sendJson(response, 200, state);
     return;
   }
@@ -613,7 +615,8 @@ async function refreshEconomicCalendar() {
 
 async function refreshNews() {
   try {
-    const news = await fetchNews();
+    const current = await loadState();
+    const news = await fetchNews(current.targets ?? []);
     await updateState((draft) => {
       draft.news = news;
       draft.health.lastNewsRefreshAt = new Date().toISOString();
