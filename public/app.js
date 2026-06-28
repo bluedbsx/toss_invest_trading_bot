@@ -12,7 +12,14 @@ const targetAutoSaveTimers = new Map();
 await refresh();
 setInterval(refresh, 20_000);
 
-$("#saveSettings").addEventListener("click", saveSettings);
+// 안전설정/자동투자 켜기 패널: 값을 바꾸거나 체크박스를 토글하면 자동 저장(설정 저장 버튼 없음).
+for (const input of document.querySelectorAll(".control-panel .control-grid input")) {
+  input.addEventListener("input", () => scheduleSettingsAutoSave());
+  input.addEventListener("change", () => scheduleSettingsAutoSave({ immediate: true }));
+}
+for (const input of document.querySelectorAll(".control-panel .choice-grid input")) {
+  input.addEventListener("change", () => scheduleSettingsAutoSave({ immediate: true }));
+}
 $("#runOnce").addEventListener("click", () => runTossAction("runOnce", "/api/run-once", $("#runOnce")));
 $("#syncNews").addEventListener("click", (event) => {
   event.stopPropagation();
@@ -176,29 +183,57 @@ async function refreshLearningReport() {
   }
 }
 
+// 버튼 한 번에 추천 계산 → 입력칸 반영 → 자동 저장(별도 저장 버튼/확인창 없음).
 async function recommendSafetySettings() {
   const button = $("#recommendSafety");
   try {
-    setButtonBusy(button, true, "계산 중");
-    showProgress("안전설정 추천 계산 중", "자동투자 금액은 유지하고, 활성 종목 점수·비중·배율·변동성을 보고 방어 설정을 계산합니다.");
-    const currentSettings = readSettingsForm();
-    const recommendation = await post("/api/recommendations/safety", { settings: currentSettings });
-    applySafetyInputs(recommendation.recommended);
-    const summary = renderSafetyRecommendationText(recommendation);
-    if (!confirm(`안전설정 추천값을 저장할까요?\n${summary}`)) {
-      renderSafetyRecommendationNote({ ...recommendation, appliedAt: null, canceled: true });
-      showProgress("안전설정 추천 취소", "추천값은 입력칸에만 반영했고 저장하지 않았습니다.", "neutral");
-      return;
-    }
-    showProgress("안전설정 저장 중", "추천된 안전설정을 저장하고 있습니다.");
+    setButtonBusy(button, true, "계산·적용 중");
+    setSettingsStatus("저장 중", "pending");
+    showProgress("안전설정 추천 적용 중", "활성 종목 점수·비중·배율·변동성을 보고 방어 설정을 계산해 바로 저장합니다.");
     await post("/api/recommendations/safety/apply", { settings: readSettingsForm() });
     await refresh();
-    showProgress("안전설정 저장 완료", "추천 안전설정이 저장됐습니다.", "success");
+    setSettingsStatus("저장됨", "ok");
+    showProgress("안전설정 적용 완료", "추천 안전설정을 적용하고 저장했습니다.", "success");
   } catch (error) {
+    setSettingsStatus("저장 실패", "danger");
     showProgress("안전설정 추천 실패", humanError(error.message), "danger");
   } finally {
     setButtonBusy(button, false);
   }
+}
+
+let settingsSaveTimer = null;
+
+function setSettingsStatus(text, kind = "neutral") {
+  const status = $("#settingsSaveStatus");
+  if (!status) return;
+  status.textContent = text;
+  status.className = `auto-save-state ${kind}`;
+}
+
+// 안전설정/자동투자 켜기 필드·체크박스 변경 시 자동 저장. 입력은 debounce, 체크박스는 즉시(immediate).
+function scheduleSettingsAutoSave({ immediate = false } = {}) {
+  if (settingsSaveTimer) {
+    clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = null;
+  }
+  const run = async () => {
+    setSettingsStatus("저장 중", "pending");
+    try {
+      await patch("/api/settings", readSettingsForm());
+      await refresh();
+      setSettingsStatus("저장됨", "ok");
+    } catch (error) {
+      setSettingsStatus("저장 실패", "danger");
+      showProgress("설정 저장 실패", humanError(error.message), "danger");
+    }
+  };
+  if (immediate) {
+    run();
+    return;
+  }
+  setSettingsStatus("저장 대기", "pending");
+  settingsSaveTimer = setTimeout(run, 800);
 }
 
 async function addBotBudget() {
@@ -227,24 +262,6 @@ async function addBotBudget() {
   } finally {
     setButtonBusy(button, false);
   }
-}
-
-function applySafetyInputs(values) {
-  if (!values) return;
-  if (values.useVirtualSeed !== undefined) $("#useVirtualSeed").checked = Boolean(values.useVirtualSeed);
-  if (values.allowSeedTopUp !== undefined) $("#allowSeedTopUp").checked = Boolean(values.allowSeedTopUp);
-  if (values.cashBufferUsd !== undefined) $("#cashBufferUsd").value = values.cashBufferUsd;
-  if (values.maxDailyLossPct !== undefined) $("#maxDailyLossPct").value = values.maxDailyLossPct;
-  if (values.maxPositionPct !== undefined) $("#maxPositionPct").value = values.maxPositionPct;
-  if (values.maxLeveragedExposurePct !== undefined) $("#maxLeveragedExposurePct").value = values.maxLeveragedExposurePct;
-  if (values.intradayDropBlockPct !== undefined) $("#intradayDropBlockPct").value = values.intradayDropBlockPct;
-  if (values.intradayPanicExitPct !== undefined) $("#intradayPanicExitPct").value = values.intradayPanicExitPct;
-  if (values.additionalBuyCooldownMinutes !== undefined) $("#additionalBuyCooldownMinutes").value = values.additionalBuyCooldownMinutes;
-  if (values.allowAdditionalBuys !== undefined) $("#allowAdditionalBuys").checked = Boolean(values.allowAdditionalBuys);
-  $("#allowSeedTopUp").disabled = !$("#useVirtualSeed").checked;
-  $("#virtualSeedLabel").textContent = $("#useVirtualSeed").checked ? "사용" : "고정한도";
-  $("#seedTopUpLabel").textContent = $("#allowSeedTopUp").checked && $("#useVirtualSeed").checked ? "허용" : "꺼짐";
-  $("#additionalBuyLabel").textContent = $("#allowAdditionalBuys").checked ? "켜짐" : "꺼짐";
 }
 
 function createProgressHost() {
@@ -1841,11 +1858,6 @@ function renderRecommendationDiff(current, recommended) {
       return `<span class="diff-chip ${changed ? "changed" : ""}">${label}: ${formatNumber(before)}${suffix} → ${formatNumber(after)}${suffix}</span>`;
     })
     .join(" ");
-}
-
-async function saveSettings() {
-  await patch("/api/settings", readSettingsForm());
-  await refresh();
 }
 
 function readSettingsForm() {

@@ -614,3 +614,10 @@
 - 가정/주의(다른 에이전트가 검토해야 할 점):
   - Yahoo 메타 조회가 실패하면 종목 추가는 막지 않고 기존처럼 심볼 기반으로 진행한다. 이 경우 뉴스 검색은 심볼 중심으로만 동작한다.
   - 섹터 분류는 여전히 `TICKER_PROFILES`에 없는 새 티커의 경우 자동으로 알 수 없으므로, 깊은 업종별 뉴스 관련도까지 원하면 추후 Yahoo quoteSummary/별도 프로필 소스 연결이 필요하다.
+
+### 2026-06-28 (4) — Claude (Opus 4.8) : 안전설정 패널 자동저장 + 저장버튼 제거
+- 목적: 종목설정 카드처럼, 안전설정/자동투자 켜기 패널도 필드·체크박스 변경 시 자동 저장하고 "설정 저장" 버튼을 없앤다. "안전설정 추천"은 한 번 누르면 계산→입력칸 반영→자동 저장(확인창 없음).
+- 수정 내용:
+  - `public/app.js`: `#saveSettings` 리스너/함수 제거. `.control-panel .control-grid input`은 input(debounce 800ms)+change(즉시), `.control-panel .choice-grid input`(체크박스)은 change 즉시로 `scheduleSettingsAutoSave` 연결(PATCH /api/settings → refresh, 저장 상태 표시). `recommendSafetySettings`를 confirm 제거하고 `/api/recommendations/safety/apply` 한 번으로 적용·저장. 죽은 `applySafetyInputs` 제거.
+  - `public/index.html`: `설정 저장` 버튼 제거, `#settingsSaveStatus`(자동 저장 상태 칩) 추가, 버튼 라벨 `안전설정 추천·적용`, 패널 설명에 자동저장 명시. 모니터링 토글은 별도(영향 없음).
+- 검증: `node --check public/app.js` PASS. 정적 파일 서빙 확인(scheduleSettingsAutoSave 존재, #saveSettings 없음, #settingsSaveStatus 존재), 죽은 참조 0. 프런트 전용이라 서버 재시작 불요(브라우저 하드 리프레시).
