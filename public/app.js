@@ -8,6 +8,11 @@ let progressHideTimer = null;
 let lastActionRequestPreview = null;
 let state = null;
 const targetAutoSaveTimers = new Map();
+const settingsFormSelector = ".control-panel .control-grid input, .control-panel .choice-grid input";
+let settingsSaveTimer = null;
+let settingsSaveInFlight = false;
+let settingsSaveQueued = false;
+let settingsSavePromise = null;
 
 await refresh();
 setInterval(refresh, 20_000);
@@ -110,6 +115,10 @@ $("#recommendWeights").addEventListener("click", async () => {
 
 async function refresh() {
   state = await get("/api/state");
+  renderCurrentState();
+}
+
+function renderCurrentState() {
   renderBeginnerHero();
   renderOperationSummary();
   renderSettings();
@@ -187,10 +196,17 @@ async function refreshLearningReport() {
 async function recommendSafetySettings() {
   const button = $("#recommendSafety");
   try {
+    if (!settingsFormIsValid()) {
+      setSettingsStatus("입력 확인", "danger");
+      throw new Error("안전설정 입력값을 먼저 확인해주세요.");
+    }
+    const settings = readSettingsForm();
+    cancelPendingSettingsAutoSave();
     setButtonBusy(button, true, "계산·적용 중");
     setSettingsStatus("저장 중", "pending");
     showProgress("안전설정 추천 적용 중", "활성 종목 점수·비중·배율·변동성을 보고 방어 설정을 계산해 바로 저장합니다.");
-    await post("/api/recommendations/safety/apply", { settings: readSettingsForm() });
+    if (settingsSavePromise) await settingsSavePromise.catch(() => {});
+    await post("/api/recommendations/safety/apply", { settings });
     await refresh();
     setSettingsStatus("저장됨", "ok");
     showProgress("안전설정 적용 완료", "추천 안전설정을 적용하고 저장했습니다.", "success");
@@ -201,8 +217,6 @@ async function recommendSafetySettings() {
     setButtonBusy(button, false);
   }
 }
-
-let settingsSaveTimer = null;
 
 function setSettingsStatus(text, kind = "neutral") {
   const status = $("#settingsSaveStatus");
@@ -217,23 +231,71 @@ function scheduleSettingsAutoSave({ immediate = false } = {}) {
     clearTimeout(settingsSaveTimer);
     settingsSaveTimer = null;
   }
-  const run = async () => {
-    setSettingsStatus("저장 중", "pending");
-    try {
-      await patch("/api/settings", readSettingsForm());
-      await refresh();
-      setSettingsStatus("저장됨", "ok");
-    } catch (error) {
-      setSettingsStatus("저장 실패", "danger");
-      showProgress("설정 저장 실패", humanError(error.message), "danger");
-    }
-  };
   if (immediate) {
-    run();
+    startSettingsAutoSave();
     return;
   }
   setSettingsStatus("저장 대기", "pending");
-  settingsSaveTimer = setTimeout(run, 800);
+  settingsSaveTimer = setTimeout(startSettingsAutoSave, 800);
+}
+
+function startSettingsAutoSave() {
+  if (settingsSaveTimer) {
+    clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = null;
+  }
+  if (!settingsFormIsValid()) {
+    setSettingsStatus("입력 확인", "danger");
+    return;
+  }
+  if (settingsSaveInFlight) {
+    settingsSaveQueued = true;
+    setSettingsStatus("저장 대기", "pending");
+    return;
+  }
+  const promise = runSettingsAutoSave();
+  settingsSavePromise = promise;
+  promise.finally(() => {
+    if (settingsSavePromise === promise) settingsSavePromise = null;
+  });
+}
+
+async function runSettingsAutoSave() {
+  settingsSaveInFlight = true;
+  setSettingsStatus("저장 중", "pending");
+  let savedState = null;
+  try {
+    savedState = await patch("/api/settings", readSettingsForm());
+  } catch (error) {
+    setSettingsStatus("저장 실패", "danger");
+    showProgress("설정 저장 실패", humanError(error.message), "danger");
+  } finally {
+    settingsSaveInFlight = false;
+  }
+  if (settingsSaveQueued) {
+    settingsSaveQueued = false;
+    startSettingsAutoSave();
+    return;
+  }
+  if (savedState) {
+    await refresh();
+    setSettingsStatus("저장됨", "ok");
+  }
+}
+
+function cancelPendingSettingsAutoSave() {
+  if (settingsSaveTimer) {
+    clearTimeout(settingsSaveTimer);
+    settingsSaveTimer = null;
+  }
+  settingsSaveQueued = false;
+}
+
+function settingsFormIsValid() {
+  return Array.from(document.querySelectorAll(settingsFormSelector)).every((input) => {
+    if (input.type === "number" && input.value.trim() === "") return false;
+    return input.checkValidity();
+  });
 }
 
 async function addBotBudget() {
@@ -546,6 +608,21 @@ async function refreshPublicIp() {
 function renderSettings() {
   const { settings, health, runtime } = state;
   $("#monitoringEnabled").checked = Boolean(settings.monitoringEnabled);
+  if (!shouldPreserveSettingsForm()) hydrateSettingsForm(settings);
+  const apiProblem = !runtime.mockMode && (!health.tossConnected || Boolean(health.lastError));
+  $("#statusText").textContent = apiProblem
+    ? `연결 오류 · ${humanError(health.lastError)}`
+    : `${statusLabel(health.status)} · ${formatTime(settings.lastRunAt)}`;
+  $("#mockBadge").textContent = apiProblem ? "API 오류" : runtime.mockMode || settings.dryRun ? "연습" : "실거래";
+  $("#mockBadge").className = apiProblem ? "badge sell" : runtime.mockMode || settings.dryRun ? "badge neutral" : "badge sell";
+  $("#accountMode").textContent = "봇 전용";
+  $("#accountMode").className = "badge neutral";
+  $("#lastRunAt").textContent = settings.lastRunAt ? formatTime(settings.lastRunAt) : "";
+  $("#monitoringLabel").textContent = settings.monitoringEnabled ? "조건 확인 중" : "멈춤";
+  renderSettingsFormLabels();
+}
+
+function hydrateSettingsForm(settings) {
   $("#liveTradingEnabled").checked = Boolean(settings.liveTradingEnabled);
   $("#allowFractional").checked = Boolean(settings.allowFractional);
   $("#useVirtualSeed").checked = settings.useVirtualSeed !== false;
@@ -563,24 +640,23 @@ function renderSettings() {
   $("#intradayDropBlockPct").value = settings.intradayDropBlockPct;
   $("#intradayPanicExitPct").value = settings.intradayPanicExitPct;
   $("#additionalBuyCooldownMinutes").value = settings.additionalBuyCooldownMinutes;
-  const apiProblem = !runtime.mockMode && (!health.tossConnected || Boolean(health.lastError));
-  $("#statusText").textContent = apiProblem
-    ? `연결 오류 · ${humanError(health.lastError)}`
-    : `${statusLabel(health.status)} · ${formatTime(settings.lastRunAt)}`;
-  $("#mockBadge").textContent = apiProblem ? "API 오류" : runtime.mockMode || settings.dryRun ? "연습" : "실거래";
-  $("#mockBadge").className = apiProblem ? "badge sell" : runtime.mockMode || settings.dryRun ? "badge neutral" : "badge sell";
-  $("#accountMode").textContent = "봇 전용";
-  $("#accountMode").className = "badge neutral";
-  $("#lastRunAt").textContent = settings.lastRunAt ? formatTime(settings.lastRunAt) : "";
-  $("#monitoringLabel").textContent = settings.monitoringEnabled ? "조건 확인 중" : "멈춤";
-  $("#fractionalLabel").textContent = settings.allowFractional ? "켜짐" : "꺼짐";
-  $("#virtualSeedLabel").textContent = settings.useVirtualSeed !== false ? "사용" : "고정한도";
-  $("#allowSeedTopUp").disabled = settings.useVirtualSeed === false;
-  $("#seedTopUpLabel").textContent = settings.useVirtualSeed !== false && settings.allowSeedTopUp ? "허용" : "꺼짐";
+}
+
+function shouldPreserveSettingsForm() {
+  if (!settingsSaveTimer && !settingsSaveInFlight && !settingsSaveQueued) return false;
+  return Boolean(document.querySelector(".control-panel")?.contains(document.activeElement));
+}
+
+function renderSettingsFormLabels() {
+  const useSeedBook = $("#useVirtualSeed").checked;
+  $("#fractionalLabel").textContent = $("#allowFractional").checked ? "켜짐" : "꺼짐";
+  $("#virtualSeedLabel").textContent = useSeedBook ? "사용" : "고정한도";
+  $("#allowSeedTopUp").disabled = !useSeedBook;
+  $("#seedTopUpLabel").textContent = useSeedBook && $("#allowSeedTopUp").checked ? "허용" : "꺼짐";
   renderTradingSessionControls();
-  $("#liveTradingLabel").textContent = settings.liveTradingEnabled ? "허용됨" : "잠김";
-  $("#redistributeLabel").textContent = settings.redistributeUnusedAllocation ? "켜짐" : "꺼짐";
-  $("#additionalBuyLabel").textContent = settings.allowAdditionalBuys ? "켜짐" : "꺼짐";
+  $("#liveTradingLabel").textContent = $("#liveTradingEnabled").checked ? "허용됨" : "잠김";
+  $("#redistributeLabel").textContent = $("#redistributeUnusedAllocation").checked ? "켜짐" : "꺼짐";
+  $("#additionalBuyLabel").textContent = $("#allowAdditionalBuys").checked ? "켜짐" : "꺼짐";
 }
 
 function renderAutomation() {

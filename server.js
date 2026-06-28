@@ -602,13 +602,27 @@ async function handleApi(request, response, url) {
 }
 
 async function serveStatic(response, pathname) {
+  if (pathname === "/favicon.ico") {
+    response.writeHead(204, { "Cache-Control": "public, max-age=86400" });
+    response.end();
+    return;
+  }
   const safePath = pathname === "/" ? "/index.html" : pathname;
   const filePath = path.normalize(path.join(publicDir, safePath));
   if (!filePath.startsWith(publicDir)) {
     sendJson(response, 403, { error: "Forbidden" });
     return;
   }
-  const data = await readFile(filePath);
+  let data;
+  try {
+    data = await readFile(filePath);
+  } catch (error) {
+    if (error.code === "ENOENT") {
+      sendJson(response, 404, { error: "Not found" });
+      return;
+    }
+    throw error;
+  }
   response.writeHead(200, { "Content-Type": contentType(filePath) });
   response.end(data);
 }

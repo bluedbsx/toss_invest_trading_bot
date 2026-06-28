@@ -621,3 +621,29 @@
   - `public/app.js`: `#saveSettings` 리스너/함수 제거. `.control-panel .control-grid input`은 input(debounce 800ms)+change(즉시), `.control-panel .choice-grid input`(체크박스)은 change 즉시로 `scheduleSettingsAutoSave` 연결(PATCH /api/settings → refresh, 저장 상태 표시). `recommendSafetySettings`를 confirm 제거하고 `/api/recommendations/safety/apply` 한 번으로 적용·저장. 죽은 `applySafetyInputs` 제거.
   - `public/index.html`: `설정 저장` 버튼 제거, `#settingsSaveStatus`(자동 저장 상태 칩) 추가, 버튼 라벨 `안전설정 추천·적용`, 패널 설명에 자동저장 명시. 모니터링 토글은 별도(영향 없음).
 - 검증: `node --check public/app.js` PASS. 정적 파일 서빙 확인(scheduleSettingsAutoSave 존재, #saveSettings 없음, #settingsSaveStatus 존재), 죽은 참조 0. 프런트 전용이라 서버 재시작 불요(브라우저 하드 리프레시).
+
+### 2026-06-28 — Codex
+- 문제/목적:
+  - Claude의 안전설정 자동저장 변경을 교차검증하고, 저장 버튼 제거 후 입력 중 값 유실/요청 경합/브라우저 콘솔 오류가 없는지 확인.
+- 진단(근거):
+  - 자동저장 PATCH가 동시에 여러 번 날아갈 수 있어 늦게 처리된 이전 입력이 최신 값을 덮을 가능성이 있었음.
+  - 숫자 input을 잠깐 비우면 `Number("") === 0` 때문에 임시 입력값이 0으로 저장될 수 있었음.
+  - 주기적 `refresh()`가 사용자가 입력 중인 폼 값을 서버 값으로 다시 덮을 수 있었음.
+  - PATCH `/api/settings` 응답은 `/api/state`처럼 `runtime`이 보강된 상태가 아니므로, 저장 응답을 바로 렌더링하면 `runtime.mockMode` 참조 오류가 날 수 있었음.
+  - `/favicon.ico` 미존재가 정적 파일 예외로 처리되어 브라우저 콘솔에 500 오류가 남았음.
+- 수정 내용:
+  - 안전설정 자동저장을 직렬화하고, 저장 중 추가 변경은 최신 폼 값으로 한 번 더 저장하도록 큐 처리.
+  - 숫자 input이 비었거나 HTML min/max/step 검증을 통과하지 못하면 자동저장을 보내지 않고 `입력 확인` 상태만 표시.
+  - 저장 대기/진행 중이고 해당 패널에 포커스가 있을 때는 `renderSettings()`가 input 값을 덮어쓰지 않도록 보존.
+  - 저장 완료 후에는 PATCH 응답을 직접 렌더링하지 않고 `/api/state`를 다시 읽어 runtime/validation이 포함된 상태로 렌더링.
+  - `/favicon.ico`는 204로 조용히 응답하고, 없는 정적 파일은 500이 아니라 404로 응답.
+- 건드린 파일/함수:
+  - `public/app.js`: settings auto-save queue, settings form validation/preservation, `renderCurrentState`, `renderSettings`
+  - `server.js`: `serveStatic`
+- 검증 방법과 결과:
+  - `node --check public/app.js`, 전체 JS `node --check`, `git diff --check` PASS.
+  - Headless Chrome(시스템 Chrome)으로 localhost 로드: 설정값 렌더링, 저장 버튼 없음, 가로 overflow 없음 확인.
+  - `cashBufferUsd`를 빈 값으로 만들면 상태가 `입력 확인`이고 서버 값은 20 유지. 다시 20 입력 시 `저장됨` 및 서버 값 20 유지 확인.
+  - 서버 재시작 후 `/favicon.ico` 204, Headless Chrome 콘솔/네트워크 오류 없음 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 자동저장 검증은 운영 값과 같은 `cashBufferUsd=20`으로 복원 저장하는 방식으로 진행했으며, 설정 의미는 바꾸지 않았음.
