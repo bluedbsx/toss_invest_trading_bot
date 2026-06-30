@@ -454,6 +454,23 @@ export function recommendPortfolioWeights({ targets, snapshots, backtests = {} }
   const scored = enabledTargets.map((target) =>
     scoreTargetWeight(target, snapshots?.[target.symbol], backtests?.[target.symbol])
   );
+  const fundedDataGaps = scored.filter((item) => item.dataGap && Number(item.currentAllocationPct ?? 0) > 0);
+  if (fundedDataGaps.length) {
+    const preservedWeights = normalizeExistingWeights(enabledTargets);
+    const averageScore = scored.length
+      ? scored.reduce((sum, item) => sum + item.score100, 0) / scored.length
+      : 0;
+    return {
+      weights: preservedWeights,
+      score: round(averageScore, 0),
+      grade: "데이터 대기",
+      dataBlocked: true,
+      reasons: [
+        `백테스트 데이터가 부족한 기존 배정 종목(${fundedDataGaps.map((item) => item.symbol).join(", ")})이 있어 기존 비중을 보존했습니다.`,
+        ...scored.map((item) => `${item.symbol}: ${item.reason}`)
+      ]
+    };
+  }
   const totalScore = scored.reduce((sum, item) => sum + item.score, 0);
   if (totalScore <= 0) {
     const averageScore = scored.length
@@ -902,19 +919,28 @@ export function optimizeTargetSettingsDeep({ target, candles, settings = {} }) {
 
 function scoreTargetWeight(target, snapshot, overrideBacktest) {
   const metrics = snapshot?.signal?.metrics ?? {};
-  const backtest = overrideBacktest ?? snapshot?.backtest;
+  const backtest =
+    overrideBacktest?.available
+      ? overrideBacktest
+      : snapshot?.backtest?.available
+        ? snapshot.backtest
+        : target.lastStrategyReview?.available
+          ? target.lastStrategyReview
+          : overrideBacktest ?? snapshot?.backtest ?? target.lastStrategyReview;
   const leverage = parseLeverage(target.leverage);
   const atrPct = Number(metrics.atrPct ?? target.maxAtrPct ?? 12);
   const momentum = Number(metrics.momentumPct ?? metrics.momentum5dPct ?? 0);
   const rsi14 = Number(metrics.rsi14 ?? 55);
   const eventBlocked = Boolean(snapshot?.signal?.risk?.event?.blocked);
   const newsMultiplier = Number(snapshot?.signal?.risk?.news?.budgetMultiplier ?? 1);
+  const currentAllocationPct = Math.max(0, Number(target.allocationPct ?? 0));
+  const dataGap = !backtest?.available;
   const volatilityPenalty = clamp(1 - (atrPct - 8) / 28, 0.35, 1.15);
   const leveragePenalty = leverage >= 3 ? 0.78 : leverage >= 2 ? 0.9 : 1;
   const momentumBoost = clamp(1 + momentum / 80, 0.65, 1.35);
   const rsiPenalty = rsi14 > 72 ? 0.75 : rsi14 < 40 ? 0.85 : 1;
   const eventPenalty = eventBlocked ? 0.45 : 1;
-  const score100 = scoreBacktest(backtest);
+  const score100 = dataGap && currentAllocationPct > 0 ? 55 : scoreBacktest(backtest);
   const allocationFloorPct = eventBlocked || score100 < 55 ? 0 : score100 < 70 ? 3 : 5;
   const canAllocate = !eventBlocked && score100 >= 55;
   const backtestBoost =
@@ -926,11 +952,29 @@ function scoreTargetWeight(target, snapshot, overrideBacktest) {
     `변동성 ${round(atrPct, 1)}%`,
     `모멘텀 ${round(momentum, 1)}%`,
     `${target.leverage || "1x"}`,
-    backtest?.available ? `백테스트 ${score100}/100` : "백테스트 부족",
+    backtest?.available
+      ? `백테스트 ${score100}/100`
+      : currentAllocationPct > 0
+        ? "백테스트 데이터 대기(기존 비중 보존)"
+        : "백테스트 부족",
     eventBlocked ? "이벤트 위험 반영" : "이벤트 위험 낮음",
     canAllocate ? (allocationFloorPct === 0 ? "최소비중 없음" : `최소 ${allocationFloorPct}%`) : "새 비중 0%"
   ].join(", ");
-  return { symbol: target.symbol, score, score100, reason, allocationFloorPct };
+  return { symbol: target.symbol, score, score100, reason, allocationFloorPct, dataGap, currentAllocationPct };
+}
+
+function normalizeExistingWeights(targets) {
+  const enabled = targets.filter((target) => target.enabled !== false);
+  const current = enabled.map((target) => ({
+    symbol: target.symbol,
+    weight: Math.max(0, Number(target.allocationPct ?? 0))
+  }));
+  const total = current.reduce((sum, item) => sum + item.weight, 0);
+  if (total > 0) {
+    return Object.fromEntries(current.map((item) => [item.symbol, round((item.weight / total) * 100, 1)]));
+  }
+  const equal = enabled.length ? round(100 / enabled.length, 1) : 0;
+  return Object.fromEntries(enabled.map((target) => [target.symbol, equal]));
 }
 
 function normalizeWeightsWithFloor(items) {

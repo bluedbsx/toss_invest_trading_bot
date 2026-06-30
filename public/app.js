@@ -895,6 +895,15 @@ function appendTargetCard(target, container, chartJobs) {
       : state.settings.redistributeUnusedAllocation
         ? `몰아주기 · 기본 ${target.allocationPct}%`
         : `${target.allocationPct}%`;
+  const allocationNote = card.querySelector(".allocation-note");
+  const allocationChangeText = formatAllocationChange(target.lastAllocationChange);
+  if (allocationChangeText) {
+    allocationNote.hidden = false;
+    allocationNote.textContent = allocationChangeText;
+  } else {
+    allocationNote.hidden = true;
+    allocationNote.textContent = "";
+  }
   card.querySelector(".position-label").textContent = position.active
     ? `보유 ${value(position.quantity)}주 · 평균 ${money(position.averagePrice)}`
     : "보유 없음";
@@ -2238,6 +2247,23 @@ function formatTime(input) {
     hour: "2-digit",
     minute: "2-digit"
   }).format(date);
+}
+
+function formatAllocationChange(change) {
+  if (!change?.changedAt) return "";
+  const sourceLabels = {
+    "auto-weight-recommendation": "자동비중 추천",
+    "manual-weight-recommendation": "비중추천 적용",
+    "manual-target-edit": "수동 변경",
+    "target-toggle": "자동매매 토글",
+    "target-patch": "종목 설정",
+    "bugfix-restore": "비중 복구"
+  };
+  const source = sourceLabels[change.source] ?? "비중 변경";
+  const before = Number.isFinite(Number(change.beforePct)) ? `${formatNumber(change.beforePct)}%` : "-";
+  const after = Number.isFinite(Number(change.afterPct)) ? `${formatNumber(change.afterPct)}%` : "-";
+  const reason = change.reason ? ` · ${change.reason}` : "";
+  return `${source}: ${before} → ${after} (${formatTime(change.changedAt)})${reason}`;
 }
 
 function formatShortDate(input) {

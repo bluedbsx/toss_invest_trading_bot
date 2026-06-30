@@ -178,13 +178,7 @@ async function runAutomationIfDue({ force = false } = {}) {
 
   const finalState = await updateState((draft) => {
     if (weightRecommendation?.weights) {
-      for (const target of draft.targets) {
-        if (weightRecommendation.weights[target.symbol] !== undefined) {
-          target.allocationPct = weightRecommendation.weights[target.symbol];
-        } else if (target.enabled === false) {
-          target.allocationPct = 0;
-        }
-      }
+      applyPortfolioWeightRecommendation(draft, weightRecommendation, { source: "auto" });
       draft.lastWeightRecommendation = { ...weightRecommendation, appliedAt: new Date().toISOString() };
       recordRecommendationEvent(draft, "portfolio-weights", draft.lastWeightRecommendation);
     }
@@ -398,14 +392,7 @@ async function handleApi(request, response, url) {
       }
     );
     const state = await updateState((draft) => {
-      for (const target of draft.targets) {
-        if (recommendation.weights[target.symbol] !== undefined) {
-          target.allocationPct = recommendation.weights[target.symbol];
-        } else if (target.enabled === false) {
-          // 비활성 종목은 배정 대상이 아니라 비중 0으로 둬, 활성 종목 비중 합이 100을 넘어 보이지 않게 한다.
-          target.allocationPct = 0;
-        }
-      }
+      applyPortfolioWeightRecommendation(draft, recommendation, { source: "manual" });
       draft.lastWeightRecommendation = {
         ...recommendation,
         appliedAt: new Date().toISOString()
@@ -492,8 +479,10 @@ async function handleApi(request, response, url) {
       if (!target) throw new Error("target not found");
       const updates = pickTarget(body);
       const hadAllocation = Number(target.allocationPct ?? 0);
+      const beforeAllocation = Math.max(0, Number(target.allocationPct ?? 0));
       const togglingOff = Object.prototype.hasOwnProperty.call(updates, "enabled") && updates.enabled === false;
       const togglingOn = Object.prototype.hasOwnProperty.call(updates, "enabled") && updates.enabled !== false;
+      const manualAllocationEdit = Object.prototype.hasOwnProperty.call(updates, "allocationPct");
       if (togglingOff && hadAllocation > 0) target.pausedAllocationPct = hadAllocation;
       Object.assign(target, updates);
       // 자동투자 대상을 끄면 배정 비중을 0으로 맞춘다(꺼진 종목이 시드 비중을 차지하지 않도록).
@@ -502,6 +491,22 @@ async function handleApi(request, response, url) {
       if (togglingOn && !Object.prototype.hasOwnProperty.call(updates, "allocationPct") && Number(target.allocationPct ?? 0) <= 0) {
         const paused = Number(target.pausedAllocationPct ?? 0);
         target.allocationPct = paused > 0 ? paused : 10;
+      }
+      const afterAllocation = Math.max(0, Number(target.allocationPct ?? 0));
+      if (Math.abs(afterAllocation - beforeAllocation) >= 0.000001) {
+        const reason = togglingOff
+          ? "자동매매 OFF로 배정 비중을 0%로 변경"
+          : togglingOn && !manualAllocationEdit
+            ? "자동매매 ON으로 OFF 직전 비중을 복구"
+            : manualAllocationEdit
+              ? "사용자가 종목설정에서 비중을 변경"
+              : "종목 설정 변경으로 비중 갱신";
+        recordAllocationChange(target, {
+          source: manualAllocationEdit ? "manual-target-edit" : togglingOff || togglingOn ? "target-toggle" : "target-patch",
+          beforePct: beforeAllocation,
+          afterPct: afterAllocation,
+          reason
+        });
       }
       if (recommendationMatchesTarget(target, target.lastRecommendation)) {
         target.lastStrategyReview = {
@@ -938,6 +943,63 @@ function buildTargetDisplayName(symbol, meta) {
 function buildTargetMetaNote(meta) {
   if (!meta?.source) return "";
   return [meta.source, meta.instrumentType, meta.exchangeName].filter(Boolean).join(" · ");
+}
+
+function applyPortfolioWeightRecommendation(draft, recommendation, { source }) {
+  const reasonMap = recommendationReasonMap(recommendation);
+  for (const target of draft.targets) {
+    const beforePct = Math.max(0, Number(target.allocationPct ?? 0));
+    if (recommendation.weights?.[target.symbol] !== undefined) {
+      const afterPct = Math.max(0, Number(recommendation.weights[target.symbol] ?? 0));
+      target.allocationPct = afterPct;
+      if (Math.abs(afterPct - beforePct) >= 0.000001) {
+        const reason = reasonMap.get(target.symbol) ?? "전체비중 추천값을 적용";
+        recordAllocationChange(target, {
+          source: source === "auto" ? "auto-weight-recommendation" : "manual-weight-recommendation",
+          beforePct,
+          afterPct,
+          reason,
+          recommendationScore: recommendation.score,
+          recommendationGrade: recommendation.grade,
+          dataBlocked: Boolean(recommendation.dataBlocked)
+        });
+      }
+    } else if (target.enabled === false && beforePct > 0) {
+      // 비활성 종목은 배정 대상이 아니라 비중 0으로 둬, 활성 종목 비중 합이 100을 넘어 보이지 않게 한다.
+      target.allocationPct = 0;
+      recordAllocationChange(target, {
+        source: source === "auto" ? "auto-weight-recommendation" : "manual-weight-recommendation",
+        beforePct,
+        afterPct: 0,
+        reason: "비활성 종목이라 전체비중 추천 적용 시 0%로 정리",
+        recommendationScore: recommendation.score,
+        recommendationGrade: recommendation.grade,
+        dataBlocked: Boolean(recommendation.dataBlocked)
+      });
+    }
+  }
+}
+
+function recommendationReasonMap(recommendation) {
+  const map = new Map();
+  for (const reason of recommendation?.reasons ?? []) {
+    const match = String(reason).match(/^([A-Z0-9._-]+):\s*(.+)$/i);
+    if (match) map.set(match[1].toUpperCase(), match[2]);
+  }
+  return map;
+}
+
+function recordAllocationChange(target, { source, beforePct, afterPct, reason, recommendationScore = null, recommendationGrade = null, dataBlocked = false }) {
+  target.lastAllocationChange = {
+    changedAt: new Date().toISOString(),
+    source,
+    beforePct: roundNumber(beforePct, 1),
+    afterPct: roundNumber(afterPct, 1),
+    reason,
+    recommendationScore: Number.isFinite(Number(recommendationScore)) ? roundNumber(recommendationScore, 0) : null,
+    recommendationGrade: recommendationGrade ?? null,
+    dataBlocked: Boolean(dataBlocked)
+  };
 }
 
 function numberWithDefault(value, fallback) {

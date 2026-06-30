@@ -740,3 +740,31 @@
   - 이번 변경은 문서/판단 정정이며 실제 종목 편입이나 매매 로직 변경은 하지 않았음.
   - `PPA`/`IEF`는 표본 수가 작고 수익폭이 낮아 실매매가 아니라 paper 후보로만 봐야 함.
   - `SH`/`PSQ`는 데이터상 하락창 성과가 좋아도 일반 롱 엔진에 섞으면 의도치 않은 인버스 베팅이 되므로 반드시 고위험 paper 엔진에서 분리 검증해야 함.
+
+### 2026-06-30 — Codex
+- 문제/목적:
+  - 사용자 제보: MU 티커 비중이 자꾸 0%로 바뀜. 이유가 있는 자동 조정이면 화면에 사유가 보여야 하고, 사유 없는 변경이면 버그인지 확인 필요.
+- 진단(근거):
+  - `data/state.json`의 최근 `learning.recommendationEvents`와 `automation.lastActions`에 `전체비중 추천 적용: MU 0%, TSM 35.4%, WDC 64.6%` 기록이 남아 있었음.
+  - 해당 추천 사유는 `MU: ... 백테스트 부족 ... 새 비중 0%`. 즉 사용자가 직접 바꾼 것이 아니라 `autoWeightRecommendations`가 외부 백테스트 데이터 실패/부족을 실제 전략 제외 신호처럼 해석해 0%를 적용한 것.
+  - `buildBacktests`가 외부 데이터 조회 실패를 `{available:false, score:0}`으로 넘기고, `recommendPortfolioWeights`가 이를 snapshot/lastStrategyReview보다 우선해 기존 배정 종목도 `canAllocate=false`로 만드는 구조였음. 이는 정상 투자 판단이 아니라 일시 데이터 실패 처리 버그.
+- 수정 내용:
+  - `src/strategy.js`: 전체비중 추천에서 외부 백테스트가 실패해도 사용 가능한 snapshot backtest 또는 `lastStrategyReview`를 먼저 폴백. 기존 비중이 있는 종목의 백테스트 데이터가 부족하면 추천을 `dataBlocked=true`, `grade="데이터 대기"`로 두고 기존 비중을 보존하도록 변경.
+  - `server.js`: 전체비중 추천 적용 경로를 `applyPortfolioWeightRecommendation`으로 통합하고, 실제 비중이 바뀔 때 target별 `lastAllocationChange`에 출처/이전값/이후값/사유/추천점수를 기록. 종목 토글·수동 비중 편집도 같은 기록을 남김.
+  - `public/index.html`·`public/app.js`·`public/styles.css`: 종목 카드에 최근 비중 변경 사유(`allocation-note`) 표시. 자동추천/수동변경/OFF/복구 출처를 한국어 라벨로 표시.
+  - 운영 state 복구(gitignore): MU 0% 오류 상태를 최근 정상 균형 비중 `MU 41.4 / TSM 21.5 / WDC 37.1`로 복구하고, 각 종목 `lastAllocationChange` 및 `automation.lastActions`에 복구 사유 기록.
+- 건드린 파일/함수:
+  - `src/strategy.js`: `recommendPortfolioWeights`, `scoreTargetWeight`, `normalizeExistingWeights`
+  - `server.js`: weight apply paths, target PATCH allocation history helpers
+  - `public/index.html`: target card allocation note
+  - `public/app.js`: `formatAllocationChange`, target card rendering
+  - `public/styles.css`: `.allocation-note`
+  - `WORKLOG.md`
+- 검증 방법과 결과:
+  - `node --check server.js`, `node --check public/app.js`, `for f in src/*.js; do node --check "$f"; done`, `git diff --check` PASS.
+  - 모듈 테스트: 기존 비중 `MU 42.3%`인 상태에서 MU 백테스트 실패를 주입하면 추천이 `dataBlocked=true`로 나오고 `MU 42.3%`를 보존함 확인.
+  - `/api/state` 확인: 복구 후 `MU 41.4 / TSM 21.5 / WDC 37.1` 및 `lastAllocationChange` 기록 확인.
+  - 새 코드로 서버 포그라운드 실행 후 `/api/recommendations/weights`: `MU 36.9 / TSM 21.7 / WDC 41.3`, `dataBlocked` 없음, MU 백테스트 75/100으로 정상 계산 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 이번 변경은 자동추천이 "데이터 부족"만으로 기존 배정 종목을 0%로 만들지 못하게 하는 방어다. 실제 전략 점수가 충분히 낮거나 이벤트가 막는 경우에는 여전히 비중 축소/0% 추천이 가능하며, 그 경우 카드의 비중 변경 사유에 표시된다.
+  - 백그라운드 `nohup` 실행은 현재 Codex 실행 환경에서 즉시 종료되어, 서버 지속 실행 검증은 포그라운드 프로세스로 수행했다.
