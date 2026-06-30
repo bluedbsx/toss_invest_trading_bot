@@ -466,7 +466,9 @@ export function recommendPortfolioWeights({ targets, snapshots, backtests = {} }
       grade: "데이터 대기",
       dataBlocked: true,
       reasons: [
-        `백테스트 데이터가 부족한 기존 배정 종목(${fundedDataGaps.map((item) => item.symbol).join(", ")})이 있어 기존 비중을 보존했습니다.`,
+        `백테스트 조회/계산이 완료되지 않은 기존 배정 종목(${fundedDataGaps
+          .map((item) => `${item.symbol}: ${item.backtestIssue}`)
+          .join("; ")})이 있어 기존 비중을 보존했습니다.`,
         ...scored.map((item) => `${item.symbol}: ${item.reason}`)
       ]
     };
@@ -935,6 +937,7 @@ function scoreTargetWeight(target, snapshot, overrideBacktest) {
   const newsMultiplier = Number(snapshot?.signal?.risk?.news?.budgetMultiplier ?? 1);
   const currentAllocationPct = Math.max(0, Number(target.allocationPct ?? 0));
   const dataGap = !backtest?.available;
+  const backtestIssue = dataGap ? describeBacktestIssue(backtest) : null;
   const volatilityPenalty = clamp(1 - (atrPct - 8) / 28, 0.35, 1.15);
   const leveragePenalty = leverage >= 3 ? 0.78 : leverage >= 2 ? 0.9 : 1;
   const momentumBoost = clamp(1 + momentum / 80, 0.65, 1.35);
@@ -955,12 +958,28 @@ function scoreTargetWeight(target, snapshot, overrideBacktest) {
     backtest?.available
       ? `백테스트 ${score100}/100`
       : currentAllocationPct > 0
-        ? "백테스트 데이터 대기(기존 비중 보존)"
-        : "백테스트 부족",
+        ? `백테스트 대기(${backtestIssue}; 기존 비중 보존)`
+        : `백테스트 불가(${backtestIssue})`,
     eventBlocked ? "이벤트 위험 반영" : "이벤트 위험 낮음",
     canAllocate ? (allocationFloorPct === 0 ? "최소비중 없음" : `최소 ${allocationFloorPct}%`) : "새 비중 0%"
   ].join(", ");
-  return { symbol: target.symbol, score, score100, reason, allocationFloorPct, dataGap, currentAllocationPct };
+  return { symbol: target.symbol, score, score100, reason, allocationFloorPct, dataGap, currentAllocationPct, backtestIssue };
+}
+
+function describeBacktestIssue(backtest) {
+  const reason = String(backtest?.reason ?? "").replace(/\s+/g, " ").trim();
+  if (!reason) return "데이터 없음";
+  const normalized = reason.toLowerCase();
+  const externalFailure =
+    backtest?.source === "external" ||
+    /외부|조회 실패|fetch|timeout|abort|econn|enotfound|429|too many|yahoo/.test(normalized);
+  const label = externalFailure ? "외부 데이터 조회 실패" : "데이터/계산 실패";
+  const cleanedReason = reason
+    .replace(/^추천 계산용 외부 데이터 조회 실패:\s*[A-Z0-9._-]+\.?\s*/i, "")
+    .replace(/^잠시 후 다시 시도해 주세요\.\s*/i, "")
+    .replace(/^\((.+)\)$/, "$1");
+  const shortReason = cleanedReason.length > 90 ? `${cleanedReason.slice(0, 87)}...` : cleanedReason;
+  return `${label}: ${shortReason}`;
 }
 
 function normalizeExistingWeights(targets) {
