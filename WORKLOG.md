@@ -4,6 +4,28 @@
 
 > 번호 표기: 아래 `#n`은 Claude가 수행한 "전반 코드/전략 검토"에서 매긴 항목 번호입니다(Codex가 매핑하기 쉽게 보존).
 
+### 2026-07-14 — 작성자: Codex (GitHub About 메타데이터)
+- 문제/목적:
+  - GitHub 저장소 About 영역의 description과 topics가 비어 있어 프로젝트 목적과 기술적 특징이 검색·포트폴리오 화면에서 드러나지 않았음.
+- 진단(근거):
+  - `gh repo view` 결과 description은 빈 문자열, repositoryTopics는 `null`, homepage는 빈 문자열이었음.
+  - GitHub 실제 visibility는 `PUBLIC`인데 `AGENTS.md`에는 private로 적혀 있어 문서와 외부 상태가 불일치했음.
+- 수정 내용:
+  - description을 한글 프로젝트 설명 + 영문 핵심 역량(`explainable strategies`, risk controls, backtesting, bot-only ledger, responsive UI)으로 설정.
+  - Toss Invest, algorithmic/automated/quant trading, backtesting, risk/portfolio management, paper trading, fintech, Node.js, responsive dashboard 등 20개 topics 추가.
+  - 실제 배포 URL이 없으므로 homepage는 비워두고, visibility·Issues·Wiki 등 기존 저장소 설정은 변경하지 않음.
+  - `AGENTS.md`의 원격 저장소 표기를 실제 상태인 public으로 정정.
+- 건드린 파일/외부 상태:
+  - GitHub repository About metadata(description, topics)
+  - `AGENTS.md`
+  - `WORKLOG.md`
+- 검증 방법과 결과:
+  - `gh repo view --json description,homepageUrl,repositoryTopics,visibility`로 description, 20 topics, `PUBLIC`, 빈 homepage를 재확인.
+  - 전체 Git 이력에서 `tsck_`, `tssk_`, 실 `TOSS_CLIENT_SECRET` 패턴 검색 결과 없음.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 저장소가 public이므로 `.env`, `data/`, 계좌·IP·체결 캡처는 앞으로도 절대 커밋하지 않음.
+  - 실제 서비스가 배포되면 About homepage에 인증된 대시보드 URL이 아니라 공개 포트폴리오/문서 URL을 넣는 편이 안전함.
+
 ### 2026-07-14 — 작성자: Codex (README 차트 이미지 정정)
 - 문제/목적:
   - 사용자 확인 결과 README 스크린샷의 매끈한 합성 캔들이 실제 사이트에서 구현한 일봉 캔들 차트와 다르고, 보유 포지션이 없어 매수가·1차익절·최종익절·손절선도 보이지 않았음.

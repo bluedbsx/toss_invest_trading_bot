@@ -3,7 +3,7 @@
 이 저장소는 사용자(Joyanggi)와 여러 AI 에이전트(**Codex**, **Claude**)가 함께 개발합니다.
 서로의 작업을 교차 검증(cross-check)할 수 있도록 아래 규칙을 지킵니다.
 
-- **원격 저장소(private):** https://github.com/Joyanggi/toss_invest_trading_bot.git (`origin`, 기본 브랜치 `main`)
+- **원격 저장소(public):** https://github.com/Joyanggi/toss_invest_trading_bot.git (`origin`, 기본 브랜치 `main`)
 
 ## 0. 기능 단위 작업이 끝나면 커밋·푸시한다 (Codex·Claude 공통)
 - **기능 추가, 버그 수정, 리팩터 등 "한 단위"의 작업이 완료되면, 그때마다 알아서 `origin/main`에 커밋·푸시한다.** 사용자가 매번 지시하지 않아도 된다.
