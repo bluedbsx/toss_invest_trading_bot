@@ -4,6 +4,36 @@
 
 > 번호 표기: 아래 `#n`은 Claude가 수행한 "전반 코드/전략 검토"에서 매긴 항목 번호입니다(Codex가 매핑하기 쉽게 보존).
 
+### 2026-07-14 — 작성자: Codex
+- 문제/목적:
+  - 원격 저장소가 최신인지 확인하고, 실제 서비스 화면·아키텍처·사용자의 문제 해결 과정을 GitHub README와 이력서용 문서로 정리.
+- 진단(근거):
+  - `git fetch origin main` 후 `HEAD...origin/main`이 `0 0`, 작업 트리가 깨끗해 로컬 `main`이 원격 최신 코드와 일치함을 확인.
+  - 기존 README는 기능 설명은 있었지만 화면, 시스템 구조, 장부·동시성·점수 개선 같은 핵심 문제 해결 과정과 포트폴리오용 서사가 부족했음.
+  - Oracle 배포 문서가 상태 백업을 "매 저장"으로 설명해 현재 10분 throttle 및 decision sample sidecar 구조와 어긋났음.
+- 수정 내용:
+  - 모의 Toss API, 별도 임시 `DATA_DIR`, `LIVE_TRADING=false`로 문서 전용 서버를 띄워 실제 계좌/IP를 노출하지 않는 데스크톱·모바일 스크린샷 생성.
+  - 문서 화면 검수 중 `mockCandles`가 요청 개수에 비례해 마지막 가격까지 계속 상승해 mock 현재가와 불일치하고 차트 끝에 가짜 급락을 만들던 문제를 발견. 시작·종료 비율 기반 추세와 마지막 파동 보정으로 캔들이 항상 mock 현재가에서 끝나게 수정(실거래 경로 영향 없음).
+  - README를 제품 목적, 화면, 기능, 아키텍처, 전략 검증, 장부, 안전한 실행·배포, 코드 구조 중심으로 전면 재작성.
+  - `docs/portfolio-case-study.md`를 추가해 요구사항 진화, 실계좌에서 발견한 문제, 기술적 해결, 이력서 문장, 면접 포인트, 한계를 정리.
+  - Oracle 배포 문서의 백업 주기와 decision sample 저장 구조를 현재 코드에 맞게 수정.
+- 건드린 파일/함수:
+  - `README.md`
+  - `docs/portfolio-case-study.md`
+  - `docs/screenshots/dashboard-desktop.jpg`
+  - `docs/screenshots/dashboard-mobile.jpg`
+  - `deploy/oracle/README.md`
+  - `src/tossClient.js` (`mockCandles`)
+  - `WORKLOG.md`
+- 검증 방법과 결과:
+  - 문서용 서버는 실 Toss 키 없이 mock 모드로 실행하고 `POST /api/run-once` 200 확인.
+  - mock 캔들 80·260개 모두 마지막 종가가 각 심볼의 mock 현재가와 일치함을 확인.
+  - 브라우저에서 데스크톱 1440px, 모바일 390px 렌더를 확인: 종목 카드 3개, 가로 overflow 없음, 콘솔 error/warn 없음.
+  - 스크린샷에 실제 계좌 데이터와 공인 IP가 포함되지 않도록 재검증.
+- 가정/주의(다른 에이전트가 검토해야 할 점):
+  - 스크린샷의 가격·점수·비중은 문서용 합성 데이터이며 실제 전략 성과가 아님.
+  - 포트폴리오 문서는 수익 보장을 주장하지 않고 운영·회계·검증 문제 해결을 중심으로 작성함.
+
 ---
 
 ## 2026-06-25 ~ 2026-06-26 — Claude (Opus 4.8)

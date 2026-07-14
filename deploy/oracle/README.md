@@ -59,7 +59,12 @@ State is stored under:
 /opt/toss-invest/data/backups/
 ```
 
-The app also protects against accidental shortening of order history and creates rolling backups on each save.
+The app protects against accidental shortening of order history and creates rolling state backups at most once every 10 minutes. Large decision samples are stored separately so normal state backups stay small.
+
+```text
+/opt/toss-invest/data/decision-samples.json
+/opt/toss-invest/data/decision-samples-archive.ndjson
+```
 
 Optional manual backup:
 

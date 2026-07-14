@@ -243,10 +243,13 @@ function mockPrice(symbol) {
 
 function mockCandles(symbol, count = 80) {
   const base = Number(mockPrice(symbol));
+  const lastIndex = Math.max(0, count - 1);
+  const lastWave = Math.sin(lastIndex / 8);
   return Array.from({ length: count }, (_, index) => {
     const t = index / 8;
-    const trend = base * (0.72 + index * 0.004);
-    const wave = Math.sin(t) * base * 0.04;
+    const progress = lastIndex === 0 ? 1 : index / lastIndex;
+    const trend = base * (0.82 + progress * 0.18);
+    const wave = (Math.sin(t) - lastWave) * base * 0.025;
     const close = trend + wave;
     const open = close * (1 + Math.sin(t + 1) * 0.01);
     const high = Math.max(open, close) * 1.025;
