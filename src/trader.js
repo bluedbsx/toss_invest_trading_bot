@@ -5,6 +5,7 @@ import { getCalendarRisk } from "./calendar.js";
 import { attachTradeLearningContext, recordDecisionSample } from "./learning.js";
 import { recordEquitySnapshot } from "./validation.js";
 import { DEFAULT_BOT_STARTED_AT } from "./store.js";
+import { resolveAllocationUsd } from "./budget.js";
 
 // 부동소수점 매매로 남는 미세한 수량 찌꺼기(예: 3e-18주)를 보유로 오인하지 않기 위한 기준값.
 // 소수점 수량은 6자리까지만 추적하므로 1e-6주 미만은 사실상 0(전량 매도)으로 본다.
@@ -73,6 +74,7 @@ export class Trader {
 
     state.settings.lastRunAt = new Date().toISOString();
     state.settings.dryRun = !liveTradingAllowed;
+    const tradingSettings = { ...state.settings, allocationUsd: resolveAllocationUsd(state.settings) };
     state.settings.accountSeq = process.env.TOSS_ACCOUNT_SEQ || state.settings.accountSeq || "";
     state.account = holdings?.result ?? state.account ?? null;
     state.eventCalendar = listEventCalendar(state.earningsEvents ?? []);
@@ -116,14 +118,14 @@ export class Trader {
         candles,
         price: prices[target.symbol],
         position,
-        settings: state.settings,
+        settings: tradingSettings,
         isRegularMarket,
         eventRisk,
         newsRisk,
         calendarRisk,
         botBudget
       });
-      const backtest = backtestTarget({ target, candles, settings: state.settings });
+      const backtest = backtestTarget({ target, candles, settings: tradingSettings });
       signal = applyProductionRiskGuards({ signal, position, riskGuard });
 
       preparedTargets.push({
@@ -158,7 +160,7 @@ export class Trader {
         target,
         signal,
         price: prices[target.symbol],
-        settings: state.settings,
+        settings: tradingSettings,
         position,
         isRegularMarket,
         matchingBuyWeight,
@@ -213,7 +215,7 @@ export class Trader {
         target,
         signal,
         backtest,
-        settings: state.settings,
+        settings: tradingSettings,
         isRegularMarket
       });
 
@@ -361,7 +363,7 @@ function reserveExposureForOrder(exposure, target, orderPlan, lastPrice) {
 }
 
 function summarizeBotBudget(state, exposure) {
-  const allocationUsd = Math.max(0, Number(state.settings?.allocationUsd ?? 0));
+  const allocationUsd = resolveAllocationUsd(state.settings);
   const totalBuyAmountUsd = Number(state.performance?.totalBuyAmountUsd ?? 0);
   const totalSellAmountUsd = Number(state.performance?.totalSellAmountUsd ?? 0);
   const currentMarketValueUsd = Math.max(0, Number(exposure.currentMarketValueUsd ?? 0));
@@ -395,7 +397,7 @@ function summarizeBotBudget(state, exposure) {
 }
 
 function calculateDailyRiskGuard(state, targets, prices) {
-  const allocationUsd = Math.max(0, Number(state.settings?.allocationUsd ?? 0));
+  const allocationUsd = resolveAllocationUsd(state.settings);
   const maxDailyLossPct = Math.max(0, Number(state.settings?.maxDailyLossPct ?? 0));
   const percentLossUsd = allocationUsd * (maxDailyLossPct / 100);
   // 소액 시드 일상 흔들림 허용 바닥값(달러). 시드가 작을 때 %한도가 너무 빨리 걸리는 걸 막는다. 설정으로 조절 가능.
@@ -540,7 +542,7 @@ function paperTargetSignature(state = {}) {
   return JSON.stringify(
     {
       settings: {
-        allocationUsd: Number(settings.allocationUsd ?? 0),
+        allocationUsd: resolveAllocationUsd(settings),
         cashBufferUsd: Number(settings.cashBufferUsd ?? 0),
         maxDailyLossPct: Number(settings.maxDailyLossPct ?? 0),
         maxPositionPct: Number(settings.maxPositionPct ?? 0),

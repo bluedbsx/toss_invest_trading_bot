@@ -121,9 +121,14 @@
         </div>
         <div class="control-grid">
           <label>
-            <span>자동투자에 쓸 돈</span>
+            <span>실거래 시작 원금 ($)</span>
             <input id="allocationUsd" type="number" min="0" step="10" />
-            <small>정해둔 봇 자금만 사용이 켜져 있으면 이 금액이 시작 원금이 됩니다.</small>
+            <small>실거래 원금입니다. 페이퍼 전용 원금을 비우면 모의 운영에도 이 금액을 사용합니다.</small>
+          </label>
+          <label>
+            <span>페이퍼 시작 원금 ($)</span>
+            <input id="paperAllocationUsd" type="number" min="1" step="100" placeholder="실거래 원금과 동일" />
+            <small>모의 운영 전용입니다. 변경하면 페이퍼 장부를 새 원금으로 다시 시작합니다.</small>
           </label>
           <label>
             <span>남겨둘 현금</span>

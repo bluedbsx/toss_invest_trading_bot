@@ -26,6 +26,7 @@ const defaultState = {
     liveTradingEnabled: false,
     dryRun: true,
     allocationUsd: 100,
+    paperAllocationUsd: null,
     cashBufferUsd: 20,
     useVirtualSeed: true,
     allowSeedTopUp: false,

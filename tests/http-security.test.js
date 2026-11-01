@@ -25,5 +25,10 @@ try {
  r=await fetch(base+'/api/engine/toggle',{method:'POST',headers:{...auth,'Content-Type':'text/plain'},body:'{"enabled":true}'});assert.equal(r.status,415);
  r=await fetch(base+'/api/engine/toggle',{method:'POST',headers:{...auth,'Content-Type':'application/json'},body:JSON.stringify({padding:'x'.repeat(65537)})});assert.equal(r.status,413);
  r=await fetch(base+'/api/engine/toggle',{method:'POST',headers:{...auth,'Content-Type':'application/json'},body:'{"enabled":false}'});assert.equal(r.status,200);assert.equal((await r.json()).settings.monitoringEnabled,false);
+ for (const paperAllocationUsd of [-1, 0, "bad"]) {
+  r=await fetch(base+'/api/settings',{method:'PATCH',headers:{...auth,'Content-Type':'application/json'},body:JSON.stringify({paperAllocationUsd})});assert.equal(r.status,400);
+ }
+ r=await fetch(base+'/api/settings',{method:'PATCH',headers:{...auth,'Content-Type':'application/json'},body:JSON.stringify({paperAllocationUsd:10000})});
+ assert.equal(r.status,200); const paper=await r.json();assert.equal(paper.settings.paperAllocationUsd,10000);assert.equal(paper.settings.allocationUsd,100);
  console.log('HTTP integration passed: auth, CSP, module asset, foreign Origin, content type, body limit, authorized API. External API and trader start disabled.');
 }finally{child.kill('SIGTERM');await new Promise(r=>child.once('close',r));await rm(dir,{recursive:true,force:true});}

@@ -4,8 +4,11 @@ import assert from "node:assert/strict";
 import { Trader } from "../src/trader.js";
 import { createInitialState } from "../src/store.js";
 
-for (const [envLive, webLive] of [["false", false], ["false", true], ["true", false]]) {
-  test(`paper BUY and SELL never send orders when locks are ${envLive}/${webLive}`, async () => {
+for (const [envLive, webLive, paperSeed] of [
+  ["false", false, null], ["false", true, null], ["true", false, null],
+  ["false", false, 10000], ["false", true, 10000], ["true", false, 10000]
+]) {
+  test(`paper BUY/SELL, locks ${envLive}/${webLive}, seed ${paperSeed ?? "legacy"}`, async () => {
     const originalLive = process.env.LIVE_TRADING;
     const originalFetch = globalThis.fetch;
     let createOrderCalls = 0;
@@ -17,6 +20,7 @@ for (const [envLive, webLive] of [["false", false], ["false", true], ["true", fa
       const state = createInitialState();
       Object.assign(state.settings, {
         allocationUsd: 1000, monitoringEnabled: true, liveTradingEnabled: webLive,
+        paperAllocationUsd: paperSeed,
         autoSafetyRecommendations: false, autoWeightRecommendations: false
       });
       // Deliberately permissive synthetic signal fixture, never used as a live strategy.
@@ -43,10 +47,14 @@ for (const [envLive, webLive] of [["false", false], ["false", true], ["true", fa
         getPrices: async () => ({ result: [{ symbol: "TEST", lastPrice: String(price) }] }),
         getCandles: async () => ({ result: { candles } }),
         getSellableQuantity: async () => ({ result: { sellableQuantity: "100" } }),
+        getOrders: async () => ({ result: { orders: [] } }),
         createOrder: async () => { createOrderCalls++; throw new Error("Real order path invoked"); }
       };
       const trader = new Trader({ tossClient: client, store: { saveTraderState: async () => { saves++; } } });
       await trader.runOnce(state);
+      assert.equal(state.settings.allocationUsd, 1000, "live capital must stay unchanged");
+      assert.equal(state.botBudget.startingSeedUsd, paperSeed ?? 1000);
+      assert.equal(state.riskGuard.maxLossUsd, (paperSeed ?? 1000) * 0.045);
       assert.equal(state.tradeHistory.length, 1, "BUY must actually reach paper execution: " + JSON.stringify(state.marketSnapshots.TEST.signal));
       assert.equal(state.tradeHistory[0].side, "BUY");
       assert.equal(state.tradeHistory[0].dryRun, true);
@@ -66,6 +74,17 @@ for (const [envLive, webLive] of [["false", false], ["false", true], ["true", fa
       assert.equal(state.ledgerMode, "paper");
       assert.equal(createOrderCalls, 0);
       assert.equal(saves, 2);
+      if (paperSeed) {
+        process.env.LIVE_TRADING = "true";
+        state.settings.liveTradingEnabled = true;
+        state.settings.monitoringEnabled = false; // Observe live sizing without executing any order.
+        await trader.runOnce(state);
+        assert.equal(state.botBudget.startingSeedUsd, 1000);
+        assert.equal(state.riskGuard.maxLossUsd, 45);
+        assert.equal(state.settings.allocationUsd, 1000);
+        assert.equal(state.ledgerMode, "live");
+        assert.equal(createOrderCalls, 0);
+      }
     } finally {
       globalThis.fetch = originalFetch;
       if (originalLive === undefined) delete process.env.LIVE_TRADING;

@@ -920,3 +920,11 @@
 - 건드린 파일/함수: tests/dry-run-trading.test.js, package.json, deploy/wsl/README.md, WORKLOG.md. 운영 코드·전략·한도 변경 없음.
 - 검증 방법과 결과: test:dry-run 3개 통과. 전체 보안/HTTP/env/주문 차단 검사 11개 통과. 합성 매수·매도 장부 갱신, 매도 손익·포지션 제거, 수동 보유 미편입 및 실제 주문 API 0회 검증. 운영 실제 주문 기록 0건, mock=false/dryRun=true/monitoring=true 확인.
 - 가정/주의(다른 에이전트가 검토해야 할 점): 실제 시장에서 모의 체결은 아직 발생하지 않음. 합성 신호 fixture는 검사 전용이며 사용자 전략에 적용하지 않음. 키/토큰/계좌정보/개인 운용 데이터는 출력·커밋하지 않음. WSL keepalive와 PC 가동이 유지되는 동안 페이퍼 판단을 누적함.
+
+### 2026-11-01 — 작성자: Codex (페이퍼 전용 시작 원금 분리)
+- 문제/목적: 모의 테스트의 초기 자본을 실거래 설정과 별도로 지정할 수 있도록 사용자 요청 반영.
+- 진단(근거): 기존 allocationUsd 하나를 두 모드가 함께 사용하여 페이퍼 자본 변경이 실거래 원금까지 바꾸는 구조. 현재 모의 체결·보유가 없어 기존 포지션 정산 없이 새 세션 시작 가능.
+- 수정 내용: 선택적 paperAllocationUsd 추가, 모의 예산·주문계획·일일 손실 한도·검증 기준 원금에 모드별 자본 적용. 실거래는 기존 allocationUsd 유지. UI 전용 입력과 양수 검증 추가, 현재 모드 자금 추가/벤치마크 현금흐름도 모드 구분. 페이퍼 세션 서명은 유효 원금으로 계산해 변경 시 새 장부를 시작. 개인 적용값은 비공개 data에만 반영.
+- 건드린 파일/함수: src/{budget.js,store.js,trader.js,validation.js}, server.js, public/{index.html,app.js}, tests/{dry-run-trading.test.js,http-security.test.js,paper-capital.test.js}, deploy/wsl/README.md.
+- 검증 방법과 결과: private env/data 없는 /tmp 격리 클론에서 기존/신규 자본·이중 잠금·실거래 전환 원금 보존·HTTP 검증 등 14개 통과. 추가 순수 함수/벤치마크 현금흐름 검사 2개 통과. 전체 검사 16개 통과. 서비스 중지·전체 장부 snapshot 후 비공개 설정 적용, 재시작해 실제 대시보드 예산·원금·자산 및 새 페이퍼 세션 확인. 실거래 잠금은 모두 OFF 유지.
+- 가정/주의(다른 에이전트가 검토해야 할 점): 기존 paperAllocationUsd 미설정 상태는 종전과 같고 실거래 신호/한도 계산은 기존 원금을 사용. 페이퍼 원금 변경 시 모의 한도(원금 비례)와 주문 크기가 달라지는 것이 의도한 행동 변화. 현금 버퍼·종목·비중은 변경하지 않음. 기존 모의 거래가 있다면 변경은 새 세션으로 간주되며 이전 기록은 보관.

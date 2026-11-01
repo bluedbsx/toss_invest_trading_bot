@@ -25,6 +25,7 @@ import { fetchEarningsEvents } from "./src/earnings.js";
 import { listEventCalendar } from "./src/eventRisk.js";
 import { enforceDashboardAuth, enforceRequestBoundary, setSecurityHeaders } from "./src/auth.js";
 import { inferLeverage } from "./src/tickers.js";
+import { resolveAllocationUsd } from "./src/budget.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
@@ -289,6 +290,10 @@ async function handleApi(request, response, url) {
 
   if (request.method === "PATCH" && url.pathname === "/api/settings") {
     const body = await readBody(request);
+    if (body.paperAllocationUsd !== undefined && body.paperAllocationUsd !== null &&
+        !(typeof body.paperAllocationUsd === "number" && Number.isFinite(body.paperAllocationUsd) && body.paperAllocationUsd > 0)) {
+      throw Object.assign(new Error("Paper capital must be a positive number or null."), { statusCode: 400 });
+    }
     const state = await updateState((draft) => {
       draft.settings = { ...draft.settings, ...pickSettings(body) };
       if (body.liveTradingEnabled && process.env.LIVE_TRADING !== "true") {
@@ -319,9 +324,10 @@ async function handleApi(request, response, url) {
       throw new Error("추가할 금액은 0보다 커야 합니다.");
     }
     const state = await updateState((draft) => {
-      const before = Math.max(0, Number(draft.settings.allocationUsd ?? 0));
+      const before = resolveAllocationUsd(draft.settings);
       const next = roundNumber(before + amount, 2);
-      draft.settings.allocationUsd = next;
+      const key = draft.settings.dryRun && Number(draft.settings.paperAllocationUsd) > 0 ? "paperAllocationUsd" : "allocationUsd";
+      draft.settings[key] = next;
       draft.settings.useVirtualSeed = true;
       draft.settings.allowSeedTopUp = false;
       draft.orderEvents.unshift({
@@ -333,6 +339,7 @@ async function handleApi(request, response, url) {
       });
       draft.orderEvents = draft.orderEvents.slice(0, 100);
       recordRecommendationEvent(draft, "budget-add", {
+        mode: draft.settings.dryRun ? "paper" : "live",
         amountUsd: roundNumber(amount, 2),
         beforeAllocationUsd: before,
         afterAllocationUsd: next
@@ -1050,7 +1057,7 @@ function recommendSafetySettings(state) {
   const weakCount = scoredTargets.filter((item) => item.score < 65).length;
   const hasTriple = scoredTargets.some((item) => item.leverage >= 3);
   const hasLowConfidence = scoredTargets.some((item) => item.score < 55);
-  const allocationUsd = Math.max(0, Number(state.settings.allocationUsd ?? 1000));
+  const allocationUsd = resolveAllocationUsd(state.settings);
   const bufferRate = hasTriple ? 0.18 : 0.12;
   const minimumBuffer = allocationUsd <= 0 ? 0 : allocationUsd < 100 ? Math.max(1, allocationUsd * 0.08) : 25;
   const maximumBuffer = allocationUsd <= 0 ? 0 : Math.max(1, allocationUsd * 0.2);
@@ -1137,6 +1144,7 @@ function pickSettings(body) {
     "monitoringEnabled",
     "liveTradingEnabled",
     "allocationUsd",
+    "paperAllocationUsd",
     "cashBufferUsd",
     "useVirtualSeed",
     "allowSeedTopUp",

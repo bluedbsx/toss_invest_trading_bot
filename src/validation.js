@@ -3,6 +3,7 @@
 // 구성: ① 벤치마크(현금흐름 반영) ② 지표(승률·손익비·MDD·초과수익) ③ 증액 게이트.
 // 매매 로직은 전혀 건드리지 않는다(측정·표시 전용). AGENTS.md §3: 근거/가정을 함께 남긴다.
 import { DEFAULT_BOT_STARTED_AT } from "./store.js";
+import { resolveAllocationUsd } from "./budget.js";
 
 // 시드 증액 게이트 기준(시스템 자체의 buildNextActions 기준과 일치시켜 교차검증 가능하게 둠).
 export const GATE_MIN_CYCLES = 5; // 왕복(매수-매도) 사이클 최소 표본
@@ -14,7 +15,7 @@ export const BENCHMARK_SYMBOL = process.env.BENCHMARK_SYMBOL || "QQQ"; // 기본
 // 근거: 시드를 여러 번 더하면 그 각각이 현금흐름이라, 벤치마크도 "그 시점에 그만큼 매수"로 비교해야 공정하다.
 export function buildCapitalFlows(state) {
   const settings = state?.settings ?? {};
-  const currentSeed = Math.max(0, Number(state?.botBudget?.startingSeedUsd ?? settings.allocationUsd ?? 0));
+  const currentSeed = Math.max(0, Number(state?.botBudget?.startingSeedUsd ?? resolveAllocationUsd(settings)));
   // 페이퍼 세션 중에는 장부가 세션 시작 시점에 비워지고 시드가 새로 잡히므로, 벤치마크도 "페이퍼 세션 시작에
   // 현재 시드를 한 번 투입"한 것으로 본다 → 봇 수익률(페이퍼 세션 기준)과 같은 기간으로 초과수익을 비교한다.
   // (옛 에폭의 botStartedAt·budget-add 이벤트는 현 페이퍼 세션과 무관하므로 제외.)
@@ -22,7 +23,7 @@ export function buildCapitalFlows(state) {
     return [{ at: state.paperSession.startedAt, amountUsd: round(currentSeed, 2), kind: "initial" }];
   }
   const startedAt = settings.botStartedAt ?? DEFAULT_BOT_STARTED_AT;
-  const events = (state?.learning?.recommendationEvents ?? []).filter((event) => event.type === "budget-add");
+  const events = (state?.learning?.recommendationEvents ?? []).filter((event) => event.type === "budget-add" && event.payload?.mode !== "paper");
   const topUps = events
     .map((event) => ({
       at: event.payload?.at ?? event.createdAt,
@@ -221,7 +222,7 @@ export function computeScalingGate({ metrics, botReturnPct, benchmark, maxDrawdo
 export function buildValidation({ state, candles, currentPrice }) {
   const budget = state?.botBudget ?? {};
   const equityUsd = Number(budget.equityUsd ?? 0);
-  const seedUsd = Math.max(0, Number(budget.startingSeedUsd ?? state?.settings?.allocationUsd ?? 0));
+  const seedUsd = Math.max(0, Number(budget.startingSeedUsd ?? resolveAllocationUsd(state?.settings)));
   const botReturnPct = seedUsd > 0 ? round(((equityUsd - seedUsd) / seedUsd) * 100, 2) : null;
   const flows = buildCapitalFlows(state);
   const benchmark = computeBenchmark({ flows, candles, currentPrice });

@@ -308,7 +308,7 @@ async function addBotBudget() {
     showProgress("봇 자금 추가 실패", "추가할 금액을 0보다 크게 입력하세요.", "danger");
     return;
   }
-  const currentSeed = Number(state?.settings?.allocationUsd ?? 0);
+  const currentSeed = calculateBotBudget({ marketValue: 0, openCost: 0 }).startingSeedUsd;
   const nextSeed = currentSeed + amountUsd;
   if (!confirm(`봇 자금을 ${money(amountUsd)} 추가할까요?\n시작 시드가 ${money(currentSeed)} → ${money(nextSeed)}로 바뀝니다.\n원금 보충 허용은 계속 꺼진 상태로 유지됩니다.`)) {
     showProgress("봇 자금 추가 취소", "설정은 변경하지 않았습니다.", "neutral");
@@ -320,7 +320,7 @@ async function addBotBudget() {
     state = await post("/api/bot-budget/add", { amountUsd });
     input.value = "";
     await refresh();
-    showProgress("봇 자금 추가 완료", `봇 시작 시드를 ${money(state.settings.allocationUsd)}로 변경했습니다.`, "success");
+    showProgress("봇 자금 추가 완료", "현재 운영 모드의 시작 시드를 변경했습니다.", "success");
   } catch (error) {
     showProgress("봇 자금 추가 실패", humanError(error.message), "danger");
   } finally {
@@ -634,6 +634,7 @@ function hydrateSettingsForm(settings) {
   $("#redistributeUnusedAllocation").checked = Boolean(settings.redistributeUnusedAllocation);
   $("#allowAdditionalBuys").checked = Boolean(settings.allowAdditionalBuys);
   $("#allocationUsd").value = settings.allocationUsd;
+  $("#paperAllocationUsd").value = settings.paperAllocationUsd ?? "";
   $("#cashBufferUsd").value = settings.cashBufferUsd;
   $("#pollIntervalSec").value = settings.pollIntervalSec;
   $("#maxDailyLossPct").value = settings.maxDailyLossPct;
@@ -1256,7 +1257,8 @@ function calculateBotPortfolio() {
 function calculateBotBudget({ marketValue, openCost }) {
   const settings = state.settings ?? {};
   const serverBudget = state.botBudget ?? {};
-  const startingSeedUsd = Number(serverBudget.startingSeedUsd ?? settings.allocationUsd ?? 0);
+  const configuredSeed = settings.dryRun && Number(settings.paperAllocationUsd) > 0 ? settings.paperAllocationUsd : settings.allocationUsd;
+  const startingSeedUsd = Number(serverBudget.startingSeedUsd ?? configuredSeed ?? 0);
   const totalBuyAmount = Number(state.performance?.totalBuyAmountUsd ?? 0);
   const totalSellAmount = Number(state.performance?.totalSellAmountUsd ?? 0);
   const fallbackReservedPendingBuyUsd = (state.tradeHistory ?? [])
@@ -1959,6 +1961,7 @@ function readSettingsForm() {
     redistributeUnusedAllocation: $("#redistributeUnusedAllocation").checked,
     allowAdditionalBuys: $("#allowAdditionalBuys").checked,
     allocationUsd: Number($("#allocationUsd").value),
+    paperAllocationUsd: $("#paperAllocationUsd").value === "" ? null : Number($("#paperAllocationUsd").value),
     cashBufferUsd: Number($("#cashBufferUsd").value),
     pollIntervalSec: Number($("#pollIntervalSec").value),
     maxDailyLossPct: Number($("#maxDailyLossPct").value),
