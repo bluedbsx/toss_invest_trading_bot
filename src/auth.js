@@ -2,8 +2,6 @@ import crypto from "node:crypto";
 
 export function enforceDashboardAuth(request, response) {
   const password = process.env.DASHBOARD_PASSWORD;
-  const authRequired = isAuthRequired(request);
-  if (!authRequired) return true;
 
   if (!password) {
     response.writeHead(503, { "Content-Type": "text/plain; charset=utf-8" });
@@ -27,16 +25,35 @@ export function enforceDashboardAuth(request, response) {
   return true;
 }
 
-function isAuthRequired(request) {
-  if (process.env.DASHBOARD_AUTH_DISABLED === "true") return false;
-  if (process.env.DASHBOARD_PASSWORD) return true;
-  if (isLocalRequest(request)) return false;
-  return true;
+// Codex: a loopback reverse proxy must not bypass authentication.
+export function enforceRequestBoundary(request, response) {
+  const port = process.env.PORT || "3000";
+  const allowed = (process.env.DASHBOARD_ALLOWED_HOSTS || `localhost:${port},127.0.0.1:${port},[::1]:${port}`)
+    .split(",").map((value) => value.trim().toLowerCase()).filter(Boolean);
+  const host = String(request.headers.host || "").toLowerCase();
+  let valid = allowed.includes(host);
+  const origin = request.headers.origin;
+  if (origin) {
+    try {
+      const url = new URL(origin);
+      valid &&= ["http:", "https:"].includes(url.protocol) && url.host.toLowerCase() === host;
+    } catch {
+      valid = false;
+    }
+  }
+  if (request.headers["sec-fetch-site"] === "cross-site") valid = false;
+  if (valid) return true;
+  response.writeHead(403, { "Content-Type": "text/plain; charset=utf-8" });
+  response.end("Untrusted dashboard host or origin.");
+  return false;
 }
 
-function isLocalRequest(request) {
-  const remote = request.socket?.remoteAddress ?? "";
-  return ["127.0.0.1", "::1", "::ffff:127.0.0.1"].includes(remote);
+export function setSecurityHeaders(response) {
+  response.setHeader("Cache-Control", "no-store");
+  response.setHeader("X-Content-Type-Options", "nosniff");
+  response.setHeader("Referrer-Policy", "no-referrer");
+  response.setHeader("X-Frame-Options", "DENY");
+  response.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self'; connect-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'none'; frame-ancestors 'none'; form-action 'self'");
 }
 
 function deny(response) {

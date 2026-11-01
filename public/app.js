@@ -1,3 +1,5 @@
+import { safeNewsUrl } from "./safeUrl.js";
+
 const $ = (selector) => document.querySelector(selector);
 // 부동소수점 매매로 남는 미세 잔량/잔액을 보유로 표시하지 않기 위한 기준값(서버 POSITION_DUST_EPSILON과 동일).
 const DUST_EPSILON = 1e-6;
@@ -1319,15 +1321,15 @@ function renderNews() {
     ? state.news
         .map(
           (item) => `
-            <article class="news-item ${item.sentiment ?? "neutral"}">
+            <article class="news-item ${sentimentClass(item.sentiment)}">
               <div class="news-title-row">
-                <a href="${item.url}" target="_blank" rel="noreferrer">${escapeHtml(item.translatedTitle || item.title)}</a>
+                <a href="${escapeHtml(safeNewsUrl(item.url))}" target="_blank" rel="noopener noreferrer">${escapeHtml(item.translatedTitle || item.title)}</a>
                 <span class="badge ${sentimentClass(item.sentiment)}">${escapeHtml(item.signalLabel || "중립")}</span>
               </div>
               <div class="news-tags">${(item.tags ?? [])
                 .map((tag) => `<span class="news-tag">${escapeHtml(tag)}</span>`)
                 .join("")}</div>
-              <div class="news-meta">${item.source} · ${formatTime(item.publishedAt)}</div>
+              <div class="news-meta">${escapeHtml(String(item.source ?? ""))} · ${formatTime(item.publishedAt)}</div>
               <p class="row-meta">${escapeHtml(item.koreanSummary || item.summary || "")}</p>
               <p class="original-title">${escapeHtml(item.title ?? "")}</p>
             </article>
@@ -1671,7 +1673,7 @@ async function applyTargetRecommendation({ target, rowEl, button, note, mode }) 
       try {
         setButtonBusy(button, true, "정밀 계산 중");
         setEditorStatus(rowEl, "정밀 계산", "pending");
-        note.innerHTML = `<span class="inline-progress"><span class="spinner"></span>${target.symbol} 정밀추천 계산 중 · 외부 일봉과 백테스트 조합을 확인하고 있습니다.</span>`;
+        note.innerHTML = `<span class="inline-progress"><span class="spinner"></span>${escapeHtml(target.symbol)} 정밀추천 계산 중 · 외부 일봉과 백테스트 조합을 확인하고 있습니다.</span>`;
         const monitorNote = state?.settings?.monitoringEnabled
           ? "자동 모니터링이 켜져 있어도 추천 계산은 Toss API를 호출하지 않습니다."
           : "추천 계산은 Toss API를 호출하지 않습니다.";

@@ -97,6 +97,7 @@ data/backups/                           # 10분 간격 rolling state 백업
 
 ```bash
 cp .env.example .env
+# .env의 DATA_DIR=./data 및 고유 DASHBOARD_PASSWORD를 설정한 뒤 실행
 node server.js
 ```
 
@@ -112,6 +113,7 @@ node server.js
 
 ```bash
 PORT=3000
+HOST=127.0.0.1
 DATA_DIR=./data
 LIVE_TRADING=false
 DASHBOARD_PASSWORD=replace-with-long-random-password
@@ -120,6 +122,8 @@ TOSS_CLIENT_SECRET=
 TOSS_ACCOUNT_SEQ=
 TOSS_BASE_URL=https://openapi.tossinvest.com
 ```
+
+서버는 기본적으로 loopback에만 바인딩하며 로컬 접속도 비밀번호가 필요합니다. 원격 대시보드는 SSH 터널로 접속합니다. `DASHBOARD_AUTH_DISABLED`는 인증을 끄지 않습니다. 도메인/포트를 변경하면 `DASHBOARD_ALLOWED_HOSTS`에 허용할 Host 값을 명시해야 합니다.
 
 실제 키는 반드시 `.env` 또는 서버 전용 환경파일에만 저장합니다. `.env`와 `data/`는 `.gitignore`로 제외되어 있습니다.
 

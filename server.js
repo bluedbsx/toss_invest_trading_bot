@@ -1,6 +1,6 @@
+import "./src/env.js";
 import http from "node:http";
 import { readFile } from "node:fs/promises";
-import { existsSync, readFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,13 +23,17 @@ import { buildValidation, BENCHMARK_SYMBOL } from "./src/validation.js";
 import { fetchEconomicCalendar, summarizeMacroTone } from "./src/calendar.js";
 import { fetchEarningsEvents } from "./src/earnings.js";
 import { listEventCalendar } from "./src/eventRisk.js";
-import { enforceDashboardAuth } from "./src/auth.js";
+import { enforceDashboardAuth, enforceRequestBoundary, setSecurityHeaders } from "./src/auth.js";
 import { inferLeverage } from "./src/tickers.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const publicDir = path.join(__dirname, "public");
-loadEnvFile(path.join(__dirname, ".env"));
 const port = Number(process.env.PORT || 3000);
+const host = process.env.HOST || "127.0.0.1";
+process.umask(0o077);
+if (!process.env.DASHBOARD_PASSWORD || process.env.DASHBOARD_PASSWORD === "replace-with-long-random-password") {
+  throw new Error("Set a unique DASHBOARD_PASSWORD before starting the dashboard.");
+}
 const tossClient = new TossClient();
 const trader = new Trader({ tossClient, store: { loadState, saveState, saveTraderState } });
 const recommendationCache = new Map();
@@ -37,7 +41,6 @@ const RECOMMENDATION_CACHE_MS = 60 * 60_000;
 let publicIpCache = null;
 const PUBLIC_IP_CACHE_MS = 5 * 60_000;
 
-trader.start();
 refreshNews().catch(() => {});
 setInterval(refreshNews, Math.max(5, Number(process.env.NEWS_REFRESH_MINUTES || 30)) * 60_000);
 // 경제(증시) 캘린더 자동 갱신(60분). 손 안 대도 최신 일정·발표 결과(호재/악재)가 유지된다.
@@ -49,6 +52,8 @@ setInterval(() => refreshEarningsEvents().catch(() => {}), 12 * 60 * 60_000);
 
 const server = http.createServer(async (request, response) => {
   try {
+    setSecurityHeaders(response);
+    if (!enforceRequestBoundary(request, response)) return;
     if (!enforceDashboardAuth(request, response)) return;
     const url = new URL(request.url, `http://${request.headers.host}`);
     if (url.pathname.startsWith("/api/")) {
@@ -57,12 +62,14 @@ const server = http.createServer(async (request, response) => {
     }
     await serveStatic(response, url.pathname);
   } catch (error) {
-    sendJson(response, 500, { error: error.message, data: error.data ?? null });
+    sendJson(response, error.statusCode || 500, { error: error.message });
   }
 });
 
-server.listen(port, () => {
-  console.log(`Toss Invest Terminal running on http://localhost:${port}`);
+server.listen(port, host, () => {
+  // Codex: bind successfully before starting any trading loop.
+  trader.start();
+  console.log(`Toss Invest Terminal running on http://${host}:${port}`);
 });
 setInterval(() => runAutomationIfDue().catch(() => {}), 60_000);
 // 개선 리포트 자동 갱신: autoLearningReports가 켜져 있으면 주기적으로(30분) 스스로 돌린다.
@@ -633,8 +640,16 @@ async function serveStatic(response, pathname) {
 }
 
 async function readBody(request) {
+  if (!(request.headers["content-type"] ?? "").toLowerCase().startsWith("application/json")) {
+    throw Object.assign(new Error("Content-Type must be application/json"), { statusCode: 415 });
+  }
   const chunks = [];
-  for await (const chunk of request) chunks.push(chunk);
+  let size = 0;
+  for await (const chunk of request) {
+    size += chunk.length;
+    if (size > 64 * 1024) throw Object.assign(new Error("Request body too large"), { statusCode: 413 });
+    chunks.push(chunk);
+  }
   const raw = Buffer.concat(chunks).toString("utf8");
   return raw ? JSON.parse(raw) : {};
 }
@@ -1171,18 +1186,4 @@ function pickTarget(body) {
     "notes"
   ];
   return Object.fromEntries(Object.entries(body).filter(([key]) => allowed.includes(key)));
-}
-
-function loadEnvFile(filePath) {
-  if (!existsSync(filePath)) return;
-  const lines = readFileSync(filePath, "utf8").split(/\r?\n/);
-  for (const line of lines) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const index = trimmed.indexOf("=");
-    if (index === -1) continue;
-    const key = trimmed.slice(0, index).trim();
-    const value = trimmed.slice(index + 1).trim().replace(/^["']|["']$/g, "");
-    if (!(key in process.env)) process.env[key] = value;
-  }
 }

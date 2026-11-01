@@ -6,6 +6,12 @@ export class TossClient {
     this.clientSecret = process.env.TOSS_CLIENT_SECRET;
     this.accountSeq = process.env.TOSS_ACCOUNT_SEQ;
     this.baseUrl = process.env.TOSS_BASE_URL || "https://openapi.tossinvest.com";
+    const apiUrl = new URL(this.baseUrl);
+    if (apiUrl.origin !== "https://openapi.tossinvest.com" || apiUrl.username || apiUrl.password ||
+        !["", "/"].includes(apiUrl.pathname) || apiUrl.search || apiUrl.hash) {
+      throw new Error("TOSS_BASE_URL must be https://openapi.tossinvest.com");
+    }
+    this.baseUrl = apiUrl.origin;
     this.token = null;
     this.tokenExpiresAt = 0;
     this.rateLimiter = new RateLimiter();
@@ -146,7 +152,7 @@ async function parseResponse(response) {
 async function fetchWithRateLimit({ limiter, group, endpoint, url, options }) {
   for (let attempt = 0; attempt < 2; attempt += 1) {
     await limiter.waitForSlot(group, endpoint);
-    const response = await fetch(url, options);
+    const response = await fetch(url, { ...options, redirect: "error", signal: AbortSignal.timeout(15_000) });
     limiter.recordResponse(group, endpoint, response);
     if (response.status !== 429 || attempt === 1) return response;
     const retryAfter = Number(response.headers.get("Retry-After"));

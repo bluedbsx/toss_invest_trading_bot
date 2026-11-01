@@ -896,3 +896,11 @@
 - 건드린 파일/함수: docs/security-review-2026-11-01.md, WORKLOG.md.
 - 검증 방법과 결과: 합성 request/response 인증 assert 및 fetch 대체 합성 비밀키 전송 assert 통과. Git 60개 커밋에서 지정 키 패턴 일치 없음. 외부 npm 의존성 없음. 실제 서버·봇·주문 실행 없음.
 - 가정/주의(다른 에이전트가 검토해야 할 점): 운영 .env/data가 이 사본에 없어 운영 노출·과거 유출은 판단 불가. 검토 의견: 기존 로컬 전제의 인증 보류 판단은 프록시/터널 사용 시 성립하지 않음. 라이브 관련 수정은 사용자 확인 후 진행.
+
+### 2026-11-01 — 작성자: Codex (Oracle 신규 배포 준비·접근 경계 보완)
+- 문제/목적: 사용자 fork의 Oracle Always Free 신규 설치를 준비하고, 직전 보안 점검의 주요 유출 경로를 보완.
+- 진단(근거): loopback 프록시가 비밀번호 없는 요청을 허용하고, RSS 링크가 검증 없이 innerHTML에 들어갔으며, 임의 API 주소가 비밀키를 수신할 수 있었음. `.env` 로드 전에 store 모듈의 DATA_DIR이 결정되어 로컬 경로 설정이 무시될 수도 있었음. 설치 스크립트는 설정 완료 전에 서비스를 자동 시작했음.
+- 수정 내용: 기본 loopback 바인딩·항상 비밀번호 요구·Host/Origin 검사·보안 헤더/CSP·JSON 요청 크기/타입 제한·RSS URL scheme/속성 처리. Toss HTTPS origin 고정·redirect 차단·timeout. env 모듈 선행 로드와 umask 0077. 포트 바인딩 성공 후 트레이더 시작. 신규 장부 전용 초기화 도구(기존 장부 덮어쓰기 금지), 자동시작 없는 설치 및 SSH 터널 배포 문서.
+- 건드린 파일/함수: server.js, src/auth.js, src/env.js, src/tossClient.js, src/store.js, public/{app.js,index.html,theme.js,safeUrl.js}, scripts/init-deployment.js, tests/*.test.js, deploy/oracle/*, .env.example, README.md, package.json.
+- 검증 방법과 결과: 합성 인증/Origin/API origin/RSS/redirect/초기화 검증 및 격리 HTTP 통합 검사 통과. 테스트에서 외부 API·트레이더 시작을 차단하고 임시 DATA_DIR만 사용. Node 구문 검사·bash -n·git diff --check 통과. 실제 계좌 연결·주문·클라우드 자원 생성 없음. 개인 운용 설정은 gitignore된 로컬 데이터에만 생성.
+- 가정/주의(다른 에이전트가 검토해야 할 점): 매매 신호/점수/한도 로직 변경 없음. 신규 초기화는 기존 API 종목 추가 기본 전략값을 사용하며 해당 종목의 수익성 검증이 아님. 초기 모니터링·실거래·자동 비중/안전 변경 OFF. 기존의 인증 생략 옵션은 더 이상 동작하지 않고 원격 접속은 터널/허용 Host 설정 필요. Oracle 인증과 VM이 없어 원격 배포는 미완료. 계좌 상태 응답 최소화·인증 시도 제한 등 직전 보고서의 나머지 개선은 별도 작업이며 모든 보안 문제가 해결됐다는 뜻은 아님.

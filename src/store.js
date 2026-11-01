@@ -161,6 +161,11 @@ const defaultState = {
   }
 };
 
+// Codex: setup can construct a fresh state without reading or overwriting a live ledger.
+export function createInitialState() {
+  return structuredClone(defaultState);
+}
+
 export async function loadState() {
   await mkdir(DATA_DIR, { recursive: true });
   try {

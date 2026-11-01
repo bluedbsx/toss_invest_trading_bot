@@ -4,16 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Toss 자동투자 관리</title>
-    <script>
-      // 첫 페인트 전에 저장된 테마를 적용해 깜빡임을 막는다(라이트 기본).
-      (function () {
-        try {
-          document.documentElement.dataset.theme = localStorage.getItem("tds-theme") || "light";
-        } catch (e) {
-          document.documentElement.dataset.theme = "light";
-        }
-      })();
-    </script>
+    <script src="/theme.js"></script>
     <link rel="stylesheet" href="/styles.css" />
   </head>
   <body>
