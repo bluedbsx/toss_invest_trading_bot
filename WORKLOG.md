@@ -904,3 +904,11 @@
 - 건드린 파일/함수: server.js, src/auth.js, src/env.js, src/tossClient.js, src/store.js, public/{app.js,index.html,theme.js,safeUrl.js}, scripts/init-deployment.js, tests/*.test.js, deploy/oracle/*, .env.example, README.md, package.json.
 - 검증 방법과 결과: 합성 인증/Origin/API origin/RSS/redirect/초기화 검증 및 격리 HTTP 통합 검사 통과. 테스트에서 외부 API·트레이더 시작을 차단하고 임시 DATA_DIR만 사용. Node 구문 검사·bash -n·git diff --check 통과. 실제 계좌 연결·주문·클라우드 자원 생성 없음. 개인 운용 설정은 gitignore된 로컬 데이터에만 생성.
 - 가정/주의(다른 에이전트가 검토해야 할 점): 매매 신호/점수/한도 로직 변경 없음. 신규 초기화는 기존 API 종목 추가 기본 전략값을 사용하며 해당 종목의 수익성 검증이 아님. 초기 모니터링·실거래·자동 비중/안전 변경 OFF. 기존의 인증 생략 옵션은 더 이상 동작하지 않고 원격 접속은 터널/허용 Host 설정 필요. Oracle 인증과 VM이 없어 원격 배포는 미완료. 계좌 상태 응답 최소화·인증 시도 제한 등 직전 보고서의 나머지 개선은 별도 작업이며 모든 보안 문제가 해결됐다는 뜻은 아님.
+
+### 2026-11-01 — 작성자: Codex (WSL 우선 운영·클라우드 이전 준비)
+- 문제/목적: Oracle 가입 지연으로 사용자 PC WSL에서 먼저 구성하고, 추후 클라우드로 전체 장부를 옮길 수 있도록 준비.
+- 진단(근거): WSL2 systemd와 user manager 정상. 저장소가 /mnt/c에 있어 .env/data가 Linux 권한상 777로 표시됨. 키 미입력 상태이며 기존 초기 장부는 실제 주문/모니터링 OFF.
+- 수정 내용: 외부 TOSS_ENV_FILE 선택 및 repo-local 비밀 없는 포인터 지원. WSL 홈 config 700/env 600, data 디렉터리 700/파일 600으로 복사 후 user service 설치·활성화. 시작/중지/로그/keepalive/중지 후 전체 장부 export 도구 추가. 기존 원본 장부는 삭제하지 않으며 목적지 별도 장부 병합을 거절. WSL 수명주기와 Windows 절전 영향, 클라우드 이사 절차 문서화. 개인 키·운용정보는 공개 코드/커밋에 포함하지 않음.
+- 건드린 파일/함수: src/env.js, scripts/install-wsl.js, scripts/export-data.js, deploy/wsl/{manage.sh,README.md}, tests/env-file.test.js, package.json, README.md.
+- 검증 방법과 결과: 보안 검사 8개 통과. systemd unit 검증 및 실제 user service active, loopback 3000만 수신 확인. 인증 없는 요청 401, 인증 후 HTML/모듈/state 200. 기존 시드/대상 보존, mock=true·live=false·monitoring=false 확인. 서비스 실행 중 backup 거절, 중지 후 전체 snapshot 생성 및 임시 복원 파일별 SHA-256 일치 확인. 비밀파일 snapshot 미포함, archive 600 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점): 실제 Toss 키·계좌 연결은 사용자 입력 대기. 실거래 OFF 유지. Windows 로그인 자동실행/전원 정책은 변경하지 않음. user service만으로 WSL 생존을 보장하지 않으므로 keepalive 터미널이 필요하고 PC 중단 시 방어매도도 중단됨. 이사할 때 원본/목적지 봇 동시 실행 금지 및 최종 snapshot 사용. 매매 신호/점수/한도 로직 변경 없음.

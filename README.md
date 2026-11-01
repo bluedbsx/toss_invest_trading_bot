@@ -137,6 +137,8 @@ TOSS_BASE_URL=https://openapi.tossinvest.com
 
 ## 배포
 
+개인 PC의 WSL에서 먼저 운영하고 나중에 클라우드로 옮기는 경우 [WSL 설치·운영·전체 장부 이전 안내](deploy/wsl/README.md)를 사용합니다. 비밀정보와 운영 데이터는 WSL 홈에 분리하고 사용자 서비스로 실행합니다.
+
 Oracle Always Free VM용 `systemd` 서비스, 설치 스크립트, 백업 스크립트가 포함되어 있습니다.
 
 - [Oracle VM 배포 가이드](deploy/oracle/README.md)

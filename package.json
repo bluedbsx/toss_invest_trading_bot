@@ -6,6 +6,7 @@
   "description": "Toss Invest Open API auto-trading dashboard for adaptive US stock and ETF strategies.",
   "scripts": {
     "start": "node server.js",
+    "setup:wsl": "node scripts/install-wsl.js",
     "dev": "node --watch server.js",
     "research:v2": "node research/v2-strategy-backtest.mjs --output research/results/v2-strategy-backtest-latest.json",
     "research:v2:verify": "node research/verify-v2-strategy-backtest.mjs",
