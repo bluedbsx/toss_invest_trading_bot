@@ -912,3 +912,11 @@
 - 건드린 파일/함수: src/env.js, scripts/install-wsl.js, scripts/export-data.js, deploy/wsl/{manage.sh,README.md}, tests/env-file.test.js, package.json, README.md.
 - 검증 방법과 결과: 보안 검사 8개 통과. systemd unit 검증 및 실제 user service active, loopback 3000만 수신 확인. 인증 없는 요청 401, 인증 후 HTML/모듈/state 200. 기존 시드/대상 보존, mock=true·live=false·monitoring=false 확인. 서비스 실행 중 backup 거절, 중지 후 전체 snapshot 생성 및 임시 복원 파일별 SHA-256 일치 확인. 비밀파일 snapshot 미포함, archive 600 확인.
 - 가정/주의(다른 에이전트가 검토해야 할 점): 실제 Toss 키·계좌 연결은 사용자 입력 대기. 실거래 OFF 유지. Windows 로그인 자동실행/전원 정책은 변경하지 않음. user service만으로 WSL 생존을 보장하지 않으므로 keepalive 터미널이 필요하고 PC 중단 시 방어매도도 중단됨. 이사할 때 원본/목적지 봇 동시 실행 금지 및 최종 snapshot 사용. 매매 신호/점수/한도 로직 변경 없음.
+
+### 2026-11-01 — 작성자: Codex (실시세 dry-run 시작·주문 차단 회귀검사)
+- 문제/목적: 사용자가 실제 키 입력 후 실거래에 앞서 dry-run 검증 요청.
+- 진단(근거): 실제 주문 환경/웹 잠금이 모두 OFF인 것을 확인하고 서비스 재시작. 계좌 조회 및 운용 종목 실제 시세·차트 조회 성공. 정규장 아님/신호 조건 미충족으로 실제 실행 시 HOLD, 주문 기록 없음.
+- 수정 내용: 운영 모니터링만 ON, 실거래 잠금 OFF 유지(비공개 state). 네트워크 없는 메모리 장부에서 BUY→손절 SELL을 실행하고 이중 잠금 3가지 OFF 조합에서 createOrder 호출 0건을 확인하는 회귀검사 및 실행 명령 추가.
+- 건드린 파일/함수: tests/dry-run-trading.test.js, package.json, deploy/wsl/README.md, WORKLOG.md. 운영 코드·전략·한도 변경 없음.
+- 검증 방법과 결과: test:dry-run 3개 통과. 전체 보안/HTTP/env/주문 차단 검사 11개 통과. 합성 매수·매도 장부 갱신, 매도 손익·포지션 제거, 수동 보유 미편입 및 실제 주문 API 0회 검증. 운영 실제 주문 기록 0건, mock=false/dryRun=true/monitoring=true 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점): 실제 시장에서 모의 체결은 아직 발생하지 않음. 합성 신호 fixture는 검사 전용이며 사용자 전략에 적용하지 않음. 키/토큰/계좌정보/개인 운용 데이터는 출력·커밋하지 않음. WSL keepalive와 PC 가동이 유지되는 동안 페이퍼 판단을 누적함.
