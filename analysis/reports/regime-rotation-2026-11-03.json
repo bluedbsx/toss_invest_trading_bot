@@ -1,0 +1,777 @@
+{
+  "generatedAt": "2026-11-03T03:21:53.818Z",
+  "universe": "analysis\\universe.json",
+  "failures": [],
+  "windows": {
+    "2022-bear": {
+      "id": "2022-bear",
+      "label": "2022 bear",
+      "start": "2022-01-03",
+      "end": "2022-12-30",
+      "rows": {
+        "MU": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -47.4,
+          "strategyPct": -20.3,
+          "strategyMddPct": 20.3,
+          "exposurePct": 4.8,
+          "trades": 2,
+          "winRatePct": 0
+        },
+        "TSM": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -40.9,
+          "strategyPct": -2.6,
+          "strategyMddPct": 10.7,
+          "exposurePct": 6,
+          "trades": 2,
+          "winRatePct": 50
+        },
+        "WDC": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -52.1,
+          "strategyPct": 0,
+          "strategyMddPct": 0,
+          "exposurePct": 0,
+          "trades": 0,
+          "winRatePct": null
+        },
+        "SOXX": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -36.4,
+          "strategyPct": -17.6,
+          "strategyMddPct": 17.6,
+          "exposurePct": 10,
+          "trades": 5,
+          "winRatePct": 0
+        },
+        "SMH": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -35,
+          "strategyPct": -17.1,
+          "strategyMddPct": 17.1,
+          "exposurePct": 12.4,
+          "trades": 6,
+          "winRatePct": 0
+        },
+        "QQQ": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -33.2,
+          "strategyPct": -5.6,
+          "strategyMddPct": 12.1,
+          "exposurePct": 10.8,
+          "trades": 3,
+          "winRatePct": 33.3
+        },
+        "XLE": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 59.4,
+          "strategyPct": 10.2,
+          "strategyMddPct": 12.2,
+          "exposurePct": 45.8,
+          "trades": 11,
+          "winRatePct": 36.4
+        },
+        "XOM": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 80.5,
+          "strategyPct": 20.3,
+          "strategyMddPct": 16.8,
+          "exposurePct": 41.8,
+          "trades": 13,
+          "winRatePct": 46.2
+        },
+        "GLD": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 0.8,
+          "strategyPct": 9,
+          "strategyMddPct": 7.7,
+          "exposurePct": 28.3,
+          "trades": 5,
+          "winRatePct": 40
+        },
+        "LMT": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 40.9,
+          "strategyPct": 5.3,
+          "strategyMddPct": 13.5,
+          "exposurePct": 29.9,
+          "trades": 13,
+          "winRatePct": 30.8
+        },
+        "RTX": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 18.8,
+          "strategyPct": -7.5,
+          "strategyMddPct": 19.1,
+          "exposurePct": 36.7,
+          "trades": 10,
+          "winRatePct": 40
+        },
+        "IEF": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": -14.4,
+          "strategyPct": 0.4,
+          "strategyMddPct": 2.8,
+          "exposurePct": 12.7,
+          "trades": 2,
+          "winRatePct": 100
+        },
+        "SH": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 19.7,
+          "strategyPct": -2.2,
+          "strategyMddPct": 10,
+          "exposurePct": 31.1,
+          "trades": 9,
+          "winRatePct": 33.3
+        },
+        "PSQ": {
+          "available": true,
+          "days": 251,
+          "buyHoldPct": 37.8,
+          "strategyPct": -1.7,
+          "strategyMddPct": 15,
+          "exposurePct": 38.2,
+          "trades": 9,
+          "winRatePct": 44.4
+        }
+      }
+    },
+    "2024-ai-bull": {
+      "id": "2024-ai-bull",
+      "label": "2024 AI bull",
+      "start": "2024-01-02",
+      "end": "2024-12-31",
+      "rows": {
+        "MU": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 2.6,
+          "strategyPct": 4.9,
+          "strategyMddPct": 14,
+          "exposurePct": 37.7,
+          "trades": 6,
+          "winRatePct": 33.3
+        },
+        "TSM": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 97.3,
+          "strategyPct": 58.5,
+          "strategyMddPct": 12.6,
+          "exposurePct": 66.7,
+          "trades": 13,
+          "winRatePct": 53.8
+        },
+        "WDC": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 17.2,
+          "strategyPct": 10.8,
+          "strategyMddPct": 14,
+          "exposurePct": 48,
+          "trades": 8,
+          "winRatePct": 37.5
+        },
+        "SOXX": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 17.1,
+          "strategyPct": -0.4,
+          "strategyMddPct": 17.6,
+          "exposurePct": 36.1,
+          "trades": 11,
+          "winRatePct": 18.2
+        },
+        "SMH": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 44,
+          "strategyPct": 23.6,
+          "strategyMddPct": 14.8,
+          "exposurePct": 41.7,
+          "trades": 11,
+          "winRatePct": 27.3
+        },
+        "QQQ": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 27.7,
+          "strategyPct": 8.5,
+          "strategyMddPct": 6.7,
+          "exposurePct": 57.9,
+          "trades": 13,
+          "winRatePct": 46.2
+        },
+        "XLE": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 4.4,
+          "strategyPct": -2.1,
+          "strategyMddPct": 14,
+          "exposurePct": 23,
+          "trades": 9,
+          "winRatePct": 22.2
+        },
+        "XOM": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 8.7,
+          "strategyPct": -9.8,
+          "strategyMddPct": 19.4,
+          "exposurePct": 32.9,
+          "trades": 10,
+          "winRatePct": 10
+        },
+        "GLD": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 27,
+          "strategyPct": -8.3,
+          "strategyMddPct": 12.8,
+          "exposurePct": 44,
+          "trades": 12,
+          "winRatePct": 16.7
+        },
+        "LMT": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 9.3,
+          "strategyPct": 3.6,
+          "strategyMddPct": 6.2,
+          "exposurePct": 40.5,
+          "trades": 9,
+          "winRatePct": 44.4
+        },
+        "RTX": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": 39,
+          "strategyPct": 18,
+          "strategyMddPct": 7.4,
+          "exposurePct": 53.2,
+          "trades": 9,
+          "winRatePct": 55.6
+        },
+        "IEF": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": -0.3,
+          "strategyPct": -1,
+          "strategyMddPct": 5.3,
+          "exposurePct": 31.7,
+          "trades": 9,
+          "winRatePct": 33.3
+        },
+        "SH": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": -14,
+          "strategyPct": -7.4,
+          "strategyMddPct": 7.8,
+          "exposurePct": 5.2,
+          "trades": 3,
+          "winRatePct": 0
+        },
+        "PSQ": {
+          "available": true,
+          "days": 252,
+          "buyHoldPct": -17,
+          "strategyPct": -11.8,
+          "strategyMddPct": 11.8,
+          "exposurePct": 8.7,
+          "trades": 3,
+          "winRatePct": 0
+        }
+      }
+    },
+    "2025-26": {
+      "id": "2025-26",
+      "label": "2025-26",
+      "start": "2025-01-02",
+      "end": "2026-06-26",
+      "rows": {
+        "MU": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 1201.4,
+          "strategyPct": 443.3,
+          "strategyMddPct": 13.4,
+          "exposurePct": 35.6,
+          "trades": 13,
+          "winRatePct": 100
+        },
+        "TSM": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 118.5,
+          "strategyPct": 70.6,
+          "strategyMddPct": 15.8,
+          "exposurePct": 55,
+          "trades": 18,
+          "winRatePct": 55.6
+        },
+        "WDC": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 1159.8,
+          "strategyPct": 311.3,
+          "strategyMddPct": 13.8,
+          "exposurePct": 35.6,
+          "trades": 14,
+          "winRatePct": 85.7
+        },
+        "SOXX": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 174.3,
+          "strategyPct": 35.9,
+          "strategyMddPct": 16.5,
+          "exposurePct": 51.8,
+          "trades": 17,
+          "winRatePct": 47.1
+        },
+        "SMH": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 150.6,
+          "strategyPct": 15.1,
+          "strategyMddPct": 18.7,
+          "exposurePct": 50.1,
+          "trades": 16,
+          "winRatePct": 43.8
+        },
+        "QQQ": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 39.5,
+          "strategyPct": 2.9,
+          "strategyMddPct": 11.4,
+          "exposurePct": 48.8,
+          "trades": 18,
+          "winRatePct": 33.3
+        },
+        "XLE": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 30.2,
+          "strategyPct": -5,
+          "strategyMddPct": 21.1,
+          "exposurePct": 39.4,
+          "trades": 20,
+          "winRatePct": 25
+        },
+        "XOM": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 33.7,
+          "strategyPct": 7.9,
+          "strategyMddPct": 16.1,
+          "exposurePct": 41.2,
+          "trades": 17,
+          "winRatePct": 41.2
+        },
+        "GLD": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 52.2,
+          "strategyPct": 16.3,
+          "strategyMddPct": 14,
+          "exposurePct": 45,
+          "trades": 21,
+          "winRatePct": 42.9
+        },
+        "LMT": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 9.6,
+          "strategyPct": 10.7,
+          "strategyMddPct": 17.1,
+          "exposurePct": 23.7,
+          "trades": 12,
+          "winRatePct": 33.3
+        },
+        "RTX": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 66.3,
+          "strategyPct": 17.3,
+          "strategyMddPct": 8.6,
+          "exposurePct": 54.7,
+          "trades": 11,
+          "winRatePct": 54.5
+        },
+        "IEF": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": 8.4,
+          "strategyPct": -2.8,
+          "strategyMddPct": 5.7,
+          "exposurePct": 35.6,
+          "trades": 16,
+          "winRatePct": 18.8
+        },
+        "SH": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": -16,
+          "strategyPct": 0.4,
+          "strategyMddPct": 5.8,
+          "exposurePct": 16.2,
+          "trades": 8,
+          "winRatePct": 25
+        },
+        "PSQ": {
+          "available": true,
+          "days": 371,
+          "buyHoldPct": -26.1,
+          "strategyPct": 5.3,
+          "strategyMddPct": 11.5,
+          "exposurePct": 17,
+          "trades": 8,
+          "winRatePct": 37.5
+        }
+      }
+    },
+    "10y": {
+      "id": "10y",
+      "label": "10y-ish",
+      "start": "2016-01-04",
+      "end": "2026-06-26",
+      "rows": {
+        "MU": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 8002,
+          "strategyPct": 1138.6,
+          "strategyMddPct": 50.3,
+          "exposurePct": 33.3,
+          "trades": 62,
+          "winRatePct": 53.2
+        },
+        "TSM": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 2454.2,
+          "strategyPct": 499.1,
+          "strategyMddPct": 26.7,
+          "exposurePct": 42.2,
+          "trades": 106,
+          "winRatePct": 45.3
+        },
+        "WDC": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 1395.3,
+          "strategyPct": 285.1,
+          "strategyMddPct": 54.8,
+          "exposurePct": 28.9,
+          "trades": 50,
+          "winRatePct": 46
+        },
+        "SOXX": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 2110.8,
+          "strategyPct": 72.1,
+          "strategyMddPct": 49.6,
+          "exposurePct": 45.8,
+          "trades": 117,
+          "winRatePct": 33.3
+        },
+        "SMH": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 2446.9,
+          "strategyPct": 104.8,
+          "strategyMddPct": 43.6,
+          "exposurePct": 46.5,
+          "trades": 117,
+          "winRatePct": 33.3
+        },
+        "QQQ": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 595.4,
+          "strategyPct": 138.6,
+          "strategyMddPct": 16.1,
+          "exposurePct": 48.3,
+          "trades": 100,
+          "winRatePct": 43
+        },
+        "XLE": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 171.7,
+          "strategyPct": 16.6,
+          "strategyMddPct": 32.7,
+          "exposurePct": 32,
+          "trades": 101,
+          "winRatePct": 26.7
+        },
+        "XOM": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 176.8,
+          "strategyPct": 43,
+          "strategyMddPct": 31.3,
+          "exposurePct": 34.6,
+          "trades": 90,
+          "winRatePct": 34.4
+        },
+        "GLD": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 263.1,
+          "strategyPct": 6.6,
+          "strategyMddPct": 22.7,
+          "exposurePct": 35.2,
+          "trades": 94,
+          "winRatePct": 33
+        },
+        "LMT": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 214.5,
+          "strategyPct": 45,
+          "strategyMddPct": 30.2,
+          "exposurePct": 34.5,
+          "trades": 99,
+          "winRatePct": 30.3
+        },
+        "RTX": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 299.2,
+          "strategyPct": 21.3,
+          "strategyMddPct": 35.6,
+          "exposurePct": 40.4,
+          "trades": 93,
+          "winRatePct": 36.6
+        },
+        "IEF": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": 13.4,
+          "strategyPct": -6.7,
+          "strategyMddPct": 13.2,
+          "exposurePct": 32.3,
+          "trades": 93,
+          "winRatePct": 29
+        },
+        "SH": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": -75.6,
+          "strategyPct": 2.4,
+          "strategyMddPct": 25.2,
+          "exposurePct": 12.7,
+          "trades": 50,
+          "winRatePct": 26
+        },
+        "PSQ": {
+          "available": true,
+          "days": 2635,
+          "buyHoldPct": -87.9,
+          "strategyPct": -26.7,
+          "strategyMddPct": 36.9,
+          "exposurePct": 12.9,
+          "trades": 44,
+          "winRatePct": 27.3
+        }
+      }
+    }
+  },
+  "correlation": {
+    "windowId": "10y",
+    "against": "SOXX",
+    "values": {
+      "MU": 0.78,
+      "TSM": 0.77,
+      "WDC": 0.66,
+      "SOXX": 1,
+      "SMH": 0.99,
+      "QQQ": 0.87,
+      "XLE": 0.39,
+      "XOM": 0.29,
+      "GLD": 0.11,
+      "LMT": 0.2,
+      "RTX": 0.38,
+      "IEF": -0.1,
+      "SH": -0.81,
+      "PSQ": -0.87
+    }
+  },
+  "redistribution": {
+    "portfolioId": "xle-gld",
+    "weights": {
+      "MU": 28,
+      "WDC": 20,
+      "TSM": 16,
+      "XLE": 20,
+      "GLD": 16
+    },
+    "windows": {
+      "2022-bear": {
+        "days": 251,
+        "semiOffPct": 91.6,
+        "semiOffWithAltPct": 40.6,
+        "altHalfWeightPct": 43
+      },
+      "2024-ai-bull": {
+        "days": 252,
+        "semiOffPct": 27,
+        "semiOffWithAltPct": 13.9,
+        "altHalfWeightPct": 31.7
+      },
+      "2025-26": {
+        "days": 371,
+        "semiOffPct": 39.6,
+        "semiOffWithAltPct": 20.5,
+        "altHalfWeightPct": 34.8
+      },
+      "10y": {
+        "days": 2635,
+        "semiOffPct": 48.9,
+        "semiOffWithAltPct": 21.7,
+        "altHalfWeightPct": 33.2
+      }
+    }
+  },
+  "portfolios": {
+    "2022-bear": [
+      {
+        "id": "current",
+        "label": "현재 코어",
+        "available": true,
+        "strategyPct": -8,
+        "mddPct": 10.3,
+        "vsMarketPctPt": 25.2
+      },
+      {
+        "id": "xle-gld",
+        "label": "코어 + XLE/GLD",
+        "available": true,
+        "strategyPct": -2.6,
+        "mddPct": 4.8,
+        "vsMarketPctPt": 30.6
+      },
+      {
+        "id": "xle-gld-lmt",
+        "label": "코어 + XLE/GLD/LMT",
+        "available": true,
+        "strategyPct": -2,
+        "mddPct": 4.2,
+        "vsMarketPctPt": 31.2
+      }
+    ],
+    "2024-ai-bull": [
+      {
+        "id": "current",
+        "label": "현재 코어",
+        "available": true,
+        "strategyPct": 22,
+        "mddPct": 10.4,
+        "vsMarketPctPt": -5.7
+      },
+      {
+        "id": "xle-gld",
+        "label": "코어 + XLE/GLD",
+        "available": true,
+        "strategyPct": 11.1,
+        "mddPct": 8.4,
+        "vsMarketPctPt": -16.6
+      },
+      {
+        "id": "xle-gld-lmt",
+        "label": "코어 + XLE/GLD/LMT",
+        "available": true,
+        "strategyPct": 10.6,
+        "mddPct": 7.8,
+        "vsMarketPctPt": -17.1
+      }
+    ],
+    "2025-26": [
+      {
+        "id": "current",
+        "label": "현재 코어",
+        "available": true,
+        "strategyPct": 291.4,
+        "mddPct": 9.9,
+        "vsMarketPctPt": 251.9
+      },
+      {
+        "id": "xle-gld",
+        "label": "코어 + XLE/GLD",
+        "available": true,
+        "strategyPct": 199.3,
+        "mddPct": 8.1,
+        "vsMarketPctPt": 159.8
+      },
+      {
+        "id": "xle-gld-lmt",
+        "label": "코어 + XLE/GLD/LMT",
+        "available": true,
+        "strategyPct": 187,
+        "mddPct": 7.7,
+        "vsMarketPctPt": 147.5
+      }
+    ],
+    "10y": [
+      {
+        "id": "current",
+        "label": "현재 코어",
+        "available": true,
+        "strategyPct": 652.3,
+        "mddPct": 33,
+        "vsMarketPctPt": 56.9
+      },
+      {
+        "id": "xle-gld",
+        "label": "코어 + XLE/GLD",
+        "available": true,
+        "strategyPct": 460.1,
+        "mddPct": 27.3,
+        "vsMarketPctPt": -135.3
+      },
+      {
+        "id": "xle-gld-lmt",
+        "label": "코어 + XLE/GLD/LMT",
+        "available": true,
+        "strategyPct": 431.6,
+        "mddPct": 25.9,
+        "vsMarketPctPt": -163.8
+      }
+    ]
+  },
+  "verdicts": {
+    "MU": "운용 중(코어)",
+    "TSM": "운용 중(코어)",
+    "WDC": "운용 중(코어)",
+    "SOXX": "비교 기준",
+    "SMH": "중복 노출(분산효과 없음)",
+    "QQQ": "비교 기준",
+    "XLE": "실매매 후보",
+    "XOM": "실매매 후보",
+    "GLD": "실매매 후보",
+    "LMT": "실매매 후보",
+    "RTX": "paper 관찰",
+    "IEF": "paper 관찰",
+    "SH": "고위험 paper 전용",
+    "PSQ": "고위험 paper 전용"
+  }
+}

@@ -6,3 +6,4 @@ data/**
 !data/.gitkeep
 .DS_Store
 node_modules/
+analysis/.cache/

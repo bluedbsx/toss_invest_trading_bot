@@ -169,4 +169,5 @@ Oracle Always Free VM용 `systemd` 서비스, 설치 스크립트, 백업 스크
 
 - [전체 작업 기록](WORKLOG.md)
 - [레짐 로테이션 검토 문서](docs/regime-rotation-candidates.md)
+- [종목 분석 공간 (종목 list·재현 스크립트·자동 리포트)](analysis/README.md)
 - [이력서·포트폴리오용 케이스 스터디](docs/portfolio-case-study.md)

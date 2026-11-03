@@ -540,7 +540,23 @@ export function backtestTarget({ target, candles, settings = {} }) {
 // 실제 토스 수수료/체결오차와 다를 수 있는 보수적 추정치로, 백테스트를 실제에 조금 더 가깝게 만든다.
 const BACKTEST_COST_PER_SIDE = 0.001;
 
-function runBacktestSimulation({ target, candles, settings, includeDailyGuards }) {
+// 분석 스크립트(scripts/regime-rotation-analysis.mjs)용: 라이브 백테스트와 같은 시뮬레이션을 돌리되,
+// startIndex 이전은 지표 워밍업으로만 쓰고 일별 보유/BUY신호/자산을 기록한다. 라이브 경로는 이 함수를 쓰지 않는다.
+export function simulateBacktestTrace({ target, candles, settings = {}, startIndex = 50, includeDailyGuards = true }) {
+  const normalized = normalizeCandles(candles);
+  const trace = [];
+  const result = runBacktestSimulation({
+    target,
+    candles: normalized,
+    settings,
+    includeDailyGuards,
+    startIndex: Math.max(50, startIndex),
+    trace
+  });
+  return { ...result, trace };
+}
+
+function runBacktestSimulation({ target, candles, settings, includeDailyGuards, startIndex = 50, trace = null }) {
   const cost = BACKTEST_COST_PER_SIDE;
   let cash = 1000;
   let quantity = 0;
@@ -555,7 +571,7 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
   let maxEquity = cash;
   let maxDrawdownPct = 0;
 
-  for (let index = 50; index < candles.length; index += 1) {
+  for (let index = startIndex; index < candles.length; index += 1) {
     const window = candles.slice(0, index + 1);
     const closes = window.map((item) => item.close);
     const last = window.at(-1).close;
@@ -580,6 +596,20 @@ function runBacktestSimulation({ target, candles, settings, includeDailyGuards }
       Number.isFinite(dailyMovePct) &&
       dailyMovePct <= -Number(settings.intradayPanicExitPct ?? Number.POSITIVE_INFINITY);
     const equity = cash + quantity * last;
+    if (trace) {
+      // 보유 여부와 무관한 "BUY 조건 충족" 여부(재분배 효과 분석용). 아래 매수 분기와 같은 조건.
+      const traceMaxAtrPct = Number(target.maxAtrPct ?? 12);
+      const traceAtrOk = atrPct === null || atrPct <= Math.min(30, Math.max(traceMaxAtrPct + 8, traceMaxAtrPct * 1.6));
+      const traceMinAdx = Number(target.minAdx ?? settings.minAdx ?? 0);
+      const buySignal = Boolean(
+        fastSma && slowSma && last > fastSma && fastSma > slowSma &&
+          currentRsi !== null && currentRsi >= params.minBuyRsi && currentRsi <= params.maxBuyRsi &&
+          momentumPct !== null && momentumPct > 0 &&
+          (!(traceMinAdx > 0) || (currentAdx !== null && currentAdx >= traceMinAdx)) &&
+          traceAtrOk && !dailyDropBlock
+      );
+      trace.push({ timestamp: window.at(-1).timestamp, close: last, held: quantity > 0, buySignal, equity });
+    }
 
     maxEquity = Math.max(maxEquity, equity);
     maxDrawdownPct = Math.max(maxDrawdownPct, maxEquity > 0 ? ((maxEquity - equity) / maxEquity) * 100 : 0);

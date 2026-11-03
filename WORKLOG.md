@@ -936,3 +936,11 @@
 - 건드린 파일/외부 상태: WORKLOG.md 및 git 외부의 private env/audit 상태. 키·토큰·계좌번호·계좌 식별자·운용 상세는 공개 기록에 남기지 않음.
 - 검증 방법과 결과: 읽기 전용 계좌/시세/일봉/OPEN·CLOSED 주문 조회 성공(주문 전송 0). 미체결 없음. CLOSED는 첫 100개만 검사했으며 추가 페이지 존재. 실제 서비스 연결 및 sync-orders 성공, 수동 보유가 봇 positions에 없음, 페이퍼 모드·원금 분리·실거래 이중 잠금 OFF 유지. 네트워크 없는 dry-run 이중 잠금 회귀검사 6개 통과. 현재 WSL 트레이더 프로세스 1개, Windows 대응 프로세스 없음.
 - 가정/주의(다른 에이전트가 검토해야 할 점): 현재 체결/보유 장부가 비어 있어 실제 체결 후 전체 동기화 실증은 아직 없음. Docker daemon 접근 불가/다른 PC·외부 서버는 검사 범위 밖이라 계좌 전역 단일 인스턴스를 보장하지 못함. 장외 방어매도 ON이어도 정수 수량만 매도하며 소수점 잔량은 정규장 대기. 후보 전략은 기존 일반 초기값이며 실거래 성과 검증 완료를 뜻하지 않음.
+
+### 2026-11-03 — 작성자: Claude(Opus 5.5) (레짐 로테이션 분석 스크립트·종목 list 정식화)
+- 문제/목적: docs/regime-rotation-candidates.md의 수치가 scratchpad 일회성 스크립트로 만들어져 repo만으로 재현 불가. 사용자 요청으로 종목 list 파일 + 재현 스크립트 + 문서 자동 생성 체계를 추가.
+- 진단(근거): 후보(XLE/GLD/LMT/XOM/RTX/SH/PSQ 등)는 문서에만 존재, 코드/데이터 파일에 없음. runBacktestSimulation은 비공개이고 구간 워밍업 분리·일별 trace가 없었음.
+- 수정 내용: analysis/ 분석 공간 신설. analysis/universe.json(종목 list·파라미터·구간·비중안). scripts/regime-rotation-analysis.mjs(가격 캐시 → 구간별 단순보유/봇 전략/MDD/노출일, 재분배 효과, SOXX 상관, 정적비중 포트폴리오 vs QQQ, 규칙 기반 판정 → analysis/reports/regime-rotation-YYYY-MM-DD.md/.json). src/strategy.js에 simulateBacktestTrace 추가 및 runBacktestSimulation에 startIndex(기본 50)·trace(기본 null) 옵션 추가. npm run analysis:regime.
+- 건드린 파일/함수: src/strategy.js(simulateBacktestTrace, runBacktestSimulation 옵션), scripts/regime-rotation-analysis.mjs, analysis/{universe.json,README.md,reports/*}, package.json, .gitignore(analysis/.cache/), README.md.
+- 검증 방법과 결과: test:security 14 pass / 2 fail — 실패 2건(deployment fresh setup, http-security)은 내 변경을 stash한 상태에서도 동일하게 실패하는 기존 Windows 환경 이슈로 이번 변경과 무관. 첫 실행 결과 단순보유(예: 2022 XLE +59.4%, XOM +80.5%, GLD +0.8%, LMT +40.9%)와 SOXX 상관(GLD 0.11, LMT 0.20, XLE 0.39, SH -0.81)이 기존 문서와 일치 → 데이터·구간 정렬 재현 확인.
+- 가정/주의(다른 에이전트가 검토해야 할 점): 라이브 경로 행동 변화 없음(기본값이 기존과 동일, trace는 분석 스크립트만 사용). 봇 전략 수익은 기존 문서와 다름(예: 2022 XLE +10.2% vs 문서 +27.6%, MU -20.3% vs 0%) — 코어 파라미터가 6월 이후 store.js에서 바뀌었고 Codex 당시 후보 파라미터가 기록되지 않아 동일 재현 불가. 이제 universe.json에 파라미터가 명시되므로 이후 수치는 재현 가능. 코어 파라미터는 최근 데이터로 최적화된 값이라 2025-26/10y 코어 성과에 in-sample 편향 있음. 포트폴리오 표는 정적 슬리브 근사(재분배 미반영). 판정 규칙은 1차 분류일 뿐이고 실매매 편입 결정 아님.

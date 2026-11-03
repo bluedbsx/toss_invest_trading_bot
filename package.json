@@ -11,7 +11,8 @@
     "research:v2": "node research/v2-strategy-backtest.mjs --output research/results/v2-strategy-backtest-latest.json",
     "research:v2:verify": "node research/verify-v2-strategy-backtest.mjs",
     "test:security": "node --test tests/*.test.js",
-    "test:dry-run": "node --test tests/dry-run-trading.test.js"
+    "test:dry-run": "node --test tests/dry-run-trading.test.js",
+    "analysis:regime": "node scripts/regime-rotation-analysis.mjs"
   },
   "engines": {
     "node": ">=22"

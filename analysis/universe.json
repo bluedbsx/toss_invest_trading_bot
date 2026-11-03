@@ -1,0 +1,49 @@
+{
+  "_comment": "레짐 로테이션 분석 종목 list (scripts/regime-rotation-analysis.mjs 입력). 종목 추가/삭제는 이 파일만 고치면 된다. role: core=현재 봇 운용 종목, candidate=편입 검토 후보, benchmark=비교 기준. params가 없으면 server.js POST /api/targets의 신규 종목 기본값(defaults.candidateParams)을 쓴다. core 종목 params는 src/store.js 기본 targets와 같게 유지한다.",
+  "updated": "2026-11-03",
+  "benchmarks": {
+    "market": "QQQ",
+    "sector": "SOXX"
+  },
+  "windows": [
+    { "id": "2022-bear", "label": "2022 bear", "start": "2022-01-03", "end": "2022-12-30" },
+    { "id": "2024-ai-bull", "label": "2024 AI bull", "start": "2024-01-02", "end": "2024-12-31" },
+    { "id": "2025-26", "label": "2025-26", "start": "2025-01-02", "end": "2026-06-26" },
+    { "id": "10y", "label": "10y-ish", "start": "2016-01-04", "end": "2026-06-26" }
+  ],
+  "bearWindowId": "2022-bear",
+  "correlationWindowId": "10y",
+  "portfolios": [
+    { "id": "current", "label": "현재 코어", "weights": { "MU": 36, "TSM": 28, "WDC": 36 } },
+    { "id": "xle-gld", "label": "코어 + XLE/GLD", "weights": { "MU": 28, "WDC": 20, "TSM": 16, "XLE": 20, "GLD": 16 } },
+    { "id": "xle-gld-lmt", "label": "코어 + XLE/GLD/LMT", "weights": { "MU": 26, "WDC": 19, "TSM": 15, "XLE": 20, "GLD": 15, "LMT": 5 } }
+  ],
+  "redistributionPortfolioId": "xle-gld",
+  "defaults": {
+    "settings": { "intradayDropBlockPct": 4.5, "intradayPanicExitPct": 8 },
+    "candidateParams": {
+      "fastSmaDays": 20, "slowSmaDays": 50, "momentumDays": 5, "minBuyRsi": 45, "maxBuyRsi": 72,
+      "stopLossPct": 8, "partialTakeProfitPct": 10, "partialTakeProfitSellPct": 40, "takeProfitPct": 18,
+      "trailingStopPct": 10, "takeProfitRsi": 78, "maxAtrPct": 12, "minAdx": 0
+    }
+  },
+  "symbols": [
+    { "symbol": "MU", "name": "Micron Technology", "role": "core", "group": "semi",
+      "params": { "fastSmaDays": 80, "slowSmaDays": 200, "momentumDays": 20, "minBuyRsi": 35, "maxBuyRsi": 65, "stopLossPct": 8, "partialTakeProfitPct": 9, "partialTakeProfitSellPct": 40, "takeProfitPct": 18, "trailingStopPct": 10, "takeProfitRsi": 78, "maxAtrPct": 24 } },
+    { "symbol": "TSM", "name": "TSMC ADR", "role": "core", "group": "semi",
+      "params": { "fastSmaDays": 20, "slowSmaDays": 100, "momentumDays": 10, "minBuyRsi": 42, "maxBuyRsi": 70, "stopLossPct": 8, "partialTakeProfitPct": 9, "partialTakeProfitSellPct": 40, "takeProfitPct": 18, "trailingStopPct": 10, "takeProfitRsi": 78, "maxAtrPct": 24 } },
+    { "symbol": "WDC", "name": "Western Digital", "role": "core", "group": "semi",
+      "params": { "fastSmaDays": 80, "slowSmaDays": 200, "momentumDays": 20, "minBuyRsi": 35, "maxBuyRsi": 65, "stopLossPct": 8, "partialTakeProfitPct": 9, "partialTakeProfitSellPct": 40, "takeProfitPct": 18, "trailingStopPct": 10, "takeProfitRsi": 78, "maxAtrPct": 24 } },
+    { "symbol": "SOXX", "name": "iShares Semiconductor ETF", "role": "benchmark", "group": "semi" },
+    { "symbol": "SMH", "name": "VanEck Semiconductor ETF", "role": "candidate", "group": "semi", "thesis": "반도체 ETF(분산 효과 검증용 대조군)" },
+    { "symbol": "QQQ", "name": "Invesco QQQ", "role": "benchmark", "group": "index" },
+    { "symbol": "XLE", "name": "Energy Select Sector SPDR", "role": "candidate", "group": "energy", "thesis": "에너지/유가 사이클" },
+    { "symbol": "XOM", "name": "Exxon Mobil", "role": "candidate", "group": "energy", "thesis": "에너지 개별주(단일기업 리스크)" },
+    { "symbol": "GLD", "name": "SPDR Gold Shares", "role": "candidate", "group": "gold", "thesis": "금(저상관 안정 보조축)" },
+    { "symbol": "LMT", "name": "Lockheed Martin", "role": "candidate", "group": "defense", "thesis": "방산/지정학 사이클" },
+    { "symbol": "RTX", "name": "RTX Corp", "role": "candidate", "group": "defense", "thesis": "방산/항공" },
+    { "symbol": "IEF", "name": "iShares 7-10Y Treasury", "role": "candidate", "group": "bond", "thesis": "중기 국채(방어)" },
+    { "symbol": "SH", "name": "ProShares Short S&P500", "role": "candidate", "group": "inverse", "thesis": "인버스(롱 전용 엔진과 궁합 낮음)" },
+    { "symbol": "PSQ", "name": "ProShares Short QQQ", "role": "candidate", "group": "inverse", "thesis": "인버스(롱 전용 엔진과 궁합 낮음)" }
+  ]
+}
