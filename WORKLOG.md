@@ -944,3 +944,11 @@
 - 건드린 파일/함수: src/strategy.js(simulateBacktestTrace, runBacktestSimulation 옵션), scripts/regime-rotation-analysis.mjs, analysis/{universe.json,README.md,reports/*}, package.json, .gitignore(analysis/.cache/), README.md.
 - 검증 방법과 결과: test:security 14 pass / 2 fail — 실패 2건(deployment fresh setup, http-security)은 내 변경을 stash한 상태에서도 동일하게 실패하는 기존 Windows 환경 이슈로 이번 변경과 무관. 첫 실행 결과 단순보유(예: 2022 XLE +59.4%, XOM +80.5%, GLD +0.8%, LMT +40.9%)와 SOXX 상관(GLD 0.11, LMT 0.20, XLE 0.39, SH -0.81)이 기존 문서와 일치 → 데이터·구간 정렬 재현 확인.
 - 가정/주의(다른 에이전트가 검토해야 할 점): 라이브 경로 행동 변화 없음(기본값이 기존과 동일, trace는 분석 스크립트만 사용). 봇 전략 수익은 기존 문서와 다름(예: 2022 XLE +10.2% vs 문서 +27.6%, MU -20.3% vs 0%) — 코어 파라미터가 6월 이후 store.js에서 바뀌었고 Codex 당시 후보 파라미터가 기록되지 않아 동일 재현 불가. 이제 universe.json에 파라미터가 명시되므로 이후 수치는 재현 가능. 코어 파라미터는 최근 데이터로 최적화된 값이라 2025-26/10y 코어 성과에 in-sample 편향 있음. 포트폴리오 표는 정적 슬리브 근사(재분배 미반영). 판정 규칙은 1차 분류일 뿐이고 실매매 편입 결정 아님.
+
+### 2026-11-04 — 작성자: Codex (미국 후보 1차 스크리닝)
+- 문제/목적: 기존 대상 외 미국 주식·ETF 거래 후보 비교.
+- 진단(근거): 공통 기본 파라미터로 42종목의 Yahoo 5년 일봉을 기존 robustBacktestTarget에 입력. WDC 67, GOOGL 58, MU 57, CAT 55점. 70점 이상 없음.
+- 수정 내용: 읽기 전용 후보 분석 스크립트와 결과 JSON 추가. 운영 설정 변경 없음.
+- 건드린 파일/함수: scripts/screen-candidates.mjs, analysis/reports/candidate-screen-latest.json.
+- 검증 방법과 결과: 스크리닝 실행 완료, 42종목 결과 생성. node --check 및 git diff --check 실행 요청 후 결과 확인 진행.
+- 가정/주의(다른 에이전트가 검토해야 할 점): 공통 설정 비교이며 운영 종목별 설정 점수와 다름. 최신 UTC 당일 봉 제외. 장 마감 확정 여부·토스 거래 가능 여부·현재 매수 신호 미검증. 검증구간도 후보 선택에 사용하므로 독립 표본 외 검증을 의미하지 않음. 실주문·봇 추가 실행 없음.

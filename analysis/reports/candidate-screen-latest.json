@@ -1,0 +1,2589 @@
+{
+  "generatedAt": "2026-11-04T05:01:17.037Z",
+  "parameters": {
+    "settings": {
+      "intradayDropBlockPct": 4.5,
+      "intradayPanicExitPct": 8
+    },
+    "candidateParams": {
+      "fastSmaDays": 20,
+      "slowSmaDays": 50,
+      "momentumDays": 5,
+      "minBuyRsi": 45,
+      "maxBuyRsi": 72,
+      "stopLossPct": 8,
+      "partialTakeProfitPct": 10,
+      "partialTakeProfitSellPct": 40,
+      "takeProfitPct": 18,
+      "trailingStopPct": 10,
+      "takeProfitRsi": 78,
+      "maxAtrPct": 12,
+      "minAdx": 0
+    }
+  },
+  "note": "Fixed common parameters, not optimized. Latest partial UTC day excluded. Daily data is not an executable live signal. Verify data freshness and broker eligibility.",
+  "results": [
+    {
+      "symbol": "WDC",
+      "available": true,
+      "score": 67,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 333.5,
+      "drawdownPct": 30.2,
+      "trades": 46,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 20,
+        "winRatePct": 70,
+        "totalReturnPct": 328.2,
+        "maxDrawdownPct": 16.9,
+        "score": 90,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 70%, 수익률 328.2%, 최대낙폭 16.9% · 안전장치 영향 -4점, 수익률 -55.6%p",
+        "alphaBacktest": {
+          "score": 94,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 75,
+          "totalReturnPct": 383.8,
+          "maxDrawdownPct": 13.3,
+          "summary": "최근 452개 일봉 기준 승률 75%, 수익률 383.8%, 최대낙폭 13.3%"
+        },
+        "guardedBacktest": {
+          "score": 90,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 70,
+          "totalReturnPct": 328.2,
+          "maxDrawdownPct": 16.9,
+          "summary": "최근 452개 일봉 기준 승률 70%, 수익률 328.2%, 최대낙폭 16.9%"
+        },
+        "guardImpact": {
+          "scoreChange": -4,
+          "returnPctChange": -55.6,
+          "drawdownPctChange": 3.6,
+          "explanation": "안전장치가 일부 하락 구간을 피했지만 반등 구간도 놓쳐 수익률을 낮췄습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 47.8%, 수익률 333.5%, 최대낙폭 30.2% · 안전장치 영향 -3점, 수익률 -48.9%p; 전체 1254일 점수 64/100, 검증구간 452일 점수 90/100, 최종 67/100"
+    },
+    {
+      "symbol": "GOOGL",
+      "available": true,
+      "score": 58,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 50.3,
+      "drawdownPct": 27.1,
+      "trades": 40,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 11,
+        "winRatePct": 63.6,
+        "totalReturnPct": 78.7,
+        "maxDrawdownPct": 8.4,
+        "score": 75,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 63.6%, 수익률 78.7%, 최대낙폭 8.4% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 75,
+          "days": 452,
+          "trades": 11,
+          "winRatePct": 63.6,
+          "totalReturnPct": 78.7,
+          "maxDrawdownPct": 8.4,
+          "summary": "최근 452개 일봉 기준 승률 63.6%, 수익률 78.7%, 최대낙폭 8.4%"
+        },
+        "guardedBacktest": {
+          "score": 75,
+          "days": 452,
+          "trades": 11,
+          "winRatePct": 63.6,
+          "totalReturnPct": 78.7,
+          "maxDrawdownPct": 8.4,
+          "summary": "최근 452개 일봉 기준 승률 63.6%, 수익률 78.7%, 최대낙폭 8.4%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 40%, 수익률 50.3%, 최대낙폭 27.1% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 40/100, 검증구간 452일 점수 75/100, 최종 58/100"
+    },
+    {
+      "symbol": "MU",
+      "available": true,
+      "score": 57,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 208.2,
+      "drawdownPct": 20.7,
+      "trades": 46,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 23,
+        "winRatePct": 52.2,
+        "totalReturnPct": 163.4,
+        "maxDrawdownPct": 20.5,
+        "score": 67,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 52.2%, 수익률 163.4%, 최대낙폭 20.5% · 안전장치 영향 +19점, 수익률 +23.1%p",
+        "alphaBacktest": {
+          "score": 48,
+          "days": 452,
+          "trades": 24,
+          "winRatePct": 50,
+          "totalReturnPct": 140.3,
+          "maxDrawdownPct": 30.7,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 140.3%, 최대낙폭 30.7%"
+        },
+        "guardedBacktest": {
+          "score": 67,
+          "days": 452,
+          "trades": 23,
+          "winRatePct": 52.2,
+          "totalReturnPct": 163.4,
+          "maxDrawdownPct": 20.5,
+          "summary": "최근 452개 일봉 기준 승률 52.2%, 수익률 163.4%, 최대낙폭 20.5%"
+        },
+        "guardImpact": {
+          "scoreChange": 19,
+          "returnPctChange": 23.1,
+          "drawdownPctChange": -10.2,
+          "explanation": "안전장치가 손실 구간을 줄여 수익률에 보탬이 됐습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 43.5%, 수익률 208.2%, 최대낙폭 20.7% · 안전장치 영향 +22점, 수익률 +50.2%p; 전체 1254일 점수 68/100, 검증구간 452일 점수 67/100, 최종 57/100"
+    },
+    {
+      "symbol": "CAT",
+      "available": true,
+      "score": 55,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 112.3,
+      "drawdownPct": 19.4,
+      "trades": 42,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 18,
+        "winRatePct": 55.6,
+        "totalReturnPct": 76.1,
+        "maxDrawdownPct": 12.3,
+        "score": 64,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 55.6%, 수익률 76.1%, 최대낙폭 12.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 64,
+          "days": 452,
+          "trades": 18,
+          "winRatePct": 55.6,
+          "totalReturnPct": 76.1,
+          "maxDrawdownPct": 12.3,
+          "summary": "최근 452개 일봉 기준 승률 55.6%, 수익률 76.1%, 최대낙폭 12.3%"
+        },
+        "guardedBacktest": {
+          "score": 64,
+          "days": 452,
+          "trades": 18,
+          "winRatePct": 55.6,
+          "totalReturnPct": 76.1,
+          "maxDrawdownPct": 12.3,
+          "summary": "최근 452개 일봉 기준 승률 55.6%, 수익률 76.1%, 최대낙폭 12.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 45.2%, 수익률 112.3%, 최대낙폭 19.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 58/100, 검증구간 452일 점수 64/100, 최종 55/100"
+    },
+    {
+      "symbol": "AAPL",
+      "available": true,
+      "score": 52,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 80.4,
+      "drawdownPct": 14,
+      "trades": 29,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 11,
+        "winRatePct": 54.5,
+        "totalReturnPct": 27.5,
+        "maxDrawdownPct": 8.2,
+        "score": 54,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 54.5%, 수익률 27.5%, 최대낙폭 8.2% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 54,
+          "days": 452,
+          "trades": 11,
+          "winRatePct": 54.5,
+          "totalReturnPct": 27.5,
+          "maxDrawdownPct": 8.2,
+          "summary": "최근 452개 일봉 기준 승률 54.5%, 수익률 27.5%, 최대낙폭 8.2%"
+        },
+        "guardedBacktest": {
+          "score": 54,
+          "days": 452,
+          "trades": 11,
+          "winRatePct": 54.5,
+          "totalReturnPct": 27.5,
+          "maxDrawdownPct": 8.2,
+          "summary": "최근 452개 일봉 기준 승률 54.5%, 수익률 27.5%, 최대낙폭 8.2%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 48.3%, 수익률 80.4%, 최대낙폭 14% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 59/100, 검증구간 452일 점수 54/100, 최종 52/100"
+    },
+    {
+      "symbol": "TSM",
+      "available": true,
+      "score": 50,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 128.7,
+      "drawdownPct": 24.2,
+      "trades": 42,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 17,
+        "winRatePct": 58.8,
+        "totalReturnPct": 57,
+        "maxDrawdownPct": 21.4,
+        "score": 53,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 58.8%, 수익률 57%, 최대낙폭 21.4% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 53,
+          "days": 452,
+          "trades": 17,
+          "winRatePct": 58.8,
+          "totalReturnPct": 57,
+          "maxDrawdownPct": 21.4,
+          "summary": "최근 452개 일봉 기준 승률 58.8%, 수익률 57%, 최대낙폭 21.4%"
+        },
+        "guardedBacktest": {
+          "score": 53,
+          "days": 452,
+          "trades": 17,
+          "winRatePct": 58.8,
+          "totalReturnPct": 57,
+          "maxDrawdownPct": 21.4,
+          "summary": "최근 452개 일봉 기준 승률 58.8%, 수익률 57%, 최대낙폭 21.4%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 52.4%, 수익률 128.7%, 최대낙폭 24.2% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 57/100, 검증구간 452일 점수 53/100, 최종 50/100"
+    },
+    {
+      "symbol": "GE",
+      "available": true,
+      "score": 47,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 79.2,
+      "drawdownPct": 18.5,
+      "trades": 43,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 12,
+        "winRatePct": 50,
+        "totalReturnPct": 36.2,
+        "maxDrawdownPct": 10.6,
+        "score": 52,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 50%, 수익률 36.2%, 최대낙폭 10.6% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 52,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 50,
+          "totalReturnPct": 36.2,
+          "maxDrawdownPct": 10.6,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 36.2%, 최대낙폭 10.6%"
+        },
+        "guardedBacktest": {
+          "score": 52,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 50,
+          "totalReturnPct": 36.2,
+          "maxDrawdownPct": 10.6,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 36.2%, 최대낙폭 10.6%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 37.2%, 수익률 79.2%, 최대낙폭 18.5% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 50/100, 검증구간 452일 점수 52/100, 최종 47/100"
+    },
+    {
+      "symbol": "RTX",
+      "available": true,
+      "score": 42,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 20.4,
+      "drawdownPct": 29.5,
+      "trades": 41,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 11,
+        "winRatePct": 45.5,
+        "totalReturnPct": 25.4,
+        "maxDrawdownPct": 8.6,
+        "score": 49,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 45.5%, 수익률 25.4%, 최대낙폭 8.6% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 49,
+          "days": 452,
+          "trades": 11,
+          "winRatePct": 45.5,
+          "totalReturnPct": 25.4,
+          "maxDrawdownPct": 8.6,
+          "summary": "최근 452개 일봉 기준 승률 45.5%, 수익률 25.4%, 최대낙폭 8.6%"
+        },
+        "guardedBacktest": {
+          "score": 49,
+          "days": 452,
+          "trades": 11,
+          "winRatePct": 45.5,
+          "totalReturnPct": 25.4,
+          "maxDrawdownPct": 8.6,
+          "summary": "최근 452개 일봉 기준 승률 45.5%, 수익률 25.4%, 최대낙폭 8.6%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 39%, 수익률 20.4%, 최대낙폭 29.5% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 35/100, 검증구간 452일 점수 49/100, 최종 42/100"
+    },
+    {
+      "symbol": "SMH",
+      "available": true,
+      "score": 40,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 45.7,
+      "drawdownPct": 28.8,
+      "trades": 43,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 14,
+        "winRatePct": 50,
+        "totalReturnPct": 23,
+        "maxDrawdownPct": 15.3,
+        "score": 46,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 50%, 수익률 23%, 최대낙폭 15.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 46,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 50,
+          "totalReturnPct": 23,
+          "maxDrawdownPct": 15.3,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 23%, 최대낙폭 15.3%"
+        },
+        "guardedBacktest": {
+          "score": 46,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 50,
+          "totalReturnPct": 23,
+          "maxDrawdownPct": 15.3,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 23%, 최대낙폭 15.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 32.6%, 수익률 45.7%, 최대낙폭 28.8% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 36/100, 검증구간 452일 점수 46/100, 최종 40/100"
+    },
+    {
+      "symbol": "SOXX",
+      "available": true,
+      "score": 38,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 12,
+      "drawdownPct": 31.2,
+      "trades": 47,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 16,
+        "winRatePct": 50,
+        "totalReturnPct": 36.8,
+        "maxDrawdownPct": 20.2,
+        "score": 47,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 50%, 수익률 36.8%, 최대낙폭 20.2% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 47,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 50,
+          "totalReturnPct": 36.8,
+          "maxDrawdownPct": 20.2,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 36.8%, 최대낙폭 20.2%"
+        },
+        "guardedBacktest": {
+          "score": 47,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 50,
+          "totalReturnPct": 36.8,
+          "maxDrawdownPct": 20.2,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 36.8%, 최대낙폭 20.2%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 27.7%, 수익률 12%, 최대낙폭 31.2% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 25/100, 검증구간 452일 점수 47/100, 최종 38/100"
+    },
+    {
+      "symbol": "XLK",
+      "available": true,
+      "score": 36,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 18.7,
+      "drawdownPct": 17.9,
+      "trades": 44,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 20,
+        "winRatePct": 35,
+        "totalReturnPct": 7,
+        "maxDrawdownPct": 17.2,
+        "score": 36,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 35%, 수익률 7%, 최대낙폭 17.2% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 36,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 35,
+          "totalReturnPct": 7,
+          "maxDrawdownPct": 17.2,
+          "summary": "최근 452개 일봉 기준 승률 35%, 수익률 7%, 최대낙폭 17.2%"
+        },
+        "guardedBacktest": {
+          "score": 36,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 35,
+          "totalReturnPct": 7,
+          "maxDrawdownPct": 17.2,
+          "summary": "최근 452개 일봉 기준 승률 35%, 수익률 7%, 최대낙폭 17.2%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 34.1%, 수익률 18.7%, 최대낙폭 17.9% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 38/100, 검증구간 452일 점수 36/100, 최종 36/100"
+    },
+    {
+      "symbol": "MSFT",
+      "available": true,
+      "score": 36,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 14.5,
+      "drawdownPct": 18.3,
+      "trades": 38,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 14,
+        "winRatePct": 35.7,
+        "totalReturnPct": 7.4,
+        "maxDrawdownPct": 18.2,
+        "score": 36,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 35.7%, 수익률 7.4%, 최대낙폭 18.2% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 36,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 35.7,
+          "totalReturnPct": 7.4,
+          "maxDrawdownPct": 18.2,
+          "summary": "최근 452개 일봉 기준 승률 35.7%, 수익률 7.4%, 최대낙폭 18.2%"
+        },
+        "guardedBacktest": {
+          "score": 36,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 35.7,
+          "totalReturnPct": 7.4,
+          "maxDrawdownPct": 18.2,
+          "summary": "최근 452개 일봉 기준 승률 35.7%, 수익률 7.4%, 최대낙폭 18.2%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 34.2%, 수익률 14.5%, 최대낙폭 18.3% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 37/100, 검증구간 452일 점수 36/100, 최종 36/100"
+    },
+    {
+      "symbol": "XLE",
+      "available": true,
+      "score": 35,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 10.6,
+      "drawdownPct": 32.7,
+      "trades": 51,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 20,
+        "winRatePct": 35,
+        "totalReturnPct": 14.8,
+        "maxDrawdownPct": 14.7,
+        "score": 38,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 35%, 수익률 14.8%, 최대낙폭 14.7% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 38,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 35,
+          "totalReturnPct": 14.8,
+          "maxDrawdownPct": 14.7,
+          "summary": "최근 452개 일봉 기준 승률 35%, 수익률 14.8%, 최대낙폭 14.7%"
+        },
+        "guardedBacktest": {
+          "score": 38,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 35,
+          "totalReturnPct": 14.8,
+          "maxDrawdownPct": 14.7,
+          "summary": "최근 452개 일봉 기준 승률 35%, 수익률 14.8%, 최대낙폭 14.7%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 29.4%, 수익률 10.6%, 최대낙폭 32.7% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 25/100, 검증구간 452일 점수 38/100, 최종 35/100"
+    },
+    {
+      "symbol": "GLD",
+      "available": true,
+      "score": 35,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 13.3,
+      "drawdownPct": 17.9,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 20,
+        "winRatePct": 35,
+        "totalReturnPct": 4.6,
+        "maxDrawdownPct": 14,
+        "score": 35,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 35%, 수익률 4.6%, 최대낙폭 14% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 35,
+          "totalReturnPct": 4.6,
+          "maxDrawdownPct": 14,
+          "summary": "최근 452개 일봉 기준 승률 35%, 수익률 4.6%, 최대낙폭 14%"
+        },
+        "guardedBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 35,
+          "totalReturnPct": 4.6,
+          "maxDrawdownPct": 14,
+          "summary": "최근 452개 일봉 기준 승률 35%, 수익률 4.6%, 최대낙폭 14%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 35.6%, 수익률 13.3%, 최대낙폭 17.9% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 37/100, 검증구간 452일 점수 35/100, 최종 35/100"
+    },
+    {
+      "symbol": "XOM",
+      "available": true,
+      "score": 35,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 17.8,
+      "drawdownPct": 31.3,
+      "trades": 50,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 18,
+        "winRatePct": 38.9,
+        "totalReturnPct": 10.2,
+        "maxDrawdownPct": 15.7,
+        "score": 38,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 38.9%, 수익률 10.2%, 최대낙폭 15.7% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 38,
+          "days": 452,
+          "trades": 18,
+          "winRatePct": 38.9,
+          "totalReturnPct": 10.2,
+          "maxDrawdownPct": 15.7,
+          "summary": "최근 452개 일봉 기준 승률 38.9%, 수익률 10.2%, 최대낙폭 15.7%"
+        },
+        "guardedBacktest": {
+          "score": 38,
+          "days": 452,
+          "trades": 18,
+          "winRatePct": 38.9,
+          "totalReturnPct": 10.2,
+          "maxDrawdownPct": 15.7,
+          "summary": "최근 452개 일봉 기준 승률 38.9%, 수익률 10.2%, 최대낙폭 15.7%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 32%, 수익률 17.8%, 최대낙폭 31.3% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 27/100, 검증구간 452일 점수 38/100, 최종 35/100"
+    },
+    {
+      "symbol": "JPM",
+      "available": true,
+      "score": 35,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 29,
+      "drawdownPct": 16.8,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 15,
+        "winRatePct": 33.3,
+        "totalReturnPct": 7.3,
+        "maxDrawdownPct": 15.1,
+        "score": 35,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 7.3%, 최대낙폭 15.1% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 33.3,
+          "totalReturnPct": 7.3,
+          "maxDrawdownPct": 15.1,
+          "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 7.3%, 최대낙폭 15.1%"
+        },
+        "guardedBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 33.3,
+          "totalReturnPct": 7.3,
+          "maxDrawdownPct": 15.1,
+          "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 7.3%, 최대낙폭 15.1%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 42.2%, 수익률 29%, 최대낙폭 16.8% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 43/100, 검증구간 452일 점수 35/100, 최종 35/100"
+    },
+    {
+      "symbol": "DIA",
+      "available": true,
+      "score": 34,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -7.1,
+      "drawdownPct": 13.1,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 18,
+        "winRatePct": 38.9,
+        "totalReturnPct": -1.9,
+        "maxDrawdownPct": 10.8,
+        "score": 35,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 38.9%, 수익률 -1.9%, 최대낙폭 10.8% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 18,
+          "winRatePct": 38.9,
+          "totalReturnPct": -1.9,
+          "maxDrawdownPct": 10.8,
+          "summary": "최근 452개 일봉 기준 승률 38.9%, 수익률 -1.9%, 최대낙폭 10.8%"
+        },
+        "guardedBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 18,
+          "winRatePct": 38.9,
+          "totalReturnPct": -1.9,
+          "maxDrawdownPct": 10.8,
+          "summary": "최근 452개 일봉 기준 승률 38.9%, 수익률 -1.9%, 최대낙폭 10.8%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 35.6%, 수익률 -7.1%, 최대낙폭 13.1% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 32/100, 검증구간 452일 점수 35/100, 최종 34/100"
+    },
+    {
+      "symbol": "AVGO",
+      "available": true,
+      "score": 33,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 20,
+      "drawdownPct": 27.7,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 12,
+        "winRatePct": 33.3,
+        "totalReturnPct": 22.7,
+        "maxDrawdownPct": 25.5,
+        "score": 34,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 22.7%, 최대낙폭 25.5% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 34,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 33.3,
+          "totalReturnPct": 22.7,
+          "maxDrawdownPct": 25.5,
+          "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 22.7%, 최대낙폭 25.5%"
+        },
+        "guardedBacktest": {
+          "score": 34,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 33.3,
+          "totalReturnPct": 22.7,
+          "maxDrawdownPct": 25.5,
+          "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 22.7%, 최대낙폭 25.5%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 37.8%, 수익률 20%, 최대낙폭 27.7% · 안전장치 영향 +0점, 수익률 +1.7%p; 전체 1254일 점수 35/100, 검증구간 452일 점수 34/100, 최종 33/100"
+    },
+    {
+      "symbol": "V",
+      "available": true,
+      "score": 33,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -2.9,
+      "drawdownPct": 28.4,
+      "trades": 44,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 12,
+        "winRatePct": 33.3,
+        "totalReturnPct": 4.7,
+        "maxDrawdownPct": 13.4,
+        "score": 35,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 4.7%, 최대낙폭 13.4% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 33.3,
+          "totalReturnPct": 4.7,
+          "maxDrawdownPct": 13.4,
+          "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 4.7%, 최대낙폭 13.4%"
+        },
+        "guardedBacktest": {
+          "score": 35,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 33.3,
+          "totalReturnPct": 4.7,
+          "maxDrawdownPct": 13.4,
+          "summary": "최근 452개 일봉 기준 승률 33.3%, 수익률 4.7%, 최대낙폭 13.4%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 29.5%, 수익률 -2.9%, 최대낙폭 28.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 28/100, 검증구간 452일 점수 35/100, 최종 33/100"
+    },
+    {
+      "symbol": "QQQ",
+      "available": true,
+      "score": 31,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 17.4,
+      "drawdownPct": 16,
+      "trades": 50,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 21,
+        "winRatePct": 28.6,
+        "totalReturnPct": -1.1,
+        "maxDrawdownPct": 16,
+        "score": 31,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 -1.1%, 최대낙폭 16% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 31,
+          "days": 452,
+          "trades": 21,
+          "winRatePct": 28.6,
+          "totalReturnPct": -1.1,
+          "maxDrawdownPct": 16,
+          "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 -1.1%, 최대낙폭 16%"
+        },
+        "guardedBacktest": {
+          "score": 31,
+          "days": 452,
+          "trades": 21,
+          "winRatePct": 28.6,
+          "totalReturnPct": -1.1,
+          "maxDrawdownPct": 16,
+          "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 -1.1%, 최대낙폭 16%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 36%, 수익률 17.4%, 최대낙폭 16% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 38/100, 검증구간 452일 점수 31/100, 최종 31/100"
+    },
+    {
+      "symbol": "IWM",
+      "available": true,
+      "score": 31,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -15.9,
+      "drawdownPct": 24.7,
+      "trades": 44,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 15,
+        "winRatePct": 40,
+        "totalReturnPct": 1,
+        "maxDrawdownPct": 14.3,
+        "score": 36,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 40%, 수익률 1%, 최대낙폭 14.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 36,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 40,
+          "totalReturnPct": 1,
+          "maxDrawdownPct": 14.3,
+          "summary": "최근 452개 일봉 기준 승률 40%, 수익률 1%, 최대낙폭 14.3%"
+        },
+        "guardedBacktest": {
+          "score": 36,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 40,
+          "totalReturnPct": 1,
+          "maxDrawdownPct": 14.3,
+          "summary": "최근 452개 일봉 기준 승률 40%, 수익률 1%, 최대낙폭 14.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 25%, 수익률 -15.9%, 최대낙폭 24.7% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 25/100, 검증구간 452일 점수 36/100, 최종 31/100"
+    },
+    {
+      "symbol": "LMT",
+      "available": true,
+      "score": 30,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -2.5,
+      "drawdownPct": 30.2,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 14,
+        "winRatePct": 28.6,
+        "totalReturnPct": 2.7,
+        "maxDrawdownPct": 17.1,
+        "score": 32,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 2.7%, 최대낙폭 17.1% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 32,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 28.6,
+          "totalReturnPct": 2.7,
+          "maxDrawdownPct": 17.1,
+          "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 2.7%, 최대낙폭 17.1%"
+        },
+        "guardedBacktest": {
+          "score": 32,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 28.6,
+          "totalReturnPct": 2.7,
+          "maxDrawdownPct": 17.1,
+          "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 2.7%, 최대낙폭 17.1%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 26.7%, 수익률 -2.5%, 최대낙폭 30.2% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 22/100, 검증구간 452일 점수 32/100, 최종 30/100"
+    },
+    {
+      "symbol": "XLV",
+      "available": true,
+      "score": 30,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -2.7,
+      "drawdownPct": 17.1,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 20,
+        "winRatePct": 25,
+        "totalReturnPct": 1.2,
+        "maxDrawdownPct": 10.9,
+        "score": 30,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 25%, 수익률 1.2%, 최대낙폭 10.9% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 30,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 25,
+          "totalReturnPct": 1.2,
+          "maxDrawdownPct": 10.9,
+          "summary": "최근 452개 일봉 기준 승률 25%, 수익률 1.2%, 최대낙폭 10.9%"
+        },
+        "guardedBacktest": {
+          "score": 30,
+          "days": 452,
+          "trades": 20,
+          "winRatePct": 25,
+          "totalReturnPct": 1.2,
+          "maxDrawdownPct": 10.9,
+          "summary": "최근 452개 일봉 기준 승률 25%, 수익률 1.2%, 최대낙폭 10.9%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 31.1%, 수익률 -2.7%, 최대낙폭 17.1% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 32/100, 검증구간 452일 점수 30/100, 최종 30/100"
+    },
+    {
+      "symbol": "XLU",
+      "available": true,
+      "score": 30,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 13.2,
+      "drawdownPct": 13.4,
+      "trades": 38,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 15,
+        "winRatePct": 20,
+        "totalReturnPct": 3.7,
+        "maxDrawdownPct": 7.3,
+        "score": 30,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 20%, 수익률 3.7%, 최대낙폭 7.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 30,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 20,
+          "totalReturnPct": 3.7,
+          "maxDrawdownPct": 7.3,
+          "summary": "최근 452개 일봉 기준 승률 20%, 수익률 3.7%, 최대낙폭 7.3%"
+        },
+        "guardedBacktest": {
+          "score": 30,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 20,
+          "totalReturnPct": 3.7,
+          "maxDrawdownPct": 7.3,
+          "summary": "최근 452개 일봉 기준 승률 20%, 수익률 3.7%, 최대낙폭 7.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 26.3%, 수익률 13.2%, 최대낙폭 13.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 34/100, 검증구간 452일 점수 30/100, 최종 30/100"
+    },
+    {
+      "symbol": "META",
+      "available": true,
+      "score": 30,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 155.7,
+      "drawdownPct": 17.3,
+      "trades": 40,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 12,
+        "winRatePct": 25,
+        "totalReturnPct": -2.2,
+        "maxDrawdownPct": 17.3,
+        "score": 30,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 25%, 수익률 -2.2%, 최대낙폭 17.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 30,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 25,
+          "totalReturnPct": -2.2,
+          "maxDrawdownPct": 17.3,
+          "summary": "최근 452개 일봉 기준 승률 25%, 수익률 -2.2%, 최대낙폭 17.3%"
+        },
+        "guardedBacktest": {
+          "score": 30,
+          "days": 452,
+          "trades": 12,
+          "winRatePct": 25,
+          "totalReturnPct": -2.2,
+          "maxDrawdownPct": 17.3,
+          "summary": "최근 452개 일봉 기준 승률 25%, 수익률 -2.2%, 최대낙폭 17.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 37.5%, 수익률 155.7%, 최대낙폭 17.3% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 64/100, 검증구간 452일 점수 30/100, 최종 30/100"
+    },
+    {
+      "symbol": "AMD",
+      "available": true,
+      "score": 29,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 31.1,
+      "drawdownPct": 30.8,
+      "trades": 35,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 15,
+        "winRatePct": 40,
+        "totalReturnPct": 6.6,
+        "maxDrawdownPct": 30.8,
+        "score": 29,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 40%, 수익률 6.6%, 최대낙폭 30.8% · 안전장치 영향 -4점, 수익률 -25.6%p",
+        "alphaBacktest": {
+          "score": 33,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 43.8,
+          "totalReturnPct": 32.2,
+          "maxDrawdownPct": 30.8,
+          "summary": "최근 452개 일봉 기준 승률 43.8%, 수익률 32.2%, 최대낙폭 30.8%"
+        },
+        "guardedBacktest": {
+          "score": 29,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 40,
+          "totalReturnPct": 6.6,
+          "maxDrawdownPct": 30.8,
+          "summary": "최근 452개 일봉 기준 승률 40%, 수익률 6.6%, 최대낙폭 30.8%"
+        },
+        "guardImpact": {
+          "scoreChange": -4,
+          "returnPctChange": -25.6,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 일부 하락 구간을 피했지만 반등 구간도 놓쳐 수익률을 낮췄습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 48.6%, 수익률 31.1%, 최대낙폭 30.8% · 안전장치 영향 -5점, 수익률 -31.4%p; 전체 1254일 점수 35/100, 검증구간 452일 점수 29/100, 최종 29/100"
+    },
+    {
+      "symbol": "UNH",
+      "available": true,
+      "score": 29,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -22.9,
+      "drawdownPct": 40.9,
+      "trades": 25,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 8,
+        "winRatePct": 50,
+        "totalReturnPct": -8,
+        "maxDrawdownPct": 29,
+        "score": 31,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 50%, 수익률 -8%, 최대낙폭 29% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 31,
+          "days": 452,
+          "trades": 8,
+          "winRatePct": 50,
+          "totalReturnPct": -8,
+          "maxDrawdownPct": 29,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 -8%, 최대낙폭 29%"
+        },
+        "guardedBacktest": {
+          "score": 31,
+          "days": 452,
+          "trades": 8,
+          "winRatePct": 50,
+          "totalReturnPct": -8,
+          "maxDrawdownPct": 29,
+          "summary": "최근 452개 일봉 기준 승률 50%, 수익률 -8%, 최대낙폭 29%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 36%, 수익률 -22.9%, 최대낙폭 40.9% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 17/100, 검증구간 452일 점수 31/100, 최종 29/100"
+    },
+    {
+      "symbol": "SPY",
+      "available": true,
+      "score": 27,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -7.1,
+      "drawdownPct": 16.8,
+      "trades": 47,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 24,
+        "winRatePct": 20.8,
+        "totalReturnPct": -6.3,
+        "maxDrawdownPct": 14.3,
+        "score": 27,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 20.8%, 수익률 -6.3%, 최대낙폭 14.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 24,
+          "winRatePct": 20.8,
+          "totalReturnPct": -6.3,
+          "maxDrawdownPct": 14.3,
+          "summary": "최근 452개 일봉 기준 승률 20.8%, 수익률 -6.3%, 최대낙폭 14.3%"
+        },
+        "guardedBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 24,
+          "winRatePct": 20.8,
+          "totalReturnPct": -6.3,
+          "maxDrawdownPct": 14.3,
+          "summary": "최근 452개 일봉 기준 승률 20.8%, 수익률 -6.3%, 최대낙폭 14.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 25.5%, 수익률 -7.1%, 최대낙폭 16.8% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 29/100, 검증구간 452일 점수 27/100, 최종 27/100"
+    },
+    {
+      "symbol": "XLF",
+      "available": true,
+      "score": 27,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 3.9,
+      "drawdownPct": 18,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 15,
+        "winRatePct": 20,
+        "totalReturnPct": -4.5,
+        "maxDrawdownPct": 11.3,
+        "score": 27,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 20%, 수익률 -4.5%, 최대낙폭 11.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 20,
+          "totalReturnPct": -4.5,
+          "maxDrawdownPct": 11.3,
+          "summary": "최근 452개 일봉 기준 승률 20%, 수익률 -4.5%, 최대낙폭 11.3%"
+        },
+        "guardedBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 15,
+          "winRatePct": 20,
+          "totalReturnPct": -4.5,
+          "maxDrawdownPct": 11.3,
+          "summary": "최근 452개 일봉 기준 승률 20%, 수익률 -4.5%, 최대낙폭 11.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 33.3%, 수익률 3.9%, 최대낙폭 18% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 34/100, 검증구간 452일 점수 27/100, 최종 27/100"
+    },
+    {
+      "symbol": "XLB",
+      "available": true,
+      "score": 27,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -20.1,
+      "drawdownPct": 21,
+      "trades": 40,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 19,
+        "winRatePct": 21.1,
+        "totalReturnPct": -9,
+        "maxDrawdownPct": 20.2,
+        "score": 27,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 21.1%, 수익률 -9%, 최대낙폭 20.2% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 21.1,
+          "totalReturnPct": -9,
+          "maxDrawdownPct": 20.2,
+          "summary": "최근 452개 일봉 기준 승률 21.1%, 수익률 -9%, 최대낙폭 20.2%"
+        },
+        "guardedBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 21.1,
+          "totalReturnPct": -9,
+          "maxDrawdownPct": 20.2,
+          "summary": "최근 452개 일봉 기준 승률 21.1%, 수익률 -9%, 최대낙폭 20.2%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 27.5%, 수익률 -20.1%, 최대낙폭 21% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 27/100, 검증구간 452일 점수 27/100, 최종 27/100"
+    },
+    {
+      "symbol": "XLI",
+      "available": true,
+      "score": 26,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -0.3,
+      "drawdownPct": 17.1,
+      "trades": 44,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 19,
+        "winRatePct": 21.1,
+        "totalReturnPct": -9.4,
+        "maxDrawdownPct": 17.1,
+        "score": 26,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 21.1%, 수익률 -9.4%, 최대낙폭 17.1% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 26,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 21.1,
+          "totalReturnPct": -9.4,
+          "maxDrawdownPct": 17.1,
+          "summary": "최근 452개 일봉 기준 승률 21.1%, 수익률 -9.4%, 최대낙폭 17.1%"
+        },
+        "guardedBacktest": {
+          "score": 26,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 21.1,
+          "totalReturnPct": -9.4,
+          "maxDrawdownPct": 17.1,
+          "summary": "최근 452개 일봉 기준 승률 21.1%, 수익률 -9.4%, 최대낙폭 17.1%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 25%, 수익률 -0.3%, 최대낙폭 17.1% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 30/100, 검증구간 452일 점수 26/100, 최종 26/100"
+    },
+    {
+      "symbol": "SH",
+      "available": true,
+      "score": 25,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -16.5,
+      "drawdownPct": 24.8,
+      "trades": 28,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 7,
+        "winRatePct": 28.6,
+        "totalReturnPct": 1.2,
+        "maxDrawdownPct": 7.5,
+        "score": 27,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 1.2%, 최대낙폭 7.5% · 안전장치 영향 -7점, 수익률 -3.5%p",
+        "alphaBacktest": {
+          "score": 34,
+          "days": 452,
+          "trades": 7,
+          "winRatePct": 42.9,
+          "totalReturnPct": 4.7,
+          "maxDrawdownPct": 7.5,
+          "summary": "최근 452개 일봉 기준 승률 42.9%, 수익률 4.7%, 최대낙폭 7.5%"
+        },
+        "guardedBacktest": {
+          "score": 27,
+          "days": 452,
+          "trades": 7,
+          "winRatePct": 28.6,
+          "totalReturnPct": 1.2,
+          "maxDrawdownPct": 7.5,
+          "summary": "최근 452개 일봉 기준 승률 28.6%, 수익률 1.2%, 최대낙폭 7.5%"
+        },
+        "guardImpact": {
+          "scoreChange": -7,
+          "returnPctChange": -3.5,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 일부 하락 구간을 피했지만 반등 구간도 놓쳐 수익률을 낮췄습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 21.4%, 수익률 -16.5%, 최대낙폭 24.8% · 안전장치 영향 -2점, 수익률 -2.9%p; 전체 1254일 점수 23/100, 검증구간 452일 점수 27/100, 최종 25/100"
+    },
+    {
+      "symbol": "MA",
+      "available": true,
+      "score": 25,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -6.5,
+      "drawdownPct": 26.4,
+      "trades": 38,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 8,
+        "winRatePct": 25,
+        "totalReturnPct": -1.8,
+        "maxDrawdownPct": 18.7,
+        "score": 25,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 25%, 수익률 -1.8%, 최대낙폭 18.7% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 25,
+          "days": 452,
+          "trades": 8,
+          "winRatePct": 25,
+          "totalReturnPct": -1.8,
+          "maxDrawdownPct": 18.7,
+          "summary": "최근 452개 일봉 기준 승률 25%, 수익률 -1.8%, 최대낙폭 18.7%"
+        },
+        "guardedBacktest": {
+          "score": 25,
+          "days": 452,
+          "trades": 8,
+          "winRatePct": 25,
+          "totalReturnPct": -1.8,
+          "maxDrawdownPct": 18.7,
+          "summary": "최근 452개 일봉 기준 승률 25%, 수익률 -1.8%, 최대낙폭 18.7%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 34.2%, 수익률 -6.5%, 최대낙폭 26.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 30/100, 검증구간 452일 점수 25/100, 최종 25/100"
+    },
+    {
+      "symbol": "PSQ",
+      "available": true,
+      "score": 24,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -21.9,
+      "drawdownPct": 28.9,
+      "trades": 26,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 9,
+        "winRatePct": 22.2,
+        "totalReturnPct": -0.6,
+        "maxDrawdownPct": 12.7,
+        "score": 24,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 22.2%, 수익률 -0.6%, 최대낙폭 12.7% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 24,
+          "days": 452,
+          "trades": 9,
+          "winRatePct": 22.2,
+          "totalReturnPct": -0.6,
+          "maxDrawdownPct": 12.7,
+          "summary": "최근 452개 일봉 기준 승률 22.2%, 수익률 -0.6%, 최대낙폭 12.7%"
+        },
+        "guardedBacktest": {
+          "score": 24,
+          "days": 452,
+          "trades": 9,
+          "winRatePct": 22.2,
+          "totalReturnPct": -0.6,
+          "maxDrawdownPct": 12.7,
+          "summary": "최근 452개 일봉 기준 승률 22.2%, 수익률 -0.6%, 최대낙폭 12.7%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 26.9%, 수익률 -21.9%, 최대낙폭 28.9% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 25/100, 검증구간 452일 점수 24/100, 최종 24/100"
+    },
+    {
+      "symbol": "NVDA",
+      "available": true,
+      "score": 23,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 108.9,
+      "drawdownPct": 33.7,
+      "trades": 47,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 19,
+        "winRatePct": 31.6,
+        "totalReturnPct": -11,
+        "maxDrawdownPct": 33.7,
+        "score": 23,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 31.6%, 수익률 -11%, 최대낙폭 33.7% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 23,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 31.6,
+          "totalReturnPct": -11,
+          "maxDrawdownPct": 33.7,
+          "summary": "최근 452개 일봉 기준 승률 31.6%, 수익률 -11%, 최대낙폭 33.7%"
+        },
+        "guardedBacktest": {
+          "score": 23,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 31.6,
+          "totalReturnPct": -11,
+          "maxDrawdownPct": 33.7,
+          "summary": "최근 452개 일봉 기준 승률 31.6%, 수익률 -11%, 최대낙폭 33.7%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 40.4%, 수익률 108.9%, 최대낙폭 33.7% · 안전장치 영향 +3점, 수익률 +28.9%p; 전체 1254일 점수 40/100, 검증구간 452일 점수 23/100, 최종 23/100"
+    },
+    {
+      "symbol": "IEF",
+      "available": true,
+      "score": 22,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -5.3,
+      "drawdownPct": 8,
+      "trades": 34,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 16,
+        "winRatePct": 12.5,
+        "totalReturnPct": -5.6,
+        "maxDrawdownPct": 6.9,
+        "score": 22,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 12.5%, 수익률 -5.6%, 최대낙폭 6.9% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 22,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 12.5,
+          "totalReturnPct": -5.6,
+          "maxDrawdownPct": 6.9,
+          "summary": "최근 452개 일봉 기준 승률 12.5%, 수익률 -5.6%, 최대낙폭 6.9%"
+        },
+        "guardedBacktest": {
+          "score": 22,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 12.5,
+          "totalReturnPct": -5.6,
+          "maxDrawdownPct": 6.9,
+          "summary": "최근 452개 일봉 기준 승률 12.5%, 수익률 -5.6%, 최대낙폭 6.9%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 29.4%, 수익률 -5.3%, 최대낙폭 8% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 29/100, 검증구간 452일 점수 22/100, 최종 22/100"
+    },
+    {
+      "symbol": "XLY",
+      "available": true,
+      "score": 22,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 2.9,
+      "drawdownPct": 16.4,
+      "trades": 42,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 16,
+        "winRatePct": 12.5,
+        "totalReturnPct": -11.7,
+        "maxDrawdownPct": 15.8,
+        "score": 22,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 12.5%, 수익률 -11.7%, 최대낙폭 15.8% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 22,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 12.5,
+          "totalReturnPct": -11.7,
+          "maxDrawdownPct": 15.8,
+          "summary": "최근 452개 일봉 기준 승률 12.5%, 수익률 -11.7%, 최대낙폭 15.8%"
+        },
+        "guardedBacktest": {
+          "score": 22,
+          "days": 452,
+          "trades": 16,
+          "winRatePct": 12.5,
+          "totalReturnPct": -11.7,
+          "maxDrawdownPct": 15.8,
+          "summary": "최근 452개 일봉 기준 승률 12.5%, 수익률 -11.7%, 최대낙폭 15.8%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 23.8%, 수익률 2.9%, 최대낙폭 16.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 30/100, 검증구간 452일 점수 22/100, 최종 22/100"
+    },
+    {
+      "symbol": "XLC",
+      "available": true,
+      "score": 21,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 15.4,
+      "drawdownPct": 22.4,
+      "trades": 46,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 19,
+        "winRatePct": 15.8,
+        "totalReturnPct": -11,
+        "maxDrawdownPct": 22.4,
+        "score": 21,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 15.8%, 수익률 -11%, 최대낙폭 22.4% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 21,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 15.8,
+          "totalReturnPct": -11,
+          "maxDrawdownPct": 22.4,
+          "summary": "최근 452개 일봉 기준 승률 15.8%, 수익률 -11%, 최대낙폭 22.4%"
+        },
+        "guardedBacktest": {
+          "score": 21,
+          "days": 452,
+          "trades": 19,
+          "winRatePct": 15.8,
+          "totalReturnPct": -11,
+          "maxDrawdownPct": 22.4,
+          "summary": "최근 452개 일봉 기준 승률 15.8%, 수익률 -11%, 최대낙폭 22.4%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 32.6%, 수익률 15.4%, 최대낙폭 22.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 33/100, 검증구간 452일 점수 21/100, 최종 21/100"
+    },
+    {
+      "symbol": "XLRE",
+      "available": true,
+      "score": 20,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -14.4,
+      "drawdownPct": 22.4,
+      "trades": 45,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 21,
+        "winRatePct": 9.5,
+        "totalReturnPct": -19.2,
+        "maxDrawdownPct": 20.3,
+        "score": 20,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 9.5%, 수익률 -19.2%, 최대낙폭 20.3% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 20,
+          "days": 452,
+          "trades": 21,
+          "winRatePct": 9.5,
+          "totalReturnPct": -19.2,
+          "maxDrawdownPct": 20.3,
+          "summary": "최근 452개 일봉 기준 승률 9.5%, 수익률 -19.2%, 최대낙폭 20.3%"
+        },
+        "guardedBacktest": {
+          "score": 20,
+          "days": 452,
+          "trades": 21,
+          "winRatePct": 9.5,
+          "totalReturnPct": -19.2,
+          "maxDrawdownPct": 20.3,
+          "summary": "최근 452개 일봉 기준 승률 9.5%, 수익률 -19.2%, 최대낙폭 20.3%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 17.8%, 수익률 -14.4%, 최대낙폭 22.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 22/100, 검증구간 452일 점수 20/100, 최종 20/100"
+    },
+    {
+      "symbol": "XLP",
+      "available": true,
+      "score": 18,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -13.7,
+      "drawdownPct": 23,
+      "trades": 46,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 22,
+        "winRatePct": 4.5,
+        "totalReturnPct": -19,
+        "maxDrawdownPct": 21.2,
+        "score": 18,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 4.5%, 수익률 -19%, 최대낙폭 21.2% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 18,
+          "days": 452,
+          "trades": 22,
+          "winRatePct": 4.5,
+          "totalReturnPct": -19,
+          "maxDrawdownPct": 21.2,
+          "summary": "최근 452개 일봉 기준 승률 4.5%, 수익률 -19%, 최대낙폭 21.2%"
+        },
+        "guardedBacktest": {
+          "score": 18,
+          "days": 452,
+          "trades": 22,
+          "winRatePct": 4.5,
+          "totalReturnPct": -19,
+          "maxDrawdownPct": 21.2,
+          "summary": "최근 452개 일봉 기준 승률 4.5%, 수익률 -19%, 최대낙폭 21.2%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 23.9%, 수익률 -13.7%, 최대낙폭 23% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 24/100, 검증구간 452일 점수 18/100, 최종 18/100"
+    },
+    {
+      "symbol": "COST",
+      "available": true,
+      "score": 17,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": 2.9,
+      "drawdownPct": 34.5,
+      "trades": 43,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 14,
+        "winRatePct": 7.1,
+        "totalReturnPct": -19.2,
+        "maxDrawdownPct": 22.8,
+        "score": 17,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 7.1%, 수익률 -19.2%, 최대낙폭 22.8% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 17,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 7.1,
+          "totalReturnPct": -19.2,
+          "maxDrawdownPct": 22.8,
+          "summary": "최근 452개 일봉 기준 승률 7.1%, 수익률 -19.2%, 최대낙폭 22.8%"
+        },
+        "guardedBacktest": {
+          "score": 17,
+          "days": 452,
+          "trades": 14,
+          "winRatePct": 7.1,
+          "totalReturnPct": -19.2,
+          "maxDrawdownPct": 22.8,
+          "summary": "최근 452개 일봉 기준 승률 7.1%, 수익률 -19.2%, 최대낙폭 22.8%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 25.6%, 수익률 2.9%, 최대낙폭 34.5% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 23/100, 검증구간 452일 점수 17/100, 최종 17/100"
+    },
+    {
+      "symbol": "AMZN",
+      "available": true,
+      "score": 12,
+      "days": 1254,
+      "lastDate": "2026-11-03T14:30:00.000Z",
+      "returnPct": -17.3,
+      "drawdownPct": 32.4,
+      "trades": 44,
+      "validation": {
+        "available": true,
+        "engineVersion": "Adaptive Momentum Guard v0.9 Dual-Backtest",
+        "days": 452,
+        "trades": 13,
+        "winRatePct": 7.7,
+        "totalReturnPct": -26.3,
+        "maxDrawdownPct": 32.4,
+        "score": 12,
+        "variant": "guarded",
+        "summary": "최근 452개 일봉 기준 승률 7.7%, 수익률 -26.3%, 최대낙폭 32.4% · 안전장치 영향 +0점, 수익률 +0%p",
+        "alphaBacktest": {
+          "score": 12,
+          "days": 452,
+          "trades": 13,
+          "winRatePct": 7.7,
+          "totalReturnPct": -26.3,
+          "maxDrawdownPct": 32.4,
+          "summary": "최근 452개 일봉 기준 승률 7.7%, 수익률 -26.3%, 최대낙폭 32.4%"
+        },
+        "guardedBacktest": {
+          "score": 12,
+          "days": 452,
+          "trades": 13,
+          "winRatePct": 7.7,
+          "totalReturnPct": -26.3,
+          "maxDrawdownPct": 32.4,
+          "summary": "최근 452개 일봉 기준 승률 7.7%, 수익률 -26.3%, 최대낙폭 32.4%"
+        },
+        "guardImpact": {
+          "scoreChange": 0,
+          "returnPctChange": 0,
+          "drawdownPctChange": 0,
+          "explanation": "안전장치가 이번 구간 수익률에는 거의 영향을 주지 않았습니다."
+        },
+        "guardCoverage": {
+          "included": [
+            "당일 급락 신규매수 차단",
+            "당일 급락 방어매도",
+            "추정 수수료·슬리피지(왕복 약 0.2%)"
+          ],
+          "excluded": [
+            "뉴스 감성",
+            "실적·거시 이벤트",
+            "포트폴리오 당일 손실 한도",
+            "종목별 비중·전체 위험노출 한도",
+            "체결 지연·부분체결"
+          ]
+        }
+      },
+      "summary": "최근 1254개 일봉 기준 승률 31.8%, 수익률 -17.3%, 최대낙폭 32.4% · 안전장치 영향 +0점, 수익률 +0%p; 전체 1254일 점수 23/100, 검증구간 452일 점수 12/100, 최종 12/100"
+    }
+  ]
+}
